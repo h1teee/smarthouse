@@ -1,0 +1,29 @@
+version: '3.8'
+services:
+# db:
+#    image: postgres:15-alpine
+#    environment:
+#      POSTGRES_USER: admin
+#     POSTGRES_PASSWORD: password
+#      POSTGRES_DB: smarthouse
+#    ports:
+#      - "5433:5432"
+#    volumes:
+#      - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_URL=${DB_URL}
+      - AI_KEY=${AI_KEY}
+      - USE_MOCK_AI=${USE_MOCK_AI}
+
+  #frontend:
+  #  build: ./frontend
+  #  ports:
+  #    - "3000:80"
+  #  depends_on:
+  #    - api
