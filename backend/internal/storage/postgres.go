@@ -12,16 +12,20 @@ func InitDB(dsn string) {
 	var err error
 	DB, err = sql.Open("pgx", dsn)
 	if err != nil {
-		log.Fatalf("Ошибка БД: %v", err)
+		log.Fatalf("Ошибка DSN: %v", err)
 	}
-	log.Println("PostgreSQL подключен")
+
+	if err := DB.Ping(); err != nil {
+		log.Fatalf("Supabase недоступен: %v", err)
+	}
+	log.Println("Успешное подключение к базе данных")
 }
 
 func CheckUserDebt(userID int) (bool, error) {
-	var totalDebt float64
-	err := DB.QueryRow(`SELECT COALESCE(SUM(total_amount), 0) FROM bills WHERE account_number IN (SELECT account_number FROM utility_accounts WHERE user_id = $1) AND is_paid = false`, userID).Scan(&totalDebt)
+	var unpaidCount int
+	err := DB.QueryRow("SELECT COUNT(id) FROM bills WHERE user_id = $1 AND is_paid = false", userID).Scan(&unpaidCount)
 	if err != nil {
 		return false, err
 	}
-	return totalDebt > 0, nil
+	return unpaidCount > 0, nil
 }

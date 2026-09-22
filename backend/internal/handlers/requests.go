@@ -3,52 +3,51 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
-	"os"
-	"time"
-	
-	"backend/internal/ai"
-	"backend/internal/models"
+
+	"backend/internal/bot"
 	"backend/internal/storage"
 )
 
-// POST /api/requests/ai-recognize
-func RecognizeHandler(w http.ResponseWriter, r *http.Request) {
-	if os.Getenv("USE_MOCK_AI") == "true" {
-		time.Sleep(2 * time.Second)
-		json.NewEncoder(w).Encode(models.Request{
-			Type: "water", 
-			Title: "Отключение воды (Мок)", 
-			StartDate: "15.10", 
-			EndDate: "16.10",
-			Description: "Текст сгенерирован локально без интернета.",
-		})
-		return
+func UpdateRequestStatusHandler(w http.ResponseWriter, r *http.Request) {
+	requestID := r.PathValue("id")
+	
+	var req struct {
+		Status string `json:"status"`
 	}
-
-	var req models.UploadRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Ошибка чтения JSON", http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	
-	// Вызываем наш новый модуль ai/openrouter.go
-	result, err := ai.AnalyzeImage(req.ImageBase64)
-	if err != nil {
-		http.Error(w, "ИИ недоступен: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-	
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(result)
-}
 
-// PATCH /api/requests/{id}/status
-func UpdateStatusHandler(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
-	var req models.StatusUpdate
-	json.NewDecoder(r.Body).Decode(&req)
-	
-	storage.DB.Exec("UPDATE requests SET status = $1 WHERE id = $2", req.Status, id)
-	
-	json.NewEncoder(w).Encode(map[string]string{"message": "success"})
+	_, err := storage.DB.Exec("UPDATE requests SET status = $1 WHERE id = $2", req.Status, requestID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Находим VK ID пользователей для отправки пуша
+	query := `
+		SELECT u.vk_id 
+		FROM users u 
+		JOIN user_addresses ua ON u.id = ua.user_id 
+		WHERE ua.address_id = (SELECT address_id FROM requests WHERE id = $1 LIMIT 1)
+	`
+	rows, err := storage.DB.Query(query, requestID)
+	if err == nil {
+		defer rows.Close()
+		var vkIDs []string
+		for rows.Next() {
+			var vkID string
+			if err := rows.Scan(&vkID); err == nil {
+				vkIDs = append(vkIDs, vkID)
+			}
+		}
+		if len(vkIDs) > 0 {
+			msg := "Статус заявки изменен на: " + req.Status
+			bot.SendPushNotification(vkIDs, msg, requestID)
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"status": req.Status})
 }
