@@ -69,6 +69,10 @@ func main() {
 	mux.HandleFunc("GET /api/uk/objects", handlers.GetUKObjectsHandler)
 	mux.HandleFunc("GET /api/uk/analytics", handlers.GetUKAnalyticsHandler)
 
-	log.Println("Сервер запущен на :8080")
-	log.Fatal(http.ListenAndServe(":8080", enableCORS(mux)))
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	log.Println("Server running on :" + port)
+	log.Fatal(http.ListenAndServe(":"+port, enableCORS(mux)))
 }
