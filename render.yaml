@@ -3,7 +3,7 @@ services:
     name: smarthouse-backend
     env: docker
     dockerContext: ./backend
-    dockerfilePath: ./Dockerfile
+    dockerfilePath: ./backend/Dockerfile
     region: frankfurt
     plan: free
     healthCheckPath: /api/map/houses
@@ -21,7 +21,7 @@ services:
     name: smarthouse-frontend
     env: docker
     dockerContext: ./frontend
-    dockerfilePath: ./Dockerfile
+    dockerfilePath: ./frontend/Dockerfile
     region: frankfurt
     plan: free
     envVars:
