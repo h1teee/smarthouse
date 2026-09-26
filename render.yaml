@@ -6,7 +6,7 @@ services:
     dockerfilePath: ./backend/Dockerfile
     region: frankfurt
     plan: free
-    healthCheckPath: /api/map/houses
+    healthCheckPath: /api/health
     envVars:
       - key: DB_URL
         sync: false

@@ -35,6 +35,10 @@ func main() {
 	storage.InitDB(dbURL)
 
 	mux := http.NewServeMux()
+	mux.HandleFunc("GET /api/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("OK"))
+	})
 
 	// Авторизация
 	mux.HandleFunc("POST /api/auth/login", handlers.LoginHandler)
