@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: smarthouse-backend
+    env: docker
+    dockerfilePath: ./backend/Dockerfile
+    region: frankfurt
+    plan: free
+    healthCheckPath: /api/map/houses
+    envVars:
+      - key: DB_URL
+        sync: false
+      - key: GIGACHAT_AUTH_DATA
+        sync: false
+      - key: USE_MOCK_AI
+        value: "true"
+      - key: MAX_TOKEN
+        sync: false
+
+  - type: web
+    name: smarthouse-frontend
+    env: docker
+    dockerfilePath: ./frontend/Dockerfile
+    region: frankfurt
+    plan: free
+    envVars:
+      - key: VITE_API_URL
+        # Этот URL нужно будет заменить на реальный URL бэкенда, который выдаст Render после деплоя smarthouse-backend
+        value: "https://smarthouse-backend.onrender.com"

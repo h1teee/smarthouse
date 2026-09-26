@@ -1,0 +1,471 @@
+/* ═══════════════════════════════════════════════════
+   UK MODERATION SCREEN — Apple Premium Dark
+   ═══════════════════════════════════════════════════ */
+
+.screen {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 430px;
+  height: 100%;
+  margin: 0 auto;
+  position: relative;
+  overflow: hidden;
+  background: var(--sys-bg);
+}
+
+/* ── Ambient Glow (идентичен AuthScreen, AddressScreen, RequestPreviewScreen) ── */
+.ambientGlow {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  width: 500px;
+  height: 500px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(
+    circle at center,
+    rgba(191, 90, 242, 0.28) 0%,
+    rgba(140, 68, 210, 0.12) 35%,
+    rgba(10, 132, 255, 0.08) 60%,
+    transparent 75%
+  );
+  border-radius: 50%;
+  filter: blur(60px);
+  animation: ambientPulse 8s ease-in-out infinite;
+}
+
+.ambientGlow::after {
+  content: '';
+  position: absolute;
+  top: 20%;
+  left: 40%;
+  width: 320px;
+  height: 320px;
+  background: radial-gradient(
+    circle,
+    rgba(10, 132, 255, 0.14) 0%,
+    transparent 65%
+  );
+  border-radius: 50%;
+  filter: blur(40px);
+  animation: ambientPulse 10s ease-in-out infinite reverse;
+}
+
+@keyframes ambientPulse {
+  0%, 100% { opacity: 0.55; transform: translate(-50%, -50%) scale(1); }
+  50%      { opacity: 0.75; transform: translate(-50%, -50%) scale(1.06); }
+}
+
+/* ── Top Bar (точно как в других экранах — без черных полос и рамок) ── */
+.topBar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-12) var(--sp-24);
+  padding-top: calc(env(safe-area-inset-top, 12px) + var(--sp-12));
+  min-height: 44px;
+  z-index: 10;
+  flex-shrink: 0;
+  background: transparent;
+}
+
+.backButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #0A84FF; /* Apple System Blue */
+  font-size: 17px;
+  font-weight: 400;
+  cursor: pointer;
+  padding: 4px 0;
+  transition: opacity 0.2s;
+  background: transparent;
+  border: none;
+}
+
+.backButton:active {
+  opacity: 0.5;
+}
+
+.headerTitle {
+  font-size: 17px;
+  font-weight: 600;
+  color: #FFFFFF;
+  letter-spacing: -0.3px;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.placeholderRight {
+  width: 60px;
+}
+
+/* ── Scrollable Content ───────────────────────────── */
+.content {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 4px 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: relative;
+  z-index: 1;
+  scrollbar-width: none;
+}
+
+.content::-webkit-scrollbar {
+  display: none;
+}
+
+/* ── Photo Preview Card ───────────────────────────── */
+.photoCard {
+  position: relative;
+  width: 100%;
+  height: 190px;
+  background: linear-gradient(145deg, rgba(35, 35, 40, 0.7) 0%, rgba(20, 20, 24, 0.8) 100%);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border: 0.5px solid rgba(255, 255, 255, 0.14);
+  border-radius: 18px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 14px 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.photoOverlayTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 2;
+}
+
+.photoBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(12px);
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 0.5px solid rgba(52, 199, 89, 0.4);
+  font-size: 11px;
+  font-weight: 600;
+  color: #34C759;
+}
+
+.photoBadgeDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #34C759;
+  box-shadow: 0 0 6px #34C759;
+}
+
+.photoFilename {
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(235, 235, 245, 0.45);
+}
+
+.photoCenterMockup {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.photoLines {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 60%;
+}
+
+.mockLine {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 4px;
+}
+
+.mockLineShort {
+  width: 45%;
+}
+
+.photoOverlayBottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 2;
+  font-size: 12px;
+  color: rgba(235, 235, 245, 0.55);
+}
+
+/* ── Author Info ──────────────────────────────────── */
+.authorBadgeWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 0.5px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  width: fit-content;
+  margin: 0 auto;
+}
+
+.authorIcon {
+  width: 14px;
+  height: 14px;
+  color: rgba(235, 235, 245, 0.6);
+}
+
+.authorInfo {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(235, 235, 245, 0.75);
+}
+
+/* ── iOS Settings Style Form ──────────────────────── */
+.formSection {
+  display: flex;
+  flex-direction: column;
+}
+
+.formSectionTitle {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(235, 235, 245, 0.45);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding-left: 12px;
+  margin-bottom: 6px;
+}
+
+.formGroup {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  border: 0.5px solid rgba(255, 255, 255, 0.12);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.formRow {
+  display: flex;
+  align-items: center;
+  padding: 13px 16px;
+  border-bottom: 0.5px solid rgba(255, 255, 255, 0.08);
+  transition: background 0.2s;
+}
+
+.formRow:focus-within {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.formRow:last-child {
+  border-bottom: none;
+}
+
+.formLabel {
+  width: 85px;
+  font-size: 16px;
+  font-weight: 500;
+  color: rgba(235, 235, 245, 0.8);
+  letter-spacing: -0.2px;
+}
+
+.formInput {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #FFFFFF;
+  font-size: 16px;
+  font-weight: 400;
+  outline: none;
+  font-family: inherit;
+  letter-spacing: -0.2px;
+}
+
+.formInput::placeholder {
+  color: rgba(235, 235, 245, 0.3);
+}
+
+.formRowVertical {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 13px 16px;
+  gap: 8px;
+}
+
+.formTextarea {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: #FFFFFF;
+  font-size: 15px;
+  line-height: 1.45;
+  outline: none;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 80px;
+  letter-spacing: -0.2px;
+}
+
+/* ═══════════════════════════════════════════════════
+   FOOTER (ГАРАНТИРОВАННО ВИДИМЫЙ ACTION BAR)
+   ═══════════════════════════════════════════════════ */
+.footer {
+  flex-shrink: 0;
+  padding: 10px 20px calc(8px + env(safe-area-inset-bottom, 0px));
+  background: rgba(18, 18, 20, 0.88);
+  backdrop-filter: saturate(180%) blur(24px);
+  -webkit-backdrop-filter: saturate(180%) blur(24px);
+  border-top: 0.5px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+  z-index: 20;
+}
+
+/* ── Primary Button: Apple iOS Green ──────────────── */
+.primaryButton {
+  background: #34C759;
+  color: #FFFFFF;
+  border-radius: 100px;
+  height: 48px;
+  min-height: 48px;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: none;
+  box-shadow: 0 4px 16px rgba(52, 199, 89, 0.35);
+  transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1), filter 0.18s;
+  cursor: pointer;
+}
+
+.primaryButton:hover {
+  filter: brightness(1.05);
+}
+
+.primaryButton:active {
+  transform: scale(0.975);
+  filter: brightness(0.95);
+}
+
+/* ── Secondary Button: Dark Gray with Apple iOS Red ── */
+.secondaryButton {
+  background: #2C2C2E;
+  color: #FF3B30;
+  border-radius: 100px;
+  height: 48px;
+  min-height: 48px;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 1px solid rgba(255, 59, 48, 0.25);
+  transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1), background 0.18s;
+  cursor: pointer;
+}
+
+.secondaryButton:hover {
+  background: #363638;
+}
+
+.secondaryButton:active {
+  transform: scale(0.975);
+  background: rgba(255, 59, 48, 0.15);
+}
+
+/* ── Home Indicator ───────────────────────────────── */
+.homeIndicator {
+  width: 134px;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 100px;
+  margin: 4px auto 0;
+}
+
+/* Bottom Sheet */
+.bottomSheet {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: var(--sys-bg-secondary);
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+  box-shadow: 0 -4px 24px rgba(0,0,0,0.4);
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+}
+
+.bottomSheet.show {
+  transform: translateY(0);
+}
+
+.grabberWrap {
+  width: 100%;
+  padding: 12px 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: grab;
+}
+
+.grabber {
+  width: 36px;
+  height: 5px;
+  background: rgba(255,255,255,0.3);
+  border-radius: 10px;
+}
+
+.sheetHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sheetTitle {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.closeBtn {
+  background: rgba(255,255,255,0.1);
+  border: none;
+  border-radius: 16px;
+  padding: 6px;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

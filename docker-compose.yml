@@ -1,11 +1,10 @@
-﻿version: '3.8'
 services:
   api:
     build:
       context: ./backend
       dockerfile: Dockerfile
     ports:
-      - "8081:8080"
+      - "8080:8080"
     environment:
       - DB_URL=${DB_URL}
       - AI_KEY=${AI_KEY}
@@ -17,3 +16,15 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:8080
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+    restart: always

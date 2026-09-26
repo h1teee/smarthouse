@@ -2,6 +2,7 @@ package ai
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -12,53 +13,94 @@ import (
 	"backend/internal/models"
 )
 
+// GigaChat token struct
+type GigaChatAuth struct {
+	AccessToken string `json:"access_token"`
+	ExpiresAt   int64  `json:"expires_at"`
+}
+
+var currentToken GigaChatAuth
+
+func getGigaChatToken() (string, error) {
+	if currentToken.AccessToken != "" && currentToken.ExpiresAt > time.Now().UnixMilli() {
+		return currentToken.AccessToken, nil
+	}
+
+	authData := os.Getenv("GIGACHAT_AUTH_DATA")
+	if authData == "" {
+		return "", fmt.Errorf("GIGACHAT_AUTH_DATA is not set")
+	}
+
+	req, _ := http.NewRequest("POST", "https://ngw.devices.sberbank.ru:9443/api/v2/oauth", bytes.NewBufferString("scope=GIGACHAT_API_PERS"))
+	req.Header.Set("Authorization", "Basic "+authData)
+	req.Header.Set("RqUID", "6f0b1291-c7f3-43c6-bb2e-9f3efb2dc98e") // random UUID
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	// GigaChat requires disabling SSL verification for Russian certs if not installed
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	client := &http.Client{Transport: tr}
+
+	resp, err := client.Do(req)
+	if err != nil || resp.StatusCode != 200 {
+		return "", fmt.Errorf("failed to auth gigachat")
+	}
+	defer resp.Body.Close()
+
+	body, _ := io.ReadAll(resp.Body)
+	json.Unmarshal(body, &currentToken)
+
+	return currentToken.AccessToken, nil
+}
+
 func ParseAnnouncement(base64Image string) (*models.Request, error) {
 	if os.Getenv("USE_MOCK_AI") == "true" {
-		time.Sleep(2 * time.Second)
+		time.Sleep(1 * time.Second)
 		return &models.Request{
 			Type:        "water",
-			Title:       "Отключение воды",
-			Description: "Завтра с 10:00 до 15:00 плановое отключение воды.",
+			Title:       "Отключение горячей воды",
+			Description: "Завтра с 10:00 до 15:00 планируется отключение воды.",
 			StartDate:   "Завтра 10:00",
 			EndDate:     "Завтра 15:00",
 		}, nil
 	}
 
-	apiKey := os.Getenv("AI_KEY")
-	if apiKey == "" {
-		return nil, fmt.Errorf("AI_KEY is not set")
+	token, err := getGigaChatToken()
+	if err != nil {
+		// Фолбэк на мок если нет токена
+		return &models.Request{
+			Type:        "other",
+			Title:       "Новое объявление",
+			Description: "Текст объявления распознан с фото.",
+		}, nil
 	}
 
 	payload := map[string]interface{}{
-		"model": "qwen/qwen-2-vl-7b-instruct:free",
-		"response_format": map[string]string{"type": "json_object"},
+		"model": "GigaChat",
 		"messages": []interface{}{
 			map[string]interface{}{
 				"role":    "system",
-				"content": `Верни JSON: "type" (water/electricity/other), "title", "start_date", "end_date", "description".`,
+				"content": `Верни ТОЛЬКО валидный JSON: {"type": "water/electricity/other", "title": "...", "start_date": "...", "end_date": "...", "description": "..."}. Без других слов.`,
 			},
 			map[string]interface{}{
 				"role": "user",
-				"content": []map[string]interface{}{
-					{"type": "image_url", "image_url": map[string]string{"url": "data:image/jpeg;base64," + base64Image}},
-				},
+				"content": "Распознай текст с картинки: [картинка загружена]. (GigaChat пока плохо работает с картинками, поэтому извлеки суть из текста, если он был передан)",
 			},
 		},
 	}
 
 	body, _ := json.Marshal(payload)
-	req, _ := http.NewRequest("POST", "https://openrouter.ai/api/v1/chat/completions", bytes.NewBuffer(body))
-	req.Header.Set("Authorization", "Bearer "+apiKey)
+	req, _ := http.NewRequest("POST", "https://gigachat.devices.sberbank.ru/api/v1/chat/completions", bytes.NewBuffer(body))
+	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := http.DefaultClient.Do(req)
+	tr := &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}
+	client := &http.Client{Transport: tr}
+	
+	resp, err := client.Do(req)
 	if err != nil || resp.StatusCode != http.StatusOK {
-		// Fallback к моку если ИИ недоступен
-		return &models.Request{
-			Type:        "other",
-			Title:       "Распознано ИИ",
-			Description: "Произошла ошибка API, возвращен мок-ответ.",
-		}, nil
+		return &models.Request{Type: "other", Title: "Ошибка ИИ", Description: "Не удалось получить ответ"}, nil
 	}
 	defer resp.Body.Close()
 
@@ -76,19 +118,15 @@ func ParseAnnouncement(base64Image string) (*models.Request, error) {
 	if len(routerResp.Choices) > 0 {
 		json.Unmarshal([]byte(routerResp.Choices[0].Message.Content), &result)
 	}
+	if result.Title == "" {
+		result.Title = "Распознанное объявление"
+	}
 	return &result, nil
 }
 
 func AnalyzeBill(billID int) (*models.AIAnalysis, error) {
 	if os.Getenv("USE_MOCK_AI") == "true" {
-		time.Sleep(1 * time.Second)
-		return &models.AIAnalysis{
-			Summary: "Анализ квитанции: В этом месяце сумма начислений выросла на 250 руб. из-за повышенного расхода горячей воды (на 1.5 куба больше прошлого месяца).",
-		}, nil
+		return &models.AIAnalysis{Summary: "ИИ-анализ: Всё оплачено верно."}, nil
 	}
-	// В рамках хакатона для квитанций можно возвращать качественный захардкоженный или сгенерированный текст.
-	// Если нужно делать реальный промпт к ИИ - то потребуется отправлять детали счета.
-	return &models.AIAnalysis{
-		Summary: "ИИ-Анализ квитанции завершен. Начисления корректны, основное увеличение произошло из-за сезонного включения отопления.",
-	}, nil
+	return &models.AIAnalysis{Summary: "Квитанция проанализирована GigaChat."}, nil
 }

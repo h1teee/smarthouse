@@ -1,0 +1,384 @@
+/* Глобальный контейнер */
+.container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 430px;
+  margin: 0 auto;
+  min-height: 100%;
+  background-color: rgba(12, 12, 16, 0.82); /* Полупрозрачный глубокий фон */
+  padding: 0 16px;
+  padding-bottom: calc(140px + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+  color: #FFFFFF;
+  position: relative;
+  overflow-x: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', sans-serif;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Свечение строго по центру экрана (fixed, чтобы не уезжало при скролле) */
+.container::before {
+  content: "";
+  position: fixed;
+  top: 42%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 380px;
+  height: 380px;
+  background: radial-gradient(circle, rgba(191, 90, 242, 0.32) 0%, rgba(10, 132, 255, 0.16) 45%, transparent 70%);
+  filter: blur(60px);
+  z-index: 0;
+  pointer-events: none;
+  animation: pulseCenterGlow 6s ease-in-out infinite alternate;
+}
+
+/* Второй мягкий слой свечения по центру для глубины */
+.container::after {
+  content: "";
+  position: fixed;
+  top: 48%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 280px;
+  height: 280px;
+  background: radial-gradient(circle, rgba(208, 126, 247, 0.22) 0%, transparent 65%);
+  filter: blur(45px);
+  z-index: 0;
+  pointer-events: none;
+  animation: pulseCenterGlow 8s ease-in-out infinite alternate-reverse;
+}
+
+@keyframes pulseCenterGlow {
+  0% { transform: translate(-50%, -50%) scale(0.92); opacity: 0.8; }
+  100% { transform: translate(-50%, -50%) scale(1.08); opacity: 1; }
+}
+
+.contentWrapper {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  flex: 1;
+}
+
+.animateStagger1 { animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0s forwards; opacity: 0; transform: translateY(15px); }
+.animateStagger2 { animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards; opacity: 0; transform: translateY(15px); }
+.animateStagger3 { animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards; opacity: 0; transform: translateY(15px); }
+.animateStagger4 { animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards; opacity: 0; transform: translateY(15px); }
+
+@keyframes fadeInUp {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- Шапка --- */
+.header {
+  display: flex;
+  align-items: center;
+  padding: 24px 0 20px 0;
+  margin-top: env(safe-area-inset-top);
+}
+
+.title {
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+  line-height: 1.24;
+  margin: 0;
+  color: #FFFFFF;
+}
+
+/* --- Секции --- */
+.sectionTitle {
+  font-size: 20px;
+  font-weight: 600;
+  color: #FFFFFF;
+  letter-spacing: -0.4px;
+  margin-bottom: 16px;
+}
+
+/* Блок Выбора Адресатов (#1C1C1E / Glass) */
+.targetBlock {
+  background: rgba(28, 28, 30, 0.75);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 28px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+/* Чекбоксы */
+.checkboxRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  padding: 4px 0;
+}
+
+.checkboxIcon {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.checkboxRow:active .checkboxIcon {
+  transform: scale(0.9);
+}
+
+.checkboxIcon.checked {
+  background: #BF5AF2; /* Purple */
+  border-color: #BF5AF2;
+}
+
+.checkboxIcon svg {
+  color: #FFF;
+  opacity: 0;
+  transform: scale(0.5);
+  transition: all 0.2s ease;
+}
+
+.checkboxIcon.checked svg {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.checkboxLabel {
+  font-size: 17px;
+  color: #FFFFFF;
+  font-weight: 400;
+}
+
+.checkboxLabel.dimmed {
+  color: rgba(235, 235, 245, 0.6);
+}
+
+/* Поиск и фильтры */
+.searchWrapper {
+  position: relative;
+  margin-bottom: 12px;
+}
+
+.searchInput {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 12px 16px 12px 40px;
+  font-size: 16px;
+  color: #FFFFFF;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease;
+}
+
+.searchInput:focus {
+  border-color: rgba(191, 90, 242, 0.6);
+}
+
+.searchInput::placeholder {
+  color: rgba(235, 235, 245, 0.3);
+}
+
+.searchIcon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(235, 235, 245, 0.4);
+  pointer-events: none;
+}
+
+.filterScroll {
+  display: flex;
+  overflow-x: auto;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.filterScroll::-webkit-scrollbar {
+  display: none;
+}
+
+.filterChip {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 8px 16px;
+  border-radius: 100px;
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(235, 235, 245, 0.6);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filterChip.active {
+  background: #BF5AF2;
+  color: #FFFFFF;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Список адресов (Scrollable) */
+.addressList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 200px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.addressList::-webkit-scrollbar {
+  width: 4px;
+}
+
+.addressList::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+/* Конструктор сообщения */
+.messageBuilder {
+  background: rgba(28, 28, 30, 0.75);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  margin-bottom: 28px;
+}
+
+/* Dropdown / Select */
+.selectWrapper {
+  position: relative;
+}
+
+.select {
+  appearance: none;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-size: 17px;
+  color: #FFFFFF;
+  font-weight: 500;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.select:focus {
+  border-color: rgba(191, 90, 242, 0.6);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.selectIcon {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(235, 235, 245, 0.6);
+  pointer-events: none;
+}
+
+/* Textarea */
+.textarea {
+  width: 100%;
+  min-height: 120px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 16px;
+  font-size: 17px;
+  color: #FFFFFF;
+  font-family: inherit;
+  resize: none;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.textarea::placeholder {
+  color: rgba(235, 235, 245, 0.3);
+}
+
+.textarea:focus {
+  border-color: rgba(191, 90, 242, 0.6);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* Кнопка ИИ */
+.aiButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  padding: 8px 0;
+  cursor: pointer;
+  align-self: flex-start;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.aiButton:active {
+  transform: scale(0.96);
+  opacity: 0.7;
+}
+
+.aiIcon {
+  color: #BF5AF2;
+}
+
+.aiText {
+  font-size: 15px;
+  font-weight: 600;
+  background: linear-gradient(135deg, #D07EF7 0%, #BF5AF2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Главная синяя кнопка-капсула (изменена на фиолетовую) */
+.submitButton {
+  width: 100%;
+  background: linear-gradient(135deg, #D07EF7 0%, #BF5AF2 100%);
+  color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 9999px;
+  padding: 18px 20px;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(191, 90, 242, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.3);
+  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+  margin-top: 10px;
+}
+
+.submitButton:active {
+  transform: scale(0.96);
+  box-shadow: 0 4px 12px rgba(191, 90, 242, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.3);
+}

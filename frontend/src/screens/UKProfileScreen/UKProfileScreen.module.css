@@ -1,0 +1,359 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 430px;
+  margin: 0 auto;
+  min-height: 100%;
+  background-color: rgba(12, 12, 16, 0.82);
+  padding: 0 16px;
+  padding-bottom: calc(140px + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+  color: #FFFFFF;
+  position: relative;
+  overflow-x: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', sans-serif;
+}
+
+/* Свечение (Ambient Glow) */
+.container::before {
+  content: "";
+  position: fixed;
+  top: 42%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 380px;
+  height: 380px;
+  background: radial-gradient(circle, rgba(191, 90, 242, 0.32) 0%, rgba(10, 132, 255, 0.16) 45%, transparent 70%);
+  filter: blur(60px);
+  z-index: 0;
+  pointer-events: none;
+  animation: pulseCenterGlow 6s ease-in-out infinite alternate;
+}
+
+@keyframes pulseCenterGlow {
+  0% { transform: translate(-50%, -50%) scale(0.92); opacity: 0.8; }
+  100% { transform: translate(-50%, -50%) scale(1.08); opacity: 1; }
+}
+
+.contentWrapper {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  flex: 1;
+}
+
+/* Анимации появления */
+.animateStagger1 { animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0s forwards; opacity: 0; transform: translateY(15px); }
+.animateStagger2 { animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards; opacity: 0; transform: translateY(15px); }
+.animateStagger3 { animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards; opacity: 0; transform: translateY(15px); }
+.animateStagger4 { animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards; opacity: 0; transform: translateY(15px); }
+
+@keyframes fadeInUp {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.header {
+  padding: 24px 0 20px 0;
+  margin-top: env(safe-area-inset-top);
+}
+
+.title {
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+  line-height: 1.24;
+  margin: 0;
+  color: #FFFFFF;
+}
+
+/* Dispatcher Card */
+.dispatcherCard {
+  background: rgba(28, 28, 30, 0.75);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.avatar {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2C2C2E 0%, #1C1C1E 100%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.15), 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.avatarInner {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar svg {
+  width: 28px;
+  height: 28px;
+  color: #A1A1A6;
+}
+
+.dispatcherInfo {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  flex: 1;
+}
+
+.nameRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.dispatcherName {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+  color: #FFFFFF;
+}
+
+.statusPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 100px;
+  background: rgba(52, 199, 89, 0.12);
+  border: 1px solid rgba(52, 199, 89, 0.28);
+  backdrop-filter: blur(10px);
+}
+
+.statusDotPulse {
+  width: 6px;
+  height: 6px;
+  background-color: #34C759;
+  border-radius: 50%;
+  box-shadow: 0 0 6px #34C759;
+  animation: pulseDot 2s infinite ease-in-out;
+}
+
+@keyframes pulseDot {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.85);
+  }
+}
+
+.statusText {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1px;
+  color: #34C759;
+}
+
+.dispatcherRole {
+  font-size: 14px;
+  color: rgba(235, 235, 245, 0.55);
+  font-weight: 400;
+  letter-spacing: -0.1px;
+}
+
+/* Stats Grid */
+.statsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.statCard {
+  background: rgba(28, 28, 30, 0.75);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.statIconWrap {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: rgba(191, 90, 242, 0.15); /* Apple Purple */
+  color: #BF5AF2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.statIconWrap.orange {
+  background: rgba(255, 149, 0, 0.15); /* iOS Orange */
+  color: #FF9500;
+}
+
+.statIconWrap svg {
+  width: 16px;
+  height: 16px;
+}
+
+.statValue {
+  font-size: 24px;
+  font-weight: 700;
+  color: #FFF;
+  margin-bottom: 4px;
+}
+
+.statLabel {
+  font-size: 13px;
+  color: rgba(235, 235, 245, 0.6);
+  line-height: 1.3;
+}
+
+/* Settings Group */
+.settingsGroup {
+  background: rgba(28, 28, 30, 0.75);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 24px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+}
+
+.settingsItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  position: relative;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.settingsItem:active {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.settingsItem:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 20px;
+  right: 0;
+  height: 1px;
+  background-color: rgba(84, 84, 88, 0.65);
+}
+
+.settingsLabel {
+  font-size: 17px;
+  font-weight: 400;
+  color: #FFFFFF;
+}
+
+.settingsRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.badge {
+  background: rgba(191, 90, 242, 0.15); /* Purple accent */
+  color: #BF5AF2;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 12px;
+}
+
+.chevronIcon {
+  color: rgba(235, 235, 245, 0.3);
+  width: 20px;
+  height: 20px;
+}
+
+/* iOS Toggle Switch */
+.toggle {
+  position: relative;
+  width: 51px;
+  height: 31px;
+  background-color: #39393D; /* Inactive gray */
+  border-radius: 15.5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.toggle.toggleOn {
+  background-color: #34C759; /* Active Green */
+}
+
+.toggleCircle {
+  position: absolute;
+  top: 2px;
+  left: 2px; /* Inactive position */
+  width: 27px;
+  height: 27px;
+  background-color: #FFF;
+  border-radius: 50%;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15), 0 3px 1px rgba(0, 0, 0, 0.06);
+  transition: left 0.3s cubic-bezier(0.2, 0.85, 0.32, 1.2);
+}
+
+.toggle.toggleOn .toggleCircle {
+  left: 22px; /* Active position */
+}
+
+/* Logout Button */
+.logoutCard {
+  background: rgba(28, 28, 30, 0.75);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.2s, background 0.2s;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.logoutCard:active {
+  transform: scale(0.975);
+  background: rgba(28, 28, 30, 0.9);
+}
+
+.logoutText {
+  font-size: 17px;
+  font-weight: 600;
+  color: #FF3B30;
+  letter-spacing: -0.2px;
+}

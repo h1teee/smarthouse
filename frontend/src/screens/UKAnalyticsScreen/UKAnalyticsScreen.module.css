@@ -1,0 +1,222 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 430px;
+  margin: 0 auto;
+  min-height: 100%;
+  background-color: transparent;
+  color: #FFFFFF;
+  position: relative;
+  overflow-y: auto;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', sans-serif;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Свечение строго по центру экрана */
+.ambientGlow {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 380px;
+  height: 380px;
+  background: radial-gradient(circle, rgba(191, 90, 242, 0.28) 0%, transparent 65%);
+  filter: blur(60px);
+  z-index: 0;
+  pointer-events: none;
+  animation: pulseCenterGlow 6s ease-in-out infinite alternate;
+}
+
+@keyframes pulseCenterGlow {
+  0% { transform: translate(-50%, -50%) scale(0.95); opacity: 0.8; }
+  100% { transform: translate(-50%, -50%) scale(1.05); opacity: 1; }
+}
+
+/* Nav Bar */
+.navBar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: max(16px, env(safe-area-inset-top)) 16px 16px;
+  background: rgba(18, 18, 22, 0.75);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.backBtn {
+  position: absolute;
+  left: 16px;
+  background: transparent;
+  border: none;
+  color: #BF5AF2; /* Apple Purple */
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 17px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.backBtn svg {
+  width: 24px;
+  height: 24px;
+}
+
+.navTitle {
+  font-size: 17px;
+  font-weight: 600;
+  color: #FFFFFF;
+}
+
+.content {
+  padding: 20px 16px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* AI Summary Card */
+.aiSummary {
+  background: rgba(191, 90, 242, 0.15);
+  border: 1px solid rgba(191, 90, 242, 0.3);
+  border-radius: 20px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.aiTitle {
+  font-size: 17px;
+  font-weight: 700;
+  color: #BF5AF2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.aiText {
+  font-size: 15px;
+  line-height: 1.4;
+  color: rgba(235, 235, 245, 0.8);
+}
+
+/* Chart Card Common */
+.chartCard {
+  background: #1C1C1E;
+  border-radius: 20px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.chartHeader {
+  font-size: 17px;
+  font-weight: 600;
+  color: #FFFFFF;
+}
+
+/* Horizontal Progress Bars */
+.progressList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.progressItem {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.progressLabelWrap {
+  display: flex;
+  justify-content: space-between;
+  font-size: 15px;
+  color: rgba(235, 235, 245, 0.6);
+}
+
+.progressValue {
+  font-weight: 600;
+  color: #FFFFFF;
+}
+
+.progressBarBg {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progressBarFill {
+  height: 100%;
+  border-radius: 4px;
+}
+
+.fillWater { background: #BF5AF2; width: 60%; }
+.fillElectro { background: #FFCC00; width: 30%; }
+.fillOther { background: #8E8E93; width: 10%; }
+
+/* Vertical Bar Chart */
+.verticalChart {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  height: 140px;
+  padding-top: 20px;
+}
+
+.barCol {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 12%;
+}
+
+.barWrapper {
+  width: 100%;
+  height: 100px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.vBar {
+  width: 100%;
+  max-width: 24px;
+  background: linear-gradient(180deg, #BF5AF2 0%, rgba(191, 90, 242, 0.2) 100%);
+  border-radius: 6px 6px 0 0;
+  transition: height 0.3s ease;
+}
+
+.barDay {
+  font-size: 12px;
+  color: rgba(235, 235, 245, 0.6);
+}
+
+.tooltipPill {
+  position: absolute;
+  top: -36px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(191, 90, 242, 0.9);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #FFFFFF;
+  padding: 4px 8px;
+  border-radius: 8px;
+  display: flex;
+  align-items: baseline;
+  pointer-events: none;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(191, 90, 242, 0.3);
+}

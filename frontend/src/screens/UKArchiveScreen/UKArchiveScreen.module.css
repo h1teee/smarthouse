@@ -1,0 +1,190 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 430px;
+  margin: 0 auto;
+  min-height: 100%;
+  background-color: transparent;
+  color: #FFFFFF;
+  position: relative;
+  overflow-y: auto;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', sans-serif;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Свечение строго по центру экрана */
+.ambientGlow {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 380px;
+  height: 380px;
+  background: radial-gradient(circle, rgba(191, 90, 242, 0.28) 0%, transparent 65%);
+  filter: blur(60px);
+  z-index: 0;
+  pointer-events: none;
+  animation: pulseCenterGlow 6s ease-in-out infinite alternate;
+}
+
+@keyframes pulseCenterGlow {
+  0% { transform: translate(-50%, -50%) scale(0.95); opacity: 0.8; }
+  100% { transform: translate(-50%, -50%) scale(1.05); opacity: 1; }
+}
+
+/* Nav Bar */
+.navBar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: max(16px, env(safe-area-inset-top)) 16px 16px;
+  background: rgba(18, 18, 22, 0.75);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.backBtn {
+  position: absolute;
+  left: 16px;
+  background: transparent;
+  border: none;
+  color: #BF5AF2; /* Apple Purple */
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 17px;
+  cursor: pointer;
+  padding: 0;
+  transition: opacity 0.2s;
+}
+
+.backBtn:active {
+  opacity: 0.6;
+}
+
+.backBtn svg {
+  width: 24px;
+  height: 24px;
+}
+
+.navTitle {
+  font-size: 17px;
+  font-weight: 600;
+  color: #FFFFFF;
+}
+
+/* Search Bar (iOS style) */
+.searchContainer {
+  padding: 12px 16px;
+  position: sticky;
+  top: calc(max(16px, env(safe-area-inset-top)) + 41px); /* Below navBar roughly */
+  z-index: 40;
+  background: transparent;
+}
+
+.searchBox {
+  display: flex;
+  align-items: center;
+  background: #1C1C1E;
+  border-radius: 10px;
+  padding: 8px 12px;
+  gap: 8px;
+}
+
+.searchIcon {
+  color: #8E8E93;
+  width: 18px;
+  height: 18px;
+}
+
+.searchInput {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #FFFFFF;
+  font-size: 17px;
+  outline: none;
+}
+
+.searchInput::placeholder {
+  color: #8E8E93;
+}
+
+/* List */
+.list {
+  padding: 8px 16px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Archive Card */
+.archiveCard {
+  background: rgba(28, 28, 30, 0.75);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s;
+}
+
+.archiveCard:active {
+  transform: scale(0.98);
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.badge {
+  background: rgba(191, 90, 242, 0.15);
+  color: #BF5AF2;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.cardDate {
+  font-size: 13px;
+  color: #8E8E93;
+}
+
+.cardMessage {
+  font-size: 15px;
+  line-height: 1.4;
+  color: #EBEBF5;
+}
+
+.cardFooter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(84, 84, 88, 0.4);
+}
+
+.statusIcon {
+  width: 14px;
+  height: 14px;
+  color: #34C759;
+}
+
+.statusText {
+  font-size: 13px;
+  color: #8E8E93;
+}

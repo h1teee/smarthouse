@@ -1,0 +1,225 @@
+.container {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at 50% -20%, #17002b 0%, #000000 60%, #000a1a 100%);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Unified Ambient Glow */
+.ambientGlow {
+  position: absolute;
+  top: 45%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(
+    circle,
+    rgba(191, 90, 242, 0.25) 0%,
+    rgba(10, 132, 255, 0.1) 40%,
+    transparent 70%
+  );
+  filter: blur(60px);
+  pointer-events: none;
+  z-index: 0;
+  animation: ambientPulse 8s ease-in-out infinite alternate;
+}
+
+@keyframes ambientPulse {
+  0% { transform: translate(-50%, -50%) scale(0.9); opacity: 0.8; }
+  100% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+}
+
+.headerRow {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  padding-top: calc(max(env(safe-area-inset-top), 20px) + 20px);
+  padding-bottom: 16px;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.backBtn {
+  width: 44px;
+  height: 44px;
+  border-radius: 22px;
+  background: rgba(28, 28, 30, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+  border: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.backBtn svg {
+  width: 24px;
+  height: 24px;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin: 0;
+}
+
+.content {
+  position: relative;
+  z-index: 10;
+  padding: 24px 20px 120px;
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.meterGroup {
+  background: rgba(28, 28, 30, 0.75);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.meterHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.meterTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.iconWrap {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.iconWrap svg {
+  width: 20px;
+  height: 20px;
+}
+
+.blue {
+  background: rgba(10, 132, 255, 0.15);
+  color: #0A84FF;
+}
+
+.cyan {
+  background: rgba(90, 200, 250, 0.15);
+  color: #5AC8FA;
+}
+
+.yellow {
+  background: rgba(255, 214, 10, 0.15);
+  color: #FFD60A;
+}
+
+.meterName {
+  font-size: 17px;
+  font-weight: 600;
+  color: #FFFFFF;
+  margin: 0;
+}
+
+.meterStatusAlert {
+  font-size: 14px;
+  font-weight: 600;
+  color: #FF9F0A;
+}
+
+.meterStatusOk {
+  font-size: 14px;
+  font-weight: 600;
+  color: #34C759;
+}
+
+.inputCard {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.inputMain {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.inputValue {
+  font-size: 34px;
+  font-weight: 700;
+  color: #FFFFFF;
+  letter-spacing: -1px;
+}
+
+.inputUnit {
+  font-size: 17px;
+  color: rgba(235, 235, 245, 0.6);
+}
+
+.inputSub {
+  font-size: 13px;
+  color: rgba(235, 235, 245, 0.3);
+}
+
+.submitBtn {
+  background: #BF5AF2;
+  color: #FFFFFF;
+  border-radius: 16px;
+  min-height: 50px;
+  font-size: 17px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s;
+}
+
+.submitBtn:active {
+  transform: scale(0.975);
+}
+
+.submitBtnDisabled {
+  background: rgba(120, 120, 128, 0.36);
+  color: rgba(235, 235, 245, 0.3);
+  border-radius: 16px;
+  min-height: 50px;
+  font-size: 17px;
+  font-weight: 600;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

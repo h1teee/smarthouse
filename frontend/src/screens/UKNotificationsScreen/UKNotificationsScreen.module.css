@@ -1,0 +1,224 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 430px;
+  margin: 0 auto;
+  min-height: 100%;
+  background: transparent;
+  color: #FFFFFF;
+  position: relative;
+  overflow-y: auto;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', sans-serif;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.ambientGlow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 500px;
+  height: 500px;
+  transform: translate(-50%, calc(-50% - 96px));
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(
+    circle at center,
+    rgba(191, 90, 242, 0.35) 0%,
+    rgba(175, 82, 222, 0.22) 20%,
+    rgba(140, 68, 210, 0.12) 40%,
+    rgba(100, 50, 180, 0.05) 60%,
+    transparent 75%
+  );
+  border-radius: 50%;
+  filter: blur(50px);
+  animation: ambientPulse 6s ease-in-out infinite;
+}
+
+.ambientGlow::after {
+  content: '';
+  position: absolute;
+  top: 25%;
+  left: 45%;
+  width: 320px;
+  height: 320px;
+  background: radial-gradient(
+    circle,
+    rgba(10, 132, 255, 0.14) 0%,
+    rgba(88, 86, 214, 0.08) 35%,
+    transparent 65%
+  );
+  border-radius: 50%;
+  filter: blur(40px);
+  animation: ambientPulse 8s ease-in-out infinite reverse;
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* Nav Bar */
+.navBar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: max(16px, env(safe-area-inset-top)) 16px 16px;
+  background: rgba(18, 18, 22, 0.75);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.navBar > * {
+  flex: 1;
+}
+
+.backBtn {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  background: transparent;
+  border: none;
+  color: #BF5AF2; /* Apple Purple */
+  font-size: 17px;
+  cursor: pointer;
+  padding: 0;
+  gap: 4px;
+}
+
+.readAllBtn {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  background: transparent;
+  border: none;
+  color: #BF5AF2; /* Apple Purple */
+  font-size: 17px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.backBtn svg {
+  width: 24px;
+  height: 24px;
+}
+
+.navTitle {
+  flex: 2 !important;
+  text-align: center;
+  font-size: 17px;
+  font-weight: 600;
+  color: #FFFFFF;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Notification Item */
+.item {
+  position: relative;
+  padding: 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  border-bottom: 1px solid rgba(84, 84, 88, 0.65);
+  transition: background 0.2s;
+  cursor: pointer;
+}
+
+.item:active {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.item.unread {
+  background: rgba(191, 90, 242, 0.05);
+}
+
+.unreadDotWrap {
+  width: 12px;
+  height: 24px; /* match line height of title */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.unreadDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #BF5AF2;
+  box-shadow: 0 0 8px rgba(191, 90, 242, 0.5);
+}
+
+.iconWrap {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-right: 4px;
+}
+
+.iconWrap svg {
+  width: 20px;
+  height: 20px;
+}
+
+.iconAlert {
+  background: rgba(255, 59, 48, 0.15);
+  color: #FF3B30;
+}
+
+.iconInfo {
+  background: rgba(10, 132, 255, 0.15);
+  color: #0A84FF;
+}
+
+.iconSystem {
+  background: rgba(191, 90, 242, 0.15);
+  color: #BF5AF2;
+}
+
+.itemContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.itemHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.itemTitle {
+  font-size: 17px;
+  font-weight: 600;
+  color: #FFFFFF;
+  margin: 0;
+}
+
+.itemTime {
+  font-size: 15px;
+  color: rgba(235, 235, 245, 0.6);
+}
+
+.itemText {
+  font-size: 15px;
+  line-height: 1.4;
+  color: rgba(235, 235, 245, 0.8);
+  margin: 0;
+}

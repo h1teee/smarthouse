@@ -1,0 +1,75 @@
+.tabBar {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 430px;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  background: rgba(18, 18, 22, 0.85); /* Премиальное полупрозрачное затемненное стекло */
+  backdrop-filter: saturate(190%) blur(25px);
+  -webkit-backdrop-filter: saturate(190%) blur(25px);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  padding: 8px 12px;
+  padding-bottom: env(safe-area-inset-bottom, 14px);
+  z-index: 1000;
+}
+
+.tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  padding: 6px 14px;
+  cursor: pointer;
+  color: rgba(235, 235, 245, 0.45);
+  transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  -webkit-tap-highlight-color: transparent;
+  border-radius: 14px;
+}
+
+.tab:active {
+  transform: scale(0.92);
+}
+
+.tabActive {
+  color: #BF5AF2; /* Фирменный акцент из GEMINI.md */
+}
+
+.iconWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+}
+
+.icon {
+  width: 22px;
+  height: 22px;
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.tabActive .icon {
+  transform: scale(1.08);
+  filter: drop-shadow(0 0 10px rgba(191, 90, 242, 0.55));
+}
+
+.label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: -0.1px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+  transition: color 0.25s ease;
+}
+
+.tabActive .label {
+  color: #FFFFFF;
+}

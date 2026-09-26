@@ -1,0 +1,375 @@
+/* ═══════════════════════════════════════════════════
+   CameraScreen — iOS-native camera interface
+   ═══════════════════════════════════════════════════ */
+
+/* ── Screen container ─────────────────────────────── */
+.screen {
+  position: relative;
+  width: 100%;
+  max-width: 430px;
+  height: 100%;
+  background: #000000;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ── Viewfinder background ────────────────────────── */
+.viewfinder {
+  position: absolute;
+  inset: 0;
+  background: #000000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.cameraScene {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at center, #18181c 0%, #09090b 75%, #000000 100%);
+}
+
+.viewfinderLiveGrid {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 32px 32px;
+  pointer-events: none;
+}
+
+.scannerCenterReticle {
+  width: 48px;
+  height: 48px;
+  position: relative;
+  opacity: 0.3;
+}
+
+.scannerCenterReticle::before,
+.scannerCenterReticle::after {
+  content: '';
+  position: absolute;
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.scannerCenterReticle::before {
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  transform: translateY(-50%);
+}
+
+.scannerCenterReticle::after {
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  transform: translateX(-50%);
+}
+
+/* ── Top bar ──────────────────────────────────────── */
+.topBar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  padding-top: calc(env(safe-area-inset-top, 12px) + 16px);
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.75) 0%, transparent 100%);
+}
+
+.topPill {
+  background: rgba(255, 214, 10, 0.2);
+  border: 1px solid rgba(255, 214, 10, 0.5);
+  padding: 3px 10px;
+  border-radius: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.topPill span {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  color: #FFD60A;
+}
+
+.topBtn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 200ms ease;
+}
+
+.topBtn:active {
+  opacity: 0.5;
+}
+
+.flashLabel {
+  position: absolute;
+  top: 0;
+  right: -2px;
+  font-family: var(--font-family);
+  font-size: 10px;
+  font-weight: 700;
+  color: #FFFFFF;
+  line-height: 1;
+}
+
+.flashSlash {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+/* ── Scanner overlay ──────────────────────────────── */
+.scannerOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.scannerFrame {
+  position: relative;
+  /* A4 proportions ≈ 1 : 1.414 */
+  width: 260px;
+  height: 368px;
+}
+
+.scannerGuideLine {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, #FFD60A 50%, transparent 100%);
+  box-shadow: 0 0 12px #FFD60A;
+  animation: scanGuide 2.5s ease-in-out infinite alternate;
+}
+
+@keyframes scanGuide {
+  0% { top: 4%; opacity: 0.3; }
+  50% { opacity: 0.9; }
+  100% { top: 96%; opacity: 0.3; }
+}
+
+/* ── Corner brackets ──────────────────────────────── */
+.corner {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  pointer-events: none;
+}
+
+/* Top-Left */
+.cornerTL {
+  top: 0;
+  left: 0;
+  border-top: 3px solid #FFD60A;
+  border-left: 3px solid #FFD60A;
+  border-top-left-radius: 6px;
+  filter: drop-shadow(0 0 4px rgba(255, 214, 10, 0.5));
+}
+
+/* Top-Right */
+.cornerTR {
+  top: 0;
+  right: 0;
+  border-top: 3px solid #FFD60A;
+  border-right: 3px solid #FFD60A;
+  border-top-right-radius: 6px;
+  filter: drop-shadow(0 0 4px rgba(255, 214, 10, 0.5));
+}
+
+/* Bottom-Left */
+.cornerBL {
+  bottom: 0;
+  left: 0;
+  border-bottom: 3px solid #FFD60A;
+  border-left: 3px solid #FFD60A;
+  border-bottom-left-radius: 6px;
+  filter: drop-shadow(0 0 4px rgba(255, 214, 10, 0.5));
+}
+
+/* Bottom-Right */
+.cornerBR {
+  bottom: 0;
+  right: 0;
+  border-bottom: 3px solid #FFD60A;
+  border-right: 3px solid #FFD60A;
+  border-bottom-right-radius: 6px;
+  filter: drop-shadow(0 0 4px rgba(255, 214, 10, 0.5));
+}
+
+/* ── Hint text ────────────────────────────────────── */
+.hint {
+  position: absolute;
+  top: calc(50% + 184px + 24px);
+  font-family: var(--font-family);
+  font-size: var(--fs-subhead, 15px);
+  font-weight: var(--fw-regular, 400);
+  line-height: var(--lh-normal, 1.47);
+  color: rgba(255, 255, 255, 0.8);
+  text-align: center;
+  letter-spacing: -0.1px;
+  pointer-events: none;
+}
+
+/* ── Bottom bar ───────────────────────────────────── */
+.bottomBar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  padding-bottom: calc(env(safe-area-inset-bottom, 34px));
+}
+
+.bottomGradient {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 200px;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0) 0%,
+    rgba(0, 0, 0, 0.55) 40%,
+    rgba(0, 0, 0, 0.85) 100%
+  );
+  pointer-events: none;
+}
+
+.bottomControls {
+  position: relative;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 20px 32px;
+  padding-bottom: 12px;
+}
+
+/* ── Gallery button ───────────────────────────────── */
+.galleryBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  border: 1.5px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 200ms ease, transform 120ms var(--spring, cubic-bezier(0.22, 1, 0.36, 1));
+}
+
+.galleryBtn:active {
+  opacity: 0.6;
+  transform: scale(0.92);
+}
+
+/* ── Shutter button ───────────────────────────────── */
+.shutterBtn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: 4px solid rgba(255, 255, 255, 0.85);
+  background: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 120ms var(--spring, cubic-bezier(0.22, 1, 0.36, 1));
+}
+
+.shutterBtn:active {
+  transform: scale(0.92);
+}
+
+.shutterInner {
+  display: block;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  transition: transform 100ms ease, background 100ms ease;
+}
+
+.shutterBtn:active .shutterInner {
+  transform: scale(0.9);
+  background: rgba(255, 255, 255, 0.78);
+}
+
+/* ── Flip camera button ───────────────────────────── */
+.flipBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 200ms ease;
+}
+
+.flipBtn:active {
+  opacity: 0.5;
+}
+
+/* ── Home indicator ───────────────────────────────── */
+.homeIndicator {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 134px;
+  height: 5px;
+  border-radius: 100px;
+  background: rgba(255, 255, 255, 0.30);
+  z-index: 20;
+}
+
+/* ── Entrance animations ──────────────────────────── */
+@keyframes cameraScanPulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.6; }
+}
+
+.scannerFrame {
+  animation: cameraScanPulse 3s ease-in-out infinite;
+}

@@ -1,0 +1,229 @@
+.screen {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 430px;
+  height: 100%;
+  margin: 0 auto;
+  position: relative;
+  overflow: hidden;
+  background: var(--sys-bg);
+}
+
+/* ═══════════════════════════════════════════════════
+   AMBIENT GLOW
+   ═══════════════════════════════════════════════════ */
+.ambientGlow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 500px;
+  height: 500px;
+  transform: translate(-50%, calc(-50% - 96px));
+  pointer-events: none;
+  z-index: 0;
+
+  background: radial-gradient(
+    circle at center,
+    rgba(191, 90, 242, 0.35) 0%,
+    rgba(175, 82, 222, 0.22) 20%,
+    rgba(140, 68, 210, 0.12) 40%,
+    rgba(100, 50, 180, 0.05) 60%,
+    transparent 75%
+  );
+  border-radius: 50%;
+  filter: blur(50px);
+  animation: ambientPulse 6s ease-in-out infinite;
+}
+
+.ambientGlow::after {
+  content: '';
+  position: absolute;
+  top: 25%;
+  left: 45%;
+  width: 320px;
+  height: 320px;
+  background: radial-gradient(
+    circle,
+    rgba(10, 132, 255, 0.14) 0%,
+    rgba(88, 86, 214, 0.08) 35%,
+    transparent 65%
+  );
+  border-radius: 50%;
+  filter: blur(40px);
+  animation: ambientPulse 8s ease-in-out infinite reverse;
+}
+
+/* ═══════════════════════════════════════════════════
+   TOP BAR & HEADER
+   ═══════════════════════════════════════════════════ */
+.topBar {
+  padding: var(--sp-12) var(--sp-24);
+  display: flex;
+  align-items: center;
+  position: relative;
+  z-index: 2;
+  margin-top: env(safe-area-inset-top, 0px);
+  animation: fadeIn 0.4s var(--ease-out-expo) both;
+}
+
+.backButton {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--accent);
+  font-size: 17px;
+  font-weight: 400;
+  letter-spacing: -0.4px;
+  padding: 8px 0;
+  transition: opacity var(--dur-fast) ease;
+}
+
+.backButton:active {
+  opacity: 0.6;
+}
+
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 0 var(--sp-24);
+  position: relative;
+  z-index: 2;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.content::-webkit-scrollbar {
+  display: none;
+}
+
+.header {
+  margin-top: 16px;
+  margin-bottom: var(--sp-24);
+  animation: fadeInUp 0.6s var(--ease-out-expo) 0.1s both;
+}
+
+.title {
+  font-size: var(--fs-large-title);
+  font-weight: var(--fw-bold);
+  color: var(--sys-label);
+  line-height: var(--lh-snug);
+  letter-spacing: -0.4px;
+  text-align: left;
+}
+
+/* ═══════════════════════════════════════════════════
+   SEARCH INPUT
+   ═══════════════════════════════════════════════════ */
+.searchWrap {
+  position: relative;
+  margin-bottom: var(--sp-32);
+  animation: fadeInUp 0.6s var(--ease-out-expo) 0.2s both;
+}
+
+.searchInput {
+  width: 100%;
+  height: 56px;
+  border-radius: 16px;
+  padding: 0 16px 0 48px;
+  
+  /* Glass Material iOS */
+  background: rgba(118, 118, 128, 0.24);
+  border: none;
+  font-family: var(--font-family);
+  font-size: var(--fs-body);
+  color: var(--sys-label);
+  outline: none;
+  transition: background-color var(--dur-fast) ease;
+}
+
+.searchInput::placeholder {
+  color: var(--sys-label-tertiary);
+}
+
+.searchInput:focus {
+  background: rgba(118, 118, 128, 0.32);
+}
+
+.searchIcon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--sys-label-tertiary);
+  pointer-events: none;
+  width: 20px;
+  height: 20px;
+}
+
+/* ═══════════════════════════════════════════════════
+   ADDRESS LIST (iOS Inset Grouped Style)
+   ═══════════════════════════════════════════════════ */
+.addressList {
+  display: flex;
+  flex-direction: column;
+  border-radius: 14px;
+  
+  /* Glass Material in compliance with GEMINI.md */
+  background: rgba(30, 30, 30, 0.75);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  
+  overflow: hidden;
+  animation: fadeInUp 0.6s var(--ease-out-expo) 0.3s both;
+}
+
+.addressCard {
+  position: relative;
+  width: 100%;
+  padding: 16px;
+  text-align: left;
+  background: transparent;
+  border: none;
+  color: var(--sys-label);
+  font-size: var(--fs-body);
+  transition: background-color var(--dur-fast) ease;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.addressCard:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 16px;
+  right: 0;
+  height: 1px;
+  background: var(--sys-separator, rgba(84, 84, 88, 0.65));
+}
+
+.addressCard:active {
+  background: rgba(120, 120, 128, 0.16);
+}
+
+.addressCard--selected {
+  /* No background change, just checkmark in TSX */
+}
+
+/* ═══════════════════════════════════════════════════
+   FOOTER
+   ═══════════════════════════════════════════════════ */
+.footer {
+  flex-shrink: 0;
+  padding: var(--sp-12) var(--sp-24);
+  padding-bottom: var(--sp-8);
+  position: relative;
+  z-index: 2;
+  animation: fadeInUp 0.6s var(--ease-out-expo) 0.4s both;
+}
+
+.homeIndicator {
+  width: 134px;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.30);
+  border-radius: 100px;
+  margin: var(--sp-12) auto var(--sp-8);
+}

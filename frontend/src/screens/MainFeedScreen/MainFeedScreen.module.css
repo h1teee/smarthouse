@@ -1,0 +1,556 @@
+/* Refined Ultra-Premium Apple Design */
+
+.screen {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #000;
+}
+
+.appBackground {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: radial-gradient(circle at 50% -20%, #17002b 0%, #000000 60%, #000a1a 100%);
+  overflow: hidden;
+}
+.appBackground::after {
+  content: '';
+  position: absolute;
+  top: 0%;
+  left: -20%;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(191, 90, 242, 0.15) 0%, transparent 70%);
+  filter: blur(60px);
+  animation: ambientPulse 14s ease-in-out infinite alternate;
+}
+.appBackground::before {
+  content: '';
+  position: absolute;
+  bottom: -10%;
+  right: -20%;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(10, 132, 255, 0.1) 0%, transparent 70%);
+  filter: blur(80px);
+  animation: ambientPulse 16s ease-in-out infinite alternate-reverse;
+}
+
+.contentLayer {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header Row */
+.headerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 16px;
+  padding-top: calc(16px + var(--sa-top));
+  margin-bottom: 24px;
+}
+
+.addressContainer {
+  position: relative;
+}
+
+.addressDropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  background: rgba(30, 30, 30, 0.85);
+  backdrop-filter: saturate(180%) blur(25px);
+  -webkit-backdrop-filter: saturate(180%) blur(25px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 8px;
+  width: 260px;
+  z-index: 100;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  animation: scaleIn 0.2s var(--ease-out-expo) both;
+  transform-origin: top left;
+}
+
+.addressDropdownItem {
+  padding: 12px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.addressDropdownItem:active {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.addressDropdownText {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 15px;
+  color: #fff;
+  font-weight: 500;
+}
+
+.addressDropdownDivider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 4px 12px;
+}
+
+.addressDropdownAdd {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.addressWrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  padding: 4px 8px 4px 0;
+}
+
+.addressText {
+  color: var(--sys-label);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+}
+
+.chevronIcon {
+  color: rgba(235, 235, 245, 0.5);
+  width: 16px;
+  height: 16px;
+  margin-top: 1px;
+}
+
+.bellButton {
+  /* Glass Material для кнопки уведомлений */
+  background: rgba(30, 30, 30, 0.75);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 50%;
+  width: 38px;
+  height: 38px;
+  color: #FFFFFF;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.bellButton:active {
+  transform: scale(0.92);
+}
+
+.notificationDot {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 9px;
+  height: 9px;
+  background-color: #BF5AF2; /* Акцентный Purple */
+  border-radius: 50%;
+  border: 2px solid #000000;
+  box-shadow: 0 0 8px rgba(191, 90, 242, 0.7);
+}
+
+/* Hero Logo */
+.logoHeroArea {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 28px;
+  animation: scaleIn 0.8s var(--ease-out-expo) both;
+}
+
+.logoContainer {
+  width: 64px;
+  height: 64px;
+  border-radius: 22.5%;
+  background: #FFF;
+  padding: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4), 0 0 60px rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.heroLogo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Scroll Area */
+.scrollArea {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 100px;
+  scrollbar-width: none;
+}
+.scrollArea::-webkit-scrollbar { display: none; }
+
+/* Segmented Control */
+.segmentedControlWrapper {
+  padding: 0 16px;
+  margin-bottom: 16px;
+}
+
+.segmentedControl {
+  display: flex;
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 9px;
+  padding: 2px;
+  border: 0.5px solid rgba(255, 255, 255, 0.05);
+}
+
+.segment {
+  flex: 1;
+  text-align: center;
+  padding: 6px 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--sys-label);
+  border-radius: 7px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.segment.active {
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  font-weight: 600;
+}
+
+.segment.inactive {
+  color: rgba(235, 235, 245, 0.4);
+}
+
+/* Cards */
+.feedList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 16px;
+}
+
+.card {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  border: 0.5px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), background 0.2s ease;
+  cursor: pointer;
+}
+
+.card:active {
+  transform: scale(0.97);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.cardIconWrap {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.15);
+}
+
+.cardContent {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cardTitle {
+  color: var(--sys-label);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+  line-height: 1.3;
+}
+
+.cardSubtitle {
+  color: rgba(235, 235, 245, 0.5);
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: -0.1px;
+}
+
+.badge {
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Status variants */
+.statusWait .cardIconWrap {
+  background: rgba(255, 149, 0, 0.15);
+  color: #FF9500;
+}
+.statusWait .badge {
+  background: rgba(255, 149, 0, 0.1);
+  color: #FF9500;
+}
+
+.statusActive .cardIconWrap {
+  background: rgba(255, 69, 58, 0.15);
+  color: #FF453A;
+}
+.statusActive .badge {
+  background: rgba(255, 69, 58, 0.1);
+  color: #FF453A;
+}
+
+.statusArchive .cardIconWrap {
+  background: rgba(120, 120, 128, 0.15);
+  color: #8E8E93;
+}
+.statusArchive .badge {
+  background: rgba(120, 120, 128, 0.1);
+  color: #8E8E93;
+}
+
+/* FAB - Eye-catching pink-purple round button */
+.fab {
+  position: fixed;
+  right: 20px;
+  bottom: calc(env(safe-area-inset-bottom, 16px) + 74px);
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FF2D55 0%, #E040FB 50%, #BF5AF2 100%);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 28px rgba(255, 45, 85, 0.45), 0 0 24px rgba(191, 90, 242, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.45);
+  border: 1.5px solid rgba(255, 255, 255, 0.3);
+  z-index: 1050;
+  cursor: pointer;
+  transition: transform 0.22s var(--spring), box-shadow 0.22s ease, filter 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+  animation: fabPulse 3s ease-in-out infinite alternate;
+}
+
+@keyframes fabPulse {
+  0% {
+    box-shadow: 0 8px 24px rgba(255, 45, 85, 0.45), 0 0 18px rgba(191, 90, 242, 0.5);
+  }
+  100% {
+    box-shadow: 0 12px 32px rgba(255, 45, 85, 0.65), 0 0 30px rgba(191, 90, 242, 0.8);
+  }
+}
+
+.fab:hover {
+  filter: brightness(1.08);
+}
+
+.fab:active {
+  transform: scale(0.92);
+  filter: brightness(0.95);
+  box-shadow: 0 4px 14px rgba(255, 45, 85, 0.5);
+}
+
+.fabIcon {
+  width: 28px;
+  height: 28px;
+  stroke-width: 2.6;
+}
+
+/* ═══════════════════════════════════════════════════
+   MODAL SHEET (BOTTOM SHEET)
+   ═══════════════════════════════════════════════════ */
+.modalOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  animation: fadeIn 0.3s ease-out both;
+}
+
+.modalSheet {
+  background: rgba(30, 30, 30, 0.85);
+  backdrop-filter: saturate(180%) blur(25px);
+  -webkit-backdrop-filter: saturate(180%) blur(25px);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 32px 32px 0 0;
+  padding: 16px 24px 34px 24px;
+  animation: slideUp 0.4s var(--ease-out-expo) both;
+  display: flex;
+  flex-direction: column;
+  max-height: 85vh;
+}
+
+.modalDragHandle {
+  width: 36px;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+  margin: 0 auto 24px;
+}
+
+.modalTitle {
+  font-size: 22px;
+  font-weight: 700;
+  color: #FFF;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.searchWrap {
+  position: relative;
+  margin-bottom: 24px;
+}
+
+.searchInput {
+  width: 100%;
+  height: 50px;
+  border-radius: 12px;
+  padding: 0 16px 0 44px;
+  background: rgba(118, 118, 128, 0.24);
+  border: none;
+  font-size: 17px;
+  color: #FFF;
+  outline: none;
+}
+
+.searchInput::placeholder {
+  color: rgba(235, 235, 245, 0.3);
+}
+
+.searchIcon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(235, 235, 245, 0.3);
+  width: 20px;
+  height: 20px;
+}
+
+.addressList {
+  display: flex;
+  flex-direction: column;
+  border-radius: 14px;
+  background: rgba(30, 30, 30, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.addressCard {
+  position: relative;
+  width: 100%;
+  padding: 16px;
+  text-align: left;
+  background: transparent;
+  border: none;
+  color: #FFF;
+  font-size: 17px;
+  transition: background-color 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.addressCard:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 16px;
+  right: 0;
+  height: 1px;
+  background: rgba(84, 84, 88, 0.65);
+}
+
+.addressCard:active {
+  background: rgba(120, 120, 128, 0.16);
+}
+
+.addressCard--selected {
+  /* No bg change */
+}
+
+.modalSubmitBtn {
+  background: var(--accent);
+  color: #FFF;
+  border: none;
+  border-radius: 14px;
+  height: 50px;
+  font-size: 17px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s;
+}
+
+.modalSubmitBtn:active:not(:disabled) {
+  transform: scale(0.975);
+}
+
+.modalSubmitBtn:disabled {
+  background: rgba(120, 120, 128, 0.36);
+  color: rgba(235, 235, 245, 0.3);
+  cursor: not-allowed;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
