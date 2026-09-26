@@ -2,7 +2,8 @@ services:
   - type: web
     name: smarthouse-backend
     env: docker
-    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    dockerfilePath: ./Dockerfile
     region: frankfurt
     plan: free
     healthCheckPath: /api/map/houses
@@ -19,10 +20,10 @@ services:
   - type: web
     name: smarthouse-frontend
     env: docker
-    dockerfilePath: ./frontend/Dockerfile
+    dockerContext: ./frontend
+    dockerfilePath: ./Dockerfile
     region: frankfurt
     plan: free
     envVars:
       - key: VITE_API_URL
-        # Этот URL нужно будет заменить на реальный URL бэкенда, который выдаст Render после деплоя smarthouse-backend
         value: "https://smarthouse-backend.onrender.com"
