@@ -101,7 +101,7 @@ export const UKDashboardScreen: React.FC<UKDashboardScreenProps> = ({ onOpenRequ
     <>
       <div className={styles.container}>
         <div className={styles.contentWrapper}>
-          <header className={"\\${styles.header} \\${styles.animateStagger1}"}>
+          <header className={`${styles.header} ${styles.animateStagger1}`}>
             <h1 className={styles.title}>Панель УК</h1>
             <button 
               className={styles.bellButton} 
@@ -117,23 +117,23 @@ export const UKDashboardScreen: React.FC<UKDashboardScreenProps> = ({ onOpenRequ
             </button>
           </header>
 
-          <section className={"\\${styles.metricsGrid} \\${styles.animateStagger2}"}>
+          <section className={`${styles.metricsGrid} ${styles.animateStagger2}`}>
             <div className={styles.metricCard}>
-              <span className={"\\${styles.metricValue} \\${styles.purple}"}>{displayRequests.filter(r => r.status === 'pending').length}</span>
+              <span className={`${styles.metricValue} ${styles.purple}`}>{displayRequests.filter(r => r.status === 'pending').length}</span>
               <span className={styles.metricLabel}>Новые заявки</span>
             </div>
             <div className={styles.metricCard}>
-              <span className={"\\${styles.metricValue} \\${styles.indigo}"}>{displayRequests.length}</span>
+              <span className={`${styles.metricValue} ${styles.indigo}`}>{displayRequests.length}</span>
               <span className={styles.metricLabel}>В работе</span>
             </div>
           </section>
 
-          <section className={"\\${styles.filtersScroll} \\${styles.animateStagger2}"}>
+          <section className={`${styles.filtersScroll} ${styles.animateStagger2}`}>
             {filters.map(filter => (
               <button
                 key={filter.id}
                 type="button"
-                className={"\\${styles.filterChip} \\${activeFilter === filter.id ? styles.filterChipActive : ''}"}
+                className={`${styles.filterChip} ${activeFilter === filter.id ? styles.filterChipActive : ''}`}
                 onClick={() => setActiveFilter(filter.id)}
               >
                 {filter.label}
@@ -141,7 +141,7 @@ export const UKDashboardScreen: React.FC<UKDashboardScreenProps> = ({ onOpenRequ
             ))}
           </section>
 
-          <section className={"\\${styles.requestsList} \\${styles.animateStagger3}"}>
+          <section className={`${styles.requestsList} ${styles.animateStagger3}`}>
             {filteredRequests.map(req => (
               <div 
                 key={req.id} 
@@ -162,7 +162,7 @@ export const UKDashboardScreen: React.FC<UKDashboardScreenProps> = ({ onOpenRequ
                 <div className={styles.requestContent}>
                   <div className={styles.requestTitleRow}>
                     <span className={styles.requestTitle}>{req.title}</span>
-                    <span className={"\\${styles.requestStatus} \\${statusLabels[req.status].colorClass}"}>
+                    <span className={`${styles.requestStatus} ${statusLabels[req.status].colorClass}`}>
                       {statusLabels[req.status].label}
                     </span>
                   </div>

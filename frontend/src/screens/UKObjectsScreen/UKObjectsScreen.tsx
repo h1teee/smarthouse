@@ -45,7 +45,7 @@ export const UKObjectsScreen: React.FC<UKObjectsScreenProps> = ({ onNavigate }) 
 
   return (
     <div className={styles.container}>
-      <header className={"\\${styles.header} \\${styles.animateStagger1}"}>
+      <header className={`${styles.header} ${styles.animateStagger1}`}>
         <div className={styles.headerTop}>
           <h1 className={styles.title}>Объекты</h1>
           <button 
@@ -71,12 +71,12 @@ export const UKObjectsScreen: React.FC<UKObjectsScreenProps> = ({ onNavigate }) 
         </div>
       </header>
 
-      <section className={"\\${styles.filtersScroll} \\${styles.animateStagger2}"}>
+      <section className={`${styles.filtersScroll} ${styles.animateStagger2}`}>
         {mapFilters.map(filter => (
           <button
             key={filter.id}
             type="button"
-            className={"\\${styles.filterChip} \\${activeFilter === filter.id ? styles.filterChipActive : ''}"}
+            className={`${styles.filterChip} ${activeFilter === filter.id ? styles.filterChipActive : ''}`}
             onClick={() => setActiveFilter(filter.id)}
           >
             {filter.label}
@@ -84,7 +84,7 @@ export const UKObjectsScreen: React.FC<UKObjectsScreenProps> = ({ onNavigate }) 
         ))}
       </section>
 
-      <div className={"\\${styles.mapWrapper} \\${styles.animateStagger3}"}>
+      <div className={`${styles.mapWrapper} ${styles.animateStagger3}`}>
         {/* Mock Map Background Layer */}
         <div className={styles.mapGrid} />
         
@@ -92,10 +92,10 @@ export const UKObjectsScreen: React.FC<UKObjectsScreenProps> = ({ onNavigate }) 
         {filteredHouses.map((house, i) => (
           <div 
             key={house.id}
-            className={"\\${styles.mapPin} \\${house.status === 'critical' ? styles.pinCritical : styles.pinNormal}"}
+            className={`${styles.mapPin} ${house.status === 'critical' ? styles.pinCritical : styles.pinNormal}`}
             style={{
-              top: \\%,
-              left: \\%
+              top: `${20 + (i * 15)}%`,
+              left: `${20 + (i * 20)}%`
             }}
           >
             <div className={styles.pinDot} />
