@@ -28,7 +28,7 @@ export const UKObjectsScreen: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [filterStatus, setFilterStatus] = useState<HouseStatus | 'all'>('all');
-  const [filterCategory, setFilterCategory] = useState<string>('all');
+  
   
   const [selectedHouseId, setSelectedHouseId] = useState<number | null>(null);
 
@@ -68,7 +68,7 @@ export const UKObjectsScreen: React.FC = () => {
     }
   };
 
-  const getProblemIcon = (type: string) => {
+  const getProblemIcon = () => {
     return (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="12" cy="12" r="10" />
@@ -175,7 +175,7 @@ export const UKObjectsScreen: React.FC = () => {
                 {selectedHouseRequests.map(prob => (
                   <div key={prob.id} className={styles.problemCard}>
                     <div className={`${styles.cardIconWrap} ${styles.critical}`}>
-                      {getProblemIcon(prob.type)}
+                      {getProblemIcon()}
                     </div>
                     <div className={styles.cardContent}>
                       <div className={styles.cardTitle}>{prob.title}</div>
