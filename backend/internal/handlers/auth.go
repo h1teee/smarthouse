@@ -5,7 +5,51 @@ import (
 	"net/http"
 	"backend/internal/storage"
 	"database/sql"
+	"strconv"
 )
+
+// Helper to get user ID from headers (or default to 1 if not provided)
+func getUserID(r *http.Request) int {
+	idStr := r.Header.Get("X-User-ID")
+	if idStr == "" {
+		return 1 // Fallback for backward compatibility
+	}
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		return 1
+	}
+	return id
+}
+
+// Login by Account Number and Apartment (for the Hackathon case)
+func LoginByAccountHandler(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		AccountNumber string `json:"account_number"`
+		Apartment     string `json:"apartment"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request", http.StatusBadRequest)
+		return
+	}
+
+	var userID int
+	err := storage.DB.QueryRow("SELECT user_id FROM user_addresses WHERE account_number = $1 AND apartment = $2 LIMIT 1", req.AccountNumber, req.Apartment).Scan(&userID)
+	
+	if err == sql.ErrNoRows {
+		http.Error(w, "Лицевой счет или квартира не найдены", http.StatusUnauthorized)
+		return
+	} else if err != nil {
+		http.Error(w, "DB error: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"token": strconv.Itoa(userID), 
+		"user_id": userID,
+		"role": "resident",
+	})
+}
 
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	var req struct{ VkID string `json:"user_id"` }
@@ -38,8 +82,7 @@ func LinkAddressHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	json.NewDecoder(r.Body).Decode(&req)
 	
-	// Р’ СЂРµР°Р»СЊРЅРѕРј РїСЂРѕРµРєС‚Рµ Р±РµСЂРµРј userID РёР· JWT (С‚СѓС‚ Р·Р°РіР»СѓС€РєР° userID=1)
-	userID := 1 
+	userID := getUserID(r)
 	
 	_, err := storage.DB.Exec(`
 		INSERT INTO user_addresses (user_id, address_id, apartment, account_number) 
@@ -51,7 +94,5 @@ func LinkAddressHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
 }

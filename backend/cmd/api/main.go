@@ -42,6 +42,7 @@ func main() {
 
 	// Авторизация
 	mux.HandleFunc("POST /api/auth/login", handlers.LoginHandler)
+	mux.HandleFunc("POST /api/auth/login-by-account", handlers.LoginByAccountHandler)
 	mux.HandleFunc("POST /api/user/link-address", handlers.LinkAddressHandler)
 
 	// Житель

@@ -11,7 +11,7 @@ import (
 )
 
 func GetBillsHandler(w http.ResponseWriter, r *http.Request) {
-	userID := 1 // Заглушка до внедрения JWT
+	userID := getUserID(r) // Заглушка до внедрения JWT
 	rows, err := storage.DB.Query("SELECT id, month, amount, is_paid FROM bills WHERE user_id = $1 ORDER BY month DESC", userID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

@@ -147,7 +147,7 @@ const App: React.FC = () => {
       <div className="appContainer">
         {/* Экран 1.1: Авторизация */}
         <div className={`screenWrapper ${getScreenClass('auth')}`}>
-          <AuthScreen onNext={() => navigateTo('address')} />
+          <AuthScreen onNext={() => navigateTo('mainFeed')} />
         </div>
 
         {/* Экран 1.2: Адрес */}

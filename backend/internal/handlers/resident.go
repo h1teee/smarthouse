@@ -11,7 +11,7 @@ import (
 )
 
 func GetFeedHandler(w http.ResponseWriter, r *http.Request) {
-	userID := 1 // Заглушка, в проде берем из JWT
+	userID := getUserID(r) // Заглушка, в проде берем из JWT
 	
 	query := `
 		SELECT f.id, f.address_id, f.title, f.body, f.category, f.created_at 
@@ -46,7 +46,7 @@ func GetFeedHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetMetersHandler(w http.ResponseWriter, r *http.Request) {
-	userID := 1
+	userID := getUserID(r)
 	var water, electricity float64
 	
 	err := storage.DB.QueryRow("SELECT water, electricity FROM meters WHERE user_id = $1 ORDER BY submitted_at DESC LIMIT 1", userID).Scan(&water, &electricity)
@@ -61,7 +61,7 @@ func GetMetersHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func PostMetersHandler(w http.ResponseWriter, r *http.Request) {
-	userID := 1
+	userID := getUserID(r)
 	var req struct {
 		Water       float64 `json:"water"`
 		Electricity float64 `json:"electricity"`
@@ -101,7 +101,7 @@ func AnalyzePhotoHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreateRequestHandler(w http.ResponseWriter, r *http.Request) {
-	userID := 1
+	userID := getUserID(r)
 	var req models.Request
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
