@@ -3,6 +3,7 @@ package ai
 import (
 	"bytes"
 	"crypto/tls"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -11,6 +12,7 @@ import (
 	"time"
 
 	"backend/internal/models"
+	"backend/internal/storage"
 )
 
 // GigaChat token struct
@@ -60,7 +62,7 @@ func ParseAnnouncement(base64Image string) (*models.Request, error) {
 		return &models.Request{
 			Type:        "water",
 			Title:       "Отключение горячей воды",
-			Description: "Завтра с 10:00 до 15:00 планируется отключение воды.",
+			Description: "Завтра с 10:00 до 15:00 планируется отключение горячей воды.",
 			StartDate:   "Завтра 10:00",
 			EndDate:     "Завтра 15:00",
 		}, nil
@@ -68,11 +70,10 @@ func ParseAnnouncement(base64Image string) (*models.Request, error) {
 
 	token, err := getGigaChatToken()
 	if err != nil {
-		// Фолбэк на мок если нет токена
 		return &models.Request{
 			Type:        "other",
-			Title:       "Новое объявление",
-			Description: "Текст объявления распознан с фото.",
+			Title:       "Неизвестное объявление",
+			Description: "Не удалось распознать текст.",
 		}, nil
 	}
 
@@ -81,11 +82,11 @@ func ParseAnnouncement(base64Image string) (*models.Request, error) {
 		"messages": []interface{}{
 			map[string]interface{}{
 				"role":    "system",
-				"content": `Верни ТОЛЬКО валидный JSON: {"type": "water/electricity/other", "title": "...", "start_date": "...", "end_date": "...", "description": "..."}. Без других слов.`,
+				"content": `Верни только валидный JSON: {"type": "water/electricity/other", "title": "...", "start_date": "...", "end_date": "...", "description": "..."}. Без приветствий: просто.`,
 			},
 			map[string]interface{}{
 				"role": "user",
-				"content": "Распознай текст с картинки: [картинка загружена]. (GigaChat пока плохо работает с картинками, поэтому извлеки суть из текста, если он был передан)",
+				"content": "Распознай текст и сделай: [представь что тут текст]. (GigaChat не умеет работать с картинками, поэтому делаем мок промпт)",
 			},
 		},
 	}
@@ -100,7 +101,7 @@ func ParseAnnouncement(base64Image string) (*models.Request, error) {
 	
 	resp, err := client.Do(req)
 	if err != nil || resp.StatusCode != http.StatusOK {
-		return &models.Request{Type: "other", Title: "Ошибка ИИ", Description: "Не удалось получить ответ"}, nil
+		return &models.Request{Type: "other", Title: "Сбой ИИ", Description: "Не удалось получить ответ"}, nil
 	}
 	defer resp.Body.Close()
 
@@ -126,7 +127,69 @@ func ParseAnnouncement(base64Image string) (*models.Request, error) {
 
 func AnalyzeBill(billID int) (*models.AIAnalysis, error) {
 	if os.Getenv("USE_MOCK_AI") == "true" {
-		return &models.AIAnalysis{Summary: "ИИ-анализ: Всё оплачено верно."}, nil
+		time.Sleep(2 * time.Second)
+		return &models.AIAnalysis{Summary: "ИИ-мок: ваша квитанция в норме. Вы потратили примерно 4500 рублей на услуги УК. Отличная экономия!"}, nil
 	}
-	return &models.AIAnalysis{Summary: "Квитанция проанализирована GigaChat."}, nil
+
+	var amount float64
+	var month string
+	err := storage.DB.QueryRow("SELECT amount, month FROM bills WHERE id = $1", billID).Scan(&amount, &month)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("квитанция не найдена")
+		}
+		return nil, err
+	}
+
+	token, err := getGigaChatToken()
+	if err != nil {
+		return nil, err
+	}
+
+	prompt := fmt.Sprintf("Я житель ЖК. Мне пришла квитанция за период %s на сумму %.2f руб. Объясни мне приветливо и коротко (3-4 предложения), почему сумма такая, из чего она может состоять (вода, свет, отопление) и дай совет по экономии.", month, amount)
+
+	payload := map[string]interface{}{
+		"model": "GigaChat",
+		"messages": []map[string]interface{}{
+			{
+				"role":    "system",
+				"content": "Ты дружелюбный и умный ИИ-помощник управляющей компании. Твоя цель - успокоить жильца и понятно объяснить начисления.",
+			},
+			{
+				"role":    "user",
+				"content": prompt,
+			},
+		},
+	}
+
+	body, _ := json.Marshal(payload)
+	req, _ := http.NewRequest("POST", "https://gigachat.devices.sberbank.ru/api/v1/chat/completions", bytes.NewBuffer(body))
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+
+	tr := &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}
+	client := &http.Client{Transport: tr}
+	
+	resp, err := client.Do(req)
+	if err != nil || resp.StatusCode != http.StatusOK {
+		return &models.AIAnalysis{Summary: "Не удалось получить ответ от GigaChat."}, nil
+	}
+	defer resp.Body.Close()
+
+	respBody, _ := io.ReadAll(resp.Body)
+	var routerResp struct {
+		Choices []struct {
+			Message struct {
+				Content string `json:"content"`
+			} `json:"message"`
+		} `json:"choices"`
+	}
+	json.Unmarshal(respBody, &routerResp)
+
+	content := "Анализ недоступен."
+	if len(routerResp.Choices) > 0 {
+		content = routerResp.Choices[0].Message.Content
+	}
+
+	return &models.AIAnalysis{Summary: content}, nil
 }
