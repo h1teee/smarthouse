@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState } from 'react';
 import styles from './UKDashboardScreen.module.css';
 
 export interface UKDashboardScreenProps {
@@ -7,113 +7,179 @@ export interface UKDashboardScreenProps {
 }
 
 const filters = [
-  { id: 'all', label: 'Все заявки' },
-  { id: 'pending', label: 'В работе' },
-  { id: 'approved', label: 'Одобрено' },
-  { id: 'rejected', label: 'Отклонено' }
+  { id: 'all', label: 'Р’СЃРµ Р·Р°СЏРІРєРё' },
+  { id: 'new', label: 'РќРѕРІС‹Рµ' },
+  { id: 'pending', label: 'РћР¶РёРґР°СЋС‚' },
+  { id: 'verified', label: 'РџСЂРѕРІРµСЂРµРЅС‹' },
+  { id: 'archive', label: 'РђСЂС…РёРІ' }
 ];
 
-export const UKDashboardScreen: React.FC<UKDashboardScreenProps> = ({ onOpenRequest }) => {
+const mockRequests = [
+  {
+    id: 1,
+    title: 'РћС‚РєР»СЋС‡РµРЅРёРµ РіРѕСЂСЏС‡РµР№ РІРѕРґС‹',
+    address: 'СѓР». РљРѕСЃРјРѕРЅР°РІС‚РѕРІ 34Р°, РєРІ. 12',
+    status: 'pending',
+    isNew: true,
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 2C12 2 6 8.5 6 13.5a6 6 0 0 0 12 0C18 8.5 12 2 12 2z" />
+        <line x1="4" y1="4" x2="20" y2="20" strokeWidth="2.2" />
+      </svg>
+    )
+  },
+  {
+    id: 2,
+    title: 'РЁСѓРј РІ РїРѕРґСЉРµР·РґРµ',
+    address: 'СѓР». РљРѕСЃРјРѕРЅР°РІС‚РѕРІ 34Р°, РєРІ. 45',
+    status: 'approved',
+    isNew: false,
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+        <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+        <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+      </svg>
+    )
+  },
+  {
+    id: 3,
+    title: 'РџСЂРѕС‚РµС‡РєР° С‚СЂСѓР±С‹',
+    address: 'СѓР». РљРѕСЃРјРѕРЅР°РІС‚РѕРІ 34Р±, РєРІ. 8',
+    status: 'rejected',
+    isNew: false,
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+      </svg>
+    )
+  }
+];
+
+const statusLabels: Record<string, { label: string; colorClass: string }> = {
+  pending: { label: 'РћР¶РёРґР°РµС‚', colorClass: styles.statusPending },
+  approved: { label: 'РџРѕРґС‚РІРµСЂР¶РґРµРЅРѕ', colorClass: styles.statusApproved },
+  rejected: { label: 'РћС‚РєР»РѕРЅРµРЅРѕ', colorClass: styles.statusRejected }
+};
+
+export const UKDashboardScreen: React.FC<UKDashboardScreenProps> = ({ onOpenRequest, onNavigate }) => {
   const [activeFilter, setActiveFilter] = useState('all');
   const [requests, setRequests] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
+  React.useEffect(() => {
     const fetchRequests = async () => {
       try {
-        const res = await fetch(import.meta.env.VITE_API_URL + '/api/uk/requests?status=' + activeFilter);
+        const res = await fetch(import.meta.env.VITE_API_URL + '/api/uk/requests');
         if (res.ok) {
           const data = await res.json();
           setRequests(data || []);
         }
-      } catch (err) {
-        console.error('Failed to fetch requests:', err);
-      } finally {
-        setIsLoading(false);
-      }
+      } catch (err) {}
     };
     fetchRequests();
-  }, [activeFilter]);
+  }, []);
 
-  const renderIcon = (type: string) => {
-    if (type === 'water') {
-      return (
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M12 2C12 2 6 8.5 6 13.5a6 6 0 0 0 12 0C18 8.5 12 2 12 2z" />
-          <line x1="4" y1="4" x2="20" y2="20" strokeWidth="2.2" />
-        </svg>
-      );
-    }
-    return (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-        <line x1="12" y1="9" x2="12" y2="13" />
-        <line x1="12" y1="17" x2="12.01" y2="17" />
-      </svg>
-    );
-  };
+  const displayRequests = requests.length > 0 ? requests.map((r: any) => ({
+    id: r.id,
+    title: r.title,
+    address: 'РљРІ. ' + r.address_id,
+    status: r.status,
+    isNew: r.status === 'pending',
+    icon: mockRequests[0].icon
+  })) : mockRequests;
+
+  const filteredRequests = displayRequests.filter(req => {
+    if (activeFilter === 'all') return true;
+    if (activeFilter === 'new') return req.isNew;
+    if (activeFilter === 'pending') return req.status === 'pending';
+    if (activeFilter === 'verified') return req.status === 'approved' || req.status === 'rejected';
+    if (activeFilter === 'archive') return req.status === 'rejected'; // Mock archive logic
+    return true;
+  });
 
   return (
     <>
       <div className={styles.container}>
         <div className={styles.contentWrapper}>
-          <header className={styles.header}>
-            <h1 className={styles.title}>Учет заявок</h1>
+          <header className={`${styles.header} ${styles.animateStagger1}`}>
+            <h1 className={styles.title}>РџР°РЅРµР»СЊ РЈРљ</h1>
+            <button 
+              className={styles.bellButton} 
+              type="button" 
+              aria-label="РЈРІРµРґРѕРјР»РµРЅРёСЏ"
+              onClick={() => onNavigate?.('ukNotifications')}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+              </svg>
+              <div className={styles.notificationDot} />
+            </button>
           </header>
 
-          <div className={styles.searchContainer}>
-            <div className={styles.searchBar}>
-              <svg className={styles.searchIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="11" cy="11" r="8" />
-                <line x1="21" y1="21" x2="16.65" y2="16.65" />
-              </svg>
-              <input type="text" placeholder="Поиск по заявкам..." className={styles.searchInput} />
+          <section className={`${styles.metricsGrid} ${styles.animateStagger2}`}>
+            <div className={styles.metricCard}>
+              <span className={`${styles.metricValue} ${styles.purple}`}>{displayRequests.filter(r => r.status === 'pending').length}</span>
+              <span className={styles.metricLabel}>РќРѕРІС‹Рµ Р·Р°СЏРІРєРё</span>
             </div>
-            
-            <div className={styles.filterScroll}>
-              <div className={styles.filtersWrapper}>
-                {filters.map(filter => (
-                  <button
-                    key={filter.id}
-                    className={`${styles.filterBtn} ${activeFilter === filter.id ? styles.active : ''}`}
-                    onClick={() => setActiveFilter(filter.id)}
-                  >
-                    {filter.label}
-                  </button>
-                ))}
-              </div>
+            <div className={styles.metricCard}>
+              <span className={`${styles.metricValue} ${styles.indigo}`}>{displayRequests.length}</span>
+              <span className={styles.metricLabel}>Р’ СЂР°Р±РѕС‚Рµ</span>
             </div>
-          </div>
+          </section>
 
-          <div className={styles.list}>
-            {isLoading ? (
-              <div style={{textAlign: 'center', padding: 20, color: '#888'}}>Загрузка...</div>
-            ) : requests.length > 0 ? (
-              requests.map(req => (
-                <div 
-                  key={req.id} 
-                  className={styles.card}
-                  onClick={() => {
-                    localStorage.setItem('selectedRequestId', String(req.id));
-                    if (onOpenRequest) onOpenRequest(req.id);
-                  }}
-                >
-                  <div className={styles.cardHeader}>
-                    <div className={`${styles.cardIcon} ${req.status === 'pending' ? styles.warning : styles.info}`}>
-                      {renderIcon(req.type)}
-                    </div>
-                    {req.status === 'pending' && <span className={styles.badgeNew}>Новая</span>}
-                  </div>
-                  <h3 className={styles.cardTitle}>{req.title}</h3>
-                  <p className={styles.cardAddress}>ID: {req.id} • Дата: {req.start_date}</p>
+          <section className={`${styles.filtersScroll} ${styles.animateStagger2}`}>
+            {filters.map(filter => (
+              <button
+                key={filter.id}
+                type="button"
+                className={`${styles.filterChip} ${activeFilter === filter.id ? styles.filterChipActive : ''}`}
+                onClick={() => setActiveFilter(filter.id)}
+              >
+                {filter.label}
+              </button>
+            ))}
+          </section>
+
+          <section className={`${styles.requestsList} ${styles.animateStagger3}`}>
+            {filteredRequests.map(req => (
+              <div 
+                key={req.id} 
+                className={styles.requestCard}
+                onClick={() => onOpenRequest?.(req.id)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    onOpenRequest?.(req.id);
+                  }
+                }}
+              >
+                <div className={styles.requestIconBox}>
+                  {req.icon}
                 </div>
-              ))
-            ) : (
-              <div style={{textAlign: 'center', padding: 20, color: '#888', opacity: 0.5}}>Нет заявок</div>
-            )}
-          </div>
+                
+                <div className={styles.requestContent}>
+                  <div className={styles.requestTitleRow}>
+                    <span className={styles.requestTitle}>{req.title}</span>
+                    <span className={`${styles.requestStatus} ${statusLabels[req.status].colorClass}`}>
+                      {statusLabels[req.status].label}
+                    </span>
+                  </div>
+                  <span className={styles.requestMeta}>{req.address}</span>
+                </div>
+                
+                <div className={styles.requestChevron}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="9 18 15 12 9 6" />
+                  </svg>
+                </div>
+              </div>
+            ))}
+          </section>
         </div>
       </div>
     </>
   );
 };
+
