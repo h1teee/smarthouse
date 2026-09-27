@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"database/sql"
 	"encoding/json"
 	"net/http"
 
@@ -12,10 +13,20 @@ import (
 func GetUKRequestsHandler(w http.ResponseWriter, r *http.Request) {
 	status := r.URL.Query().Get("status")
 	if status == "" {
-		status = "pending"
+		status = "all"
 	}
 
-	rows, err := storage.DB.Query("SELECT id, type, title, description, start_date, end_date, status FROM requests WHERE status = $1", status)
+	var query string
+	var rows *sql.Rows
+	var err error
+
+	if status == "all" {
+		query = "SELECT id, type, title, description, start_date, end_date, status FROM requests ORDER BY created_at DESC"
+		rows, err = storage.DB.Query(query)
+	} else {
+		query = "SELECT id, type, title, description, start_date, end_date, status FROM requests WHERE status = $1 ORDER BY created_at DESC"
+		rows, err = storage.DB.Query(query, status)
+	}
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
