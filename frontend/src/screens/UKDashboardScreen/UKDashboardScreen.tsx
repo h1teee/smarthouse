@@ -13,7 +13,7 @@ const filters = [
   { id: 'rejected', label: 'Отклонено' }
 ];
 
-export const UKDashboardScreen: React.FC<UKDashboardScreenProps> = ({ onOpenRequest, onNavigate }) => {
+export const UKDashboardScreen: React.FC<UKDashboardScreenProps> = ({ onOpenRequest }) => {
   const [activeFilter, setActiveFilter] = useState('all');
   const [requests, setRequests] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
