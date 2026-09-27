@@ -36,7 +36,7 @@ func LoginByAccountHandler(w http.ResponseWriter, r *http.Request) {
 	err := storage.DB.QueryRow("SELECT user_id FROM user_addresses WHERE account_number = $1 AND apartment = $2 LIMIT 1", req.AccountNumber, req.Apartment).Scan(&userID)
 	
 	if err == sql.ErrNoRows {
-		http.Error(w, "Лицевой счет или квартира не найдены", http.StatusUnauthorized)
+		http.Error(w, "Account or apartment not found", http.StatusUnauthorized)
 		return
 	} else if err != nil {
 		http.Error(w, "DB error: "+err.Error(), http.StatusInternalServerError)
