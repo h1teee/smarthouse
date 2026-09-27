@@ -21,8 +21,6 @@ export const MainFeedScreen: React.FC<MainFeedScreenProps> = ({ onOpenCamera, on
   const [activeTab, setActiveTab] = useState<'actual' | 'archive'>('actual');
   const [isAddressDropdownOpen, setIsAddressDropdownOpen] = useState(false);
   const [activeAddress, setActiveAddress] = useState('г. Ростов-на-Дону, ул. Садовая, 34');
-  const [isAddAddressOpen, setIsAddAddressOpen] = useState(false);
-  const [newAddressQuery, setNewAddressQuery] = useState('');
   
   const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
