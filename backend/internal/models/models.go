@@ -30,6 +30,7 @@ type MapObject struct {
 
 type MapHouse struct {
 	HouseID           int     `json:"houseId"`
+	Address           string  `json:"address"`
 	Lat               float64 `json:"lat"`
 	Lng               float64 `json:"lng"`
 	WaterStatus       string  `json:"water_status"`

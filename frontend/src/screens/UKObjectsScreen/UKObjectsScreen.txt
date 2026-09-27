@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo, TouchEvent, useEffect } from 'react';
+import React, { useState, useMemo, TouchEvent } from 'react';
 import styles from './UKObjectsScreen.module.css';
 
 type HouseStatus = 'critical' | 'repair' | 'ok';
@@ -21,51 +21,43 @@ interface House {
   problems: Problem[];
 }
 
-function getTopLeft(id: number): { top: string; left: string } {
-  const topOffsets = [20, 35, 50, 65, 80, 25, 40, 55, 70, 85];
-  const leftOffsets = [20, 30, 45, 60, 75, 85, 25, 50, 70, 40];
-  const top = topOffsets[id % topOffsets.length];
-  const left = leftOffsets[(id * 3) % leftOffsets.length];
-  return { top: top + '%', left: left + '%' };
-}
+const MOCK_HOUSES: House[] = [
+  { 
+    id: '1', 
+    address: 'ул. Космонавтов 34а', 
+    top: '35%', left: '45%', 
+    status: 'critical', 
+    problems: [
+      { id: 'p1', type: 'critical', category: 'water', title: 'Авария ГВС', desc: 'Прорыв трубы (3 заявки от жителей)' }
+    ] 
+  },
+  { 
+    id: '2', 
+    address: 'ул. Садовая 15', 
+    top: '55%', left: '65%', 
+    status: 'repair', 
+    problems: [
+      { id: 'p2', type: 'repair', category: 'electricity', title: 'Плановый ремонт', desc: 'Отключено электричество (до 15:00)' },
+      { id: 'p3', type: 'info', category: 'info', title: 'Рассылка', desc: 'Уведомление о завтрашнем отключении воды доставлено' }
+    ] 
+  },
+  { 
+    id: '3', 
+    address: 'ул. Ленина 10', 
+    top: '25%', left: '20%', 
+    status: 'ok', 
+    problems: [] 
+  },
+  { 
+    id: '4', 
+    address: 'ЖК Изумрудный', 
+    top: '70%', left: '30%', 
+    status: 'ok', 
+    problems: [] 
+  }
+];
 
 export const UKObjectsScreen: React.FC = () => {
-  const [houses, setHouses] = useState<House[]>([]);
-  
-  useEffect(() => {
-    const fetchMap = async () => {
-      try {
-        const res = await fetch(import.meta.env.VITE_API_URL + '/api/map/houses');
-        if (res.ok) {
-          const data = await res.json();
-          const mapped: House[] = (data || []).map((d: any) => {
-            const problems: Problem[] = [];
-            let status: HouseStatus = 'ok';
-            if (d.water_status !== 'ok') {
-              problems.push({ id: 'w-'+d.houseId, type: 'repair', category: 'water', title: 'Проблемы с водой', desc: 'Открыты заявки от жильцов' });
-              status = 'repair';
-            }
-            if (d.electricity_status !== 'ok') {
-              problems.push({ id: 'e-'+d.houseId, type: 'repair', category: 'electricity', title: 'Проблемы со светом', desc: 'Открыты заявки от жильцов' });
-              status = 'repair';
-            }
-            const { top, left } = getTopLeft(d.houseId);
-            return {
-              id: String(d.houseId),
-              address: d.address || 'г. Ростов-на-Дону',
-              top, left,
-              status,
-              problems
-            };
-          });
-          setHouses(mapped);
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    };
-    fetchMap();
-  }, []);
   const [selectedHouseId, setSelectedHouseId] = useState<string | null>(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -78,7 +70,7 @@ export const UKObjectsScreen: React.FC = () => {
   const [touchStartY, setTouchStartY] = useState<number | null>(null);
 
   const filteredHouses = useMemo(() => {
-    return houses.filter(h => {
+    return MOCK_HOUSES.filter(h => {
       const matchSearch = h.address.toLowerCase().includes(searchQuery.toLowerCase());
       const matchStatus = filterStatus === 'all' || h.status === filterStatus;
       
@@ -93,7 +85,7 @@ export const UKObjectsScreen: React.FC = () => {
     });
   }, [searchQuery, filterStatus, filterCategory]);
 
-  const selectedHouse = houses.find(h => h.id === selectedHouseId) || null;
+  const selectedHouse = MOCK_HOUSES.find(h => h.id === selectedHouseId) || null;
 
   const handleMapClick = () => {
     if (selectedHouseId) setSelectedHouseId(null);
@@ -167,7 +159,7 @@ export const UKObjectsScreen: React.FC = () => {
           <input 
             type="text" 
             className={styles.searchInput} 
-            placeholder="РќР°Р№С‚Рё Р°РґСЂРµСЃ: СѓР». РљРѕСЃРјРѕРЅР°РІС‚РѕРІ..." 
+            placeholder="Найти адрес: ул. Космонавтов..." 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -190,31 +182,31 @@ export const UKObjectsScreen: React.FC = () => {
           <div className={`${styles.filterDropdown} ${isFilterOpen ? styles.open : ''}`}>
             
             <div className={styles.filterGroup}>
-              <div className={styles.filterGroupTitle}>РЎС‚Р°С‚СѓСЃ</div>
+              <div className={styles.filterGroupTitle}>Статус</div>
               <button className={`${styles.filterOption} ${filterStatus === 'all' ? styles.active : ''}`} onClick={() => setFilterStatus('all')}>
-                Р›СЋР±РѕР№ СЃС‚Р°С‚СѓСЃ {filterStatus === 'all' && <span>вњ“</span>}
+                Любой статус {filterStatus === 'all' && <span>✓</span>}
               </button>
               <button className={`${styles.filterOption} ${filterStatus === 'critical' ? styles.active : ''}`} onClick={() => setFilterStatus('critical')}>
-                РђРІР°СЂРёРё {filterStatus === 'critical' && <span>вњ“</span>}
+                Аварии {filterStatus === 'critical' && <span>✓</span>}
               </button>
               <button className={`${styles.filterOption} ${filterStatus === 'repair' ? styles.active : ''}`} onClick={() => setFilterStatus('repair')}>
-                Р’ СЂРµРјРѕРЅС‚Рµ {filterStatus === 'repair' && <span>вњ“</span>}
+                В ремонте {filterStatus === 'repair' && <span>✓</span>}
               </button>
               <button className={`${styles.filterOption} ${filterStatus === 'ok' ? styles.active : ''}`} onClick={() => setFilterStatus('ok')}>
-                РЁС‚Р°С‚РЅРѕ {filterStatus === 'ok' && <span>вњ“</span>}
+                Штатно {filterStatus === 'ok' && <span>✓</span>}
               </button>
             </div>
 
             <div className={styles.filterGroup}>
-              <div className={styles.filterGroupTitle}>РљР°С‚РµРіРѕСЂРёСЏ</div>
+              <div className={styles.filterGroupTitle}>Категория</div>
               <button className={`${styles.filterOption} ${filterCategory === 'all' ? styles.active : ''}`} onClick={() => setFilterCategory('all')}>
-                Р’СЃРµ РєР°С‚РµРіРѕСЂРёРё {filterCategory === 'all' && <span>вњ“</span>}
+                Все категории {filterCategory === 'all' && <span>✓</span>}
               </button>
               <button className={`${styles.filterOption} ${filterCategory === 'water' ? styles.active : ''}`} onClick={() => setFilterCategory('water')}>
-                Р’РѕРґРѕСЃРЅР°Р±Р¶РµРЅРёРµ {filterCategory === 'water' && <span>вњ“</span>}
+                Водоснабжение {filterCategory === 'water' && <span>✓</span>}
               </button>
               <button className={`${styles.filterOption} ${filterCategory === 'electricity' ? styles.active : ''}`} onClick={() => setFilterCategory('electricity')}>
-                Р­Р»РµРєС‚СЂРёС‡РµСЃС‚РІРѕ {filterCategory === 'electricity' && <span>вњ“</span>}
+                Электричество {filterCategory === 'electricity' && <span>✓</span>}
               </button>
             </div>
 
@@ -281,8 +273,8 @@ export const UKObjectsScreen: React.FC = () => {
                   <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
                   <polyline points="22 4 12 14.01 9 11.01" />
                 </svg>
-                <div className={styles.emptyTitle}>Р’СЃС‘ РІ РїРѕСЂСЏРґРєРµ</div>
-                <div className={styles.emptyDesc}>РќР° РѕР±СЉРµРєС‚Рµ С€С‚Р°С‚РЅР°СЏ СЃРёС‚СѓР°С†РёСЏ. РџСЂРѕР±Р»РµРј Рё Р°РєС‚РёРІРЅС‹С… СЂР°СЃСЃС‹Р»РѕРє РЅРµС‚.</div>
+                <div className={styles.emptyTitle}>Всё в порядке</div>
+                <div className={styles.emptyDesc}>На объекте штатная ситуация. Проблем и активных рассылок нет.</div>
               </div>
             )}
           </>
@@ -291,4 +283,3 @@ export const UKObjectsScreen: React.FC = () => {
     </div>
   );
 };
-
