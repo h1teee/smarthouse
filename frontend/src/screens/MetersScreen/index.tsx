@@ -86,7 +86,7 @@ export const MetersScreen: React.FC<MetersScreenProps> = ({ onBack }) => {
         <div className={styles.meterGroup}>
           <div className={styles.meterHeader}>
             <div className={styles.meterTitleRow}>
-              <div className={`${styles.iconWrap} ${styles.blue}`}>
+              <div className={"\\${styles.iconWrap} \\${styles.blue}"}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
                 </svg>
@@ -118,7 +118,7 @@ export const MetersScreen: React.FC<MetersScreenProps> = ({ onBack }) => {
         <div className={styles.meterGroup}>
           <div className={styles.meterHeader}>
             <div className={styles.meterTitleRow}>
-              <div className={`${styles.iconWrap} ${styles.yellow}`}>
+              <div className={"\\${styles.iconWrap} \\${styles.yellow}"}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
                 </svg>

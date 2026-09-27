@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import styles from './UKDashboardScreen.module.css';
 
 export interface UKDashboardScreenProps {
@@ -7,18 +7,18 @@ export interface UKDashboardScreenProps {
 }
 
 const filters = [
-  { id: 'all', label: 'Р’СЃРµ Р·Р°СЏРІРєРё' },
-  { id: 'new', label: 'РќРѕРІС‹Рµ' },
-  { id: 'pending', label: 'РћР¶РёРґР°СЋС‚' },
-  { id: 'verified', label: 'РџСЂРѕРІРµСЂРµРЅС‹' },
-  { id: 'archive', label: 'РђСЂС…РёРІ' }
+  { id: 'all', label: 'Все заявки' },
+  { id: 'new', label: 'Новые' },
+  { id: 'pending', label: 'Ожидают' },
+  { id: 'verified', label: 'Проверены' },
+  { id: 'archive', label: 'Архив' }
 ];
 
 const mockRequests = [
   {
     id: 1,
-    title: 'РћС‚РєР»СЋС‡РµРЅРёРµ РіРѕСЂСЏС‡РµР№ РІРѕРґС‹',
-    address: 'СѓР». РљРѕСЃРјРѕРЅР°РІС‚РѕРІ 34Р°, РєРІ. 12',
+    title: 'Отключение горячей воды',
+    address: 'ул. Космонавтов 34а, кв. 12',
     status: 'pending',
     isNew: true,
     icon: (
@@ -30,8 +30,8 @@ const mockRequests = [
   },
   {
     id: 2,
-    title: 'РЁСѓРј РІ РїРѕРґСЉРµР·РґРµ',
-    address: 'СѓР». РљРѕСЃРјРѕРЅР°РІС‚РѕРІ 34Р°, РєРІ. 45',
+    title: 'Шум в подъезде',
+    address: 'ул. Космонавтов 34а, кв. 45',
     status: 'approved',
     isNew: false,
     icon: (
@@ -44,8 +44,8 @@ const mockRequests = [
   },
   {
     id: 3,
-    title: 'РџСЂРѕС‚РµС‡РєР° С‚СЂСѓР±С‹',
-    address: 'СѓР». РљРѕСЃРјРѕРЅР°РІС‚РѕРІ 34Р±, РєРІ. 8',
+    title: 'Протечка трубы',
+    address: 'ул. Космонавтов 34б, кв. 8',
     status: 'rejected',
     isNew: false,
     icon: (
@@ -57,9 +57,9 @@ const mockRequests = [
 ];
 
 const statusLabels: Record<string, { label: string; colorClass: string }> = {
-  pending: { label: 'РћР¶РёРґР°РµС‚', colorClass: styles.statusPending },
-  approved: { label: 'РџРѕРґС‚РІРµСЂР¶РґРµРЅРѕ', colorClass: styles.statusApproved },
-  rejected: { label: 'РћС‚РєР»РѕРЅРµРЅРѕ', colorClass: styles.statusRejected }
+  pending: { label: 'Ожидает', colorClass: styles.statusPending },
+  approved: { label: 'Подтверждено', colorClass: styles.statusApproved },
+  rejected: { label: 'Отклонено', colorClass: styles.statusRejected }
 };
 
 export const UKDashboardScreen: React.FC<UKDashboardScreenProps> = ({ onOpenRequest, onNavigate }) => {
@@ -82,7 +82,7 @@ export const UKDashboardScreen: React.FC<UKDashboardScreenProps> = ({ onOpenRequ
   const displayRequests = requests.length > 0 ? requests.map((r: any) => ({
     id: r.id,
     title: r.title,
-    address: 'РљРІ. ' + r.address_id,
+    address: 'Кв. ' + r.address_id,
     status: r.status,
     isNew: r.status === 'pending',
     icon: mockRequests[0].icon
@@ -101,12 +101,12 @@ export const UKDashboardScreen: React.FC<UKDashboardScreenProps> = ({ onOpenRequ
     <>
       <div className={styles.container}>
         <div className={styles.contentWrapper}>
-          <header className={`${styles.header} ${styles.animateStagger1}`}>
-            <h1 className={styles.title}>РџР°РЅРµР»СЊ РЈРљ</h1>
+          <header className={"\\${styles.header} \\${styles.animateStagger1}"}>
+            <h1 className={styles.title}>Панель УК</h1>
             <button 
               className={styles.bellButton} 
               type="button" 
-              aria-label="РЈРІРµРґРѕРјР»РµРЅРёСЏ"
+              aria-label="Уведомления"
               onClick={() => onNavigate?.('ukNotifications')}
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -117,23 +117,23 @@ export const UKDashboardScreen: React.FC<UKDashboardScreenProps> = ({ onOpenRequ
             </button>
           </header>
 
-          <section className={`${styles.metricsGrid} ${styles.animateStagger2}`}>
+          <section className={"\\${styles.metricsGrid} \\${styles.animateStagger2}"}>
             <div className={styles.metricCard}>
-              <span className={`${styles.metricValue} ${styles.purple}`}>{displayRequests.filter(r => r.status === 'pending').length}</span>
-              <span className={styles.metricLabel}>РќРѕРІС‹Рµ Р·Р°СЏРІРєРё</span>
+              <span className={"\\${styles.metricValue} \\${styles.purple}"}>{displayRequests.filter(r => r.status === 'pending').length}</span>
+              <span className={styles.metricLabel}>Новые заявки</span>
             </div>
             <div className={styles.metricCard}>
-              <span className={`${styles.metricValue} ${styles.indigo}`}>{displayRequests.length}</span>
-              <span className={styles.metricLabel}>Р’ СЂР°Р±РѕС‚Рµ</span>
+              <span className={"\\${styles.metricValue} \\${styles.indigo}"}>{displayRequests.length}</span>
+              <span className={styles.metricLabel}>В работе</span>
             </div>
           </section>
 
-          <section className={`${styles.filtersScroll} ${styles.animateStagger2}`}>
+          <section className={"\\${styles.filtersScroll} \\${styles.animateStagger2}"}>
             {filters.map(filter => (
               <button
                 key={filter.id}
                 type="button"
-                className={`${styles.filterChip} ${activeFilter === filter.id ? styles.filterChipActive : ''}`}
+                className={"\\${styles.filterChip} \\${activeFilter === filter.id ? styles.filterChipActive : ''}"}
                 onClick={() => setActiveFilter(filter.id)}
               >
                 {filter.label}
@@ -141,7 +141,7 @@ export const UKDashboardScreen: React.FC<UKDashboardScreenProps> = ({ onOpenRequ
             ))}
           </section>
 
-          <section className={`${styles.requestsList} ${styles.animateStagger3}`}>
+          <section className={"\\${styles.requestsList} \\${styles.animateStagger3}"}>
             {filteredRequests.map(req => (
               <div 
                 key={req.id} 
@@ -162,7 +162,7 @@ export const UKDashboardScreen: React.FC<UKDashboardScreenProps> = ({ onOpenRequ
                 <div className={styles.requestContent}>
                   <div className={styles.requestTitleRow}>
                     <span className={styles.requestTitle}>{req.title}</span>
-                    <span className={`${styles.requestStatus} ${statusLabels[req.status].colorClass}`}>
+                    <span className={"\\${styles.requestStatus} \\${statusLabels[req.status].colorClass}"}>
                       {statusLabels[req.status].label}
                     </span>
                   </div>
@@ -182,4 +182,3 @@ export const UKDashboardScreen: React.FC<UKDashboardScreenProps> = ({ onOpenRequ
     </>
   );
 };
-

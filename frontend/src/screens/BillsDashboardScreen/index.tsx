@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import styles from './BillsDashboardScreen.module.css';
 import { useSwipeClose } from '../../hooks/useSwipeClose';
@@ -21,15 +21,15 @@ interface Receipt {
 }
 
 const MOCK_RECEIPTS: Receipt[] = [
-  { id: '1', month: 'Июль 2026', provider: 'УК Смарт Сити', amount: '- 4 800 ₽', status: 'Оплачено', date: '10 авг 2026, 14:20', water: '1 200 ₽', electricity: '900 ₽', heating: '2 700 ₽' },
-  { id: '2', month: 'Июнь 2026', provider: 'УК Смарт Сити', amount: '- 4 650 ₽', status: 'Оплачено', date: '08 июл 2026, 09:15', water: '1 100 ₽', electricity: '850 ₽', heating: '2 700 ₽' }
+  { id: '1', month: 'Июль 2026', provider: 'УК Смарт Сити', amount: '- 4 800 ₽', status: 'Оплачено', date: '10 июля 2026, 14:20', water: '1 200 ₽', electricity: '900 ₽', heating: '2 700 ₽' },
+  { id: '2', month: 'Июнь 2026', provider: 'УК Смарт Сити', amount: '- 4 650 ₽', status: 'Оплачено', date: '08 июня 2026, 09:15', water: '1 100 ₽', electricity: '850 ₽', heating: '2 700 ₽' }
 ];
 
 export const BillsDashboardScreen: React.FC<BillsDashboardScreenProps> = ({ onDetailedAnalysis, onNavigate }) => {
   const [bills, setBills] = useState<any[]>([]);
   const [selectedReceiptId, setSelectedReceiptId] = useState<string | null>(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchBills = async () => {
       try {
         const res = await fetch(import.meta.env.VITE_API_URL + '/api/bills');
@@ -42,13 +42,13 @@ export const BillsDashboardScreen: React.FC<BillsDashboardScreenProps> = ({ onDe
     fetchBills();
   }, []);
 
-
+  const unpaidBill = bills.find(b => !b.isPaid);
   const paidBills = bills.filter(b => b.isPaid).map(b => ({
     id: String(b.id),
     month: b.month,
-    provider: MOCK_RECEIPTS[0].provider,
+    provider: 'УК Смарт Сити',
     amount: '- ' + b.amount + ' ₽',
-    status: MOCK_RECEIPTS[0].status,
+    status: 'Оплачено',
     date: '—',
     water: (b.amount * 0.25).toFixed(0) + ' ₽',
     electricity: (b.amount * 0.2).toFixed(0) + ' ₽',
@@ -62,7 +62,6 @@ export const BillsDashboardScreen: React.FC<BillsDashboardScreenProps> = ({ onDe
 
   return (
     <div className={styles.container}>
-      {/* Unified Ambient Glow */}
       <div className={styles.ambientGlow} />
       
       <div className={styles.content}>
@@ -70,79 +69,85 @@ export const BillsDashboardScreen: React.FC<BillsDashboardScreenProps> = ({ onDe
           <h1 className={styles.header}>Коммуналка</h1>
         </div>
         
-        {/* The Premium Metallic Card */}
-        <div className={styles.premiumCard}>
-          <div className={styles.cardNoise} />
-          <div className={styles.cardHeader}>
-            <div className={styles.providerInfo}>
-              <div className={styles.providerLogo}>УК</div>
-              <div className={styles.providerName}>УК «Смарт Сити»</div>
-            </div>
-            <div className={styles.statusBadge}>
-              <span className={styles.statusDot} />
-              Не оплачено
-            </div>
-          </div>
-          
-          <div className={styles.cardBody}>
-            <div className={styles.monthBadge}>Счет за август 2026</div>
-            
-            <div className={styles.amountContainer}>
-              <span className={styles.amountValue}>5 430</span>
-              <span className={styles.amountCurrency}>₽</span>
+        {unpaidBill ? (
+          <div className={styles.premiumCard}>
+            <div className={styles.cardNoise} />
+            <div className={styles.cardHeader}>
+              <div className={styles.providerInfo}>
+                <div className={styles.providerLogo}>УК</div>
+                <div className={styles.providerName}>УК Смарт Сити</div>
+              </div>
+              <div className={styles.statusBadge}>
+                <span className={styles.statusDot} />
+                Не оплачено
+              </div>
             </div>
             
-            <div className={styles.miniBreakdown}>
-              <div className={styles.breakdownRow}>
-                <span className={styles.bdLabel}>Водоснабжение</span>
-                <span className={styles.bdValue}>1 450 ₽</span>
+            <div className={styles.cardBody}>
+              <div className={styles.monthBadge}>За {unpaidBill.month}</div>
+              
+              <div className={styles.amountContainer}>
+                <span className={styles.amountValue}>{unpaidBill.amount}</span>
+                <span className={styles.amountCurrency}>₽</span>
               </div>
-              <div className={styles.breakdownRow}>
-                <span className={styles.bdLabel}>Электроэнергия</span>
-                <span className={styles.bdValue}>980 ₽</span>
-              </div>
-              <div className={styles.breakdownRow}>
-                <span className={styles.bdLabel}>Отопление и прочее</span>
-                <span className={styles.bdValue}>3 000 ₽</span>
+              
+              <div className={styles.miniBreakdown}>
+                <div className={styles.breakdownRow}>
+                  <span className={styles.bdLabel}>Водоснабжение</span>
+                  <span className={styles.bdValue}>{(unpaidBill.amount * 0.25).toFixed(0)} ₽</span>
+                </div>
+                <div className={styles.breakdownRow}>
+                  <span className={styles.bdLabel}>Электроэнергия</span>
+                  <span className={styles.bdValue}>{(unpaidBill.amount * 0.2).toFixed(0)} ₽</span>
+                </div>
+                <div className={styles.breakdownRow}>
+                  <span className={styles.bdLabel}>Отопление</span>
+                  <span className={styles.bdValue}>{(unpaidBill.amount * 0.55).toFixed(0)} ₽</span>
+                </div>
               </div>
             </div>
+            
+            <button className={styles.payButton}>
+              Оплатить
+            </button>
           </div>
-          
-          <button className={styles.payButton}>
-            Оплатить до 10 сентября
-          </button>
-        </div>
+        ) : (
+          <div className={styles.premiumCard} style={{justifyContent: 'center', alignItems: 'center', minHeight: 120}}>
+            <div style={{color: 'rgba(255,255,255,0.7)', fontSize: 16}}>Все квитанции оплачены</div>
+          </div>
+        )}
         
-        {/* AI Alert Component */}
-        <div className={styles.aiAlertCard} onClick={onDetailedAnalysis}>
-          <div className={styles.aiAlertHeaderRow}>
-            <div className={styles.aiIconWrapper}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="url(#sparkleGradient)" />
-                <defs>
-                  <linearGradient id="sparkleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#BF5AF2" />
-                    <stop offset="100%" stopColor="#0A84FF" />
-                  </linearGradient>
-                </defs>
-              </svg>
+        {unpaidBill && (
+          <div className={styles.aiAlertCard} onClick={() => {
+            localStorage.setItem('selectedBillId', String(unpaidBill.id));
+            onDetailedAnalysis();
+          }}>
+            <div className={styles.aiAlertHeaderRow}>
+              <div className={styles.aiIconWrapper}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="url(#sparkleGradient)" />
+                  <defs>
+                    <linearGradient id="sparkleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#BF5AF2" />
+                      <stop offset="100%" stopColor="#0A84FF" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+              </div>
+              <h3 className={styles.aiHeader}>Разбор начислений</h3>
+              <div className={styles.chevronIcon}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </div>
             </div>
-            <h3 className={styles.aiHeader}>Внимание от ИИ</h3>
-            <div className={styles.chevronIcon}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-            </div>
+            <p className={styles.aiText}>
+              ИИ проверит тарифы и объяснит начисления простыми словами.
+            </p>
+            <div className={styles.aiLinkButton}>Смотреть подробный разбор</div>
           </div>
-          <p className={styles.aiText}>
-            За горячую воду вышло на 20% больше, чем в прошлом месяце. Возможна утечка или ошибка в показаниях.
-          </p>
-          <div className={styles.aiLinkButton}>
-            Смотреть подробный разбор
-          </div>
-        </div>
+        )}
 
-        {/* Meters Widget */}
         <div className={styles.sectionHeader}>
           <h2 className={styles.sectionTitle}>Счетчики</h2>
           <span className={styles.sectionLink} onClick={() => onNavigate && onNavigate('meters')}>Все</span>
@@ -150,7 +155,7 @@ export const BillsDashboardScreen: React.FC<BillsDashboardScreenProps> = ({ onDe
         <div className={styles.metersGrid}>
           <div className={styles.meterCard}>
             <div className={styles.meterHeader}>
-              <div className={`${styles.meterIcon} ${styles.blue}`}>
+              <div className={"\\${styles.meterIcon} \\${styles.blue}"}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
                 </svg>
@@ -166,12 +171,12 @@ export const BillsDashboardScreen: React.FC<BillsDashboardScreenProps> = ({ onDe
 
           <div className={styles.meterCard}>
             <div className={styles.meterHeader}>
-              <div className={`${styles.meterIcon} ${styles.yellow}`}>
+              <div className={"\\${styles.meterIcon} \\${styles.yellow}"}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
                 </svg>
               </div>
-              <span className={styles.meterStatusAlert}>До 25 авг</span>
+              <span className={styles.meterStatusAlert}>До 25 числа</span>
             </div>
             <div className={styles.meterData}>
               <span className={styles.meterValue}>8 450</span>
@@ -181,7 +186,6 @@ export const BillsDashboardScreen: React.FC<BillsDashboardScreenProps> = ({ onDe
           </div>
         </div>
 
-        {/* History Widget */}
         <div className={styles.sectionHeader}>
           <h2 className={styles.sectionTitle}>История платежей</h2>
         </div>
@@ -208,7 +212,6 @@ export const BillsDashboardScreen: React.FC<BillsDashboardScreenProps> = ({ onDe
         </div>
       </div>
 
-      {/* Portal Bottom Sheet for Receipt Details */}
       {selectedReceipt && createPortal(
         <div className={styles.modalBackdrop} onClick={() => setSelectedReceiptId(null)}>
           <div 
@@ -269,5 +272,3 @@ export const BillsDashboardScreen: React.FC<BillsDashboardScreenProps> = ({ onDe
     </div>
   );
 };
-
-
