@@ -21,10 +21,10 @@ func GetUKRequestsHandler(w http.ResponseWriter, r *http.Request) {
 	var err error
 
 	if status == "all" {
-		query = "SELECT id, type, title, description, start_date, end_date, status FROM requests ORDER BY created_at DESC"
+		query = "SELECT id, type, title, description, start_date, end_date, status, address_id FROM requests ORDER BY created_at DESC"
 		rows, err = storage.DB.Query(query)
 	} else {
-		query = "SELECT id, type, title, description, start_date, end_date, status FROM requests WHERE status = $1 ORDER BY created_at DESC"
+		query = "SELECT id, type, title, description, start_date, end_date, status, address_id FROM requests WHERE status = $1 ORDER BY created_at DESC"
 		rows, err = storage.DB.Query(query, status)
 	}
 	if err != nil {
