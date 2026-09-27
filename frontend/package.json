@@ -12,6 +12,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@pbe/react-yandex-maps": "^1.2.5",
     "@vkontakte/vk-bridge": "^3.0.2",
     "puppeteer": "^25.11.0",
     "react": "^19.3.0",

@@ -1,119 +1,74 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
+import { YMaps, Map, Placemark } from '@pbe/react-yandex-maps';
 import styles from './UKObjectsScreen.module.css';
 
 type HouseStatus = 'ok' | 'repair' | 'critical';
 
-interface HouseData {
-  id: number;
-  address: string;
+interface MapObject {
+  address_id: number;
+  full_address: string;
+  lat: number;
+  lng: number;
   status: HouseStatus;
-  top: string;
-  left: string;
-  problems: { id: string; title: string; desc: string; type: HouseStatus | 'info' }[];
 }
 
-const mockHouses: HouseData[] = [
-  {
-    id: 1,
-    address: 'ул. Садовая, 15',
-    status: 'critical',
-    top: '30%',
-    left: '45%',
-    problems: [
-      { id: 'p1', title: 'Прорыв трубы', desc: 'Заявки от жильцов с 10:45. Требуется бригада.', type: 'critical' }
-    ]
-  },
-  {
-    id: 2,
-    address: 'ул. Космонавтов, 8',
-    status: 'repair',
-    top: '55%',
-    left: '60%',
-    problems: [
-      { id: 'p2', title: 'Лифт остановлен', desc: 'Плановое ТО до 18:00.', type: 'repair' }
-    ]
-  },
-  {
-    id: 3,
-    address: 'ул. Ленина, 42',
-    status: 'ok',
-    top: '40%',
-    left: '25%',
-    problems: []
-  },
-  {
-    id: 4,
-    address: 'ул. Мира, 7',
-    status: 'critical',
-    top: '70%',
-    left: '35%',
-    problems: [
-      { id: 'p3', title: 'Нет электричества', desc: 'Отключение подстанции, ожидаем городские службы.', type: 'critical' },
-      { id: 'p4', title: 'Застрял в лифте', desc: 'Заявка от жильца (кв. 12).', type: 'critical' }
-    ]
-  },
-  {
-    id: 5,
-    address: 'пр. Строителей, 11',
-    status: 'ok',
-    top: '20%',
-    left: '70%',
-    problems: []
-  }
-];
+interface RequestItem {
+  id: number;
+  address_id: number;
+  type: string;
+  title: string;
+  description: string;
+  status: string;
+}
 
 export const UKObjectsScreen: React.FC = () => {
+  const [houses, setHouses] = useState<MapObject[]>([]);
+  const [requests, setRequests] = useState<RequestItem[]>([]);
+  
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
-  const [filterCategory, setFilterCategory] = useState('all');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [filterStatus, setFilterStatus] = useState<HouseStatus | 'all'>('all');
+  const [filterCategory, setFilterCategory] = useState<string>('all');
+  
   const [selectedHouseId, setSelectedHouseId] = useState<number | null>(null);
 
-  const filteredHouses = mockHouses.filter(house => {
-    if (filterStatus !== 'all' && house.status !== filterStatus) return false;
-    if (searchQuery && !house.address.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [objRes, reqRes] = await Promise.all([
+          fetch(import.meta.env.VITE_API_URL + '/api/uk/objects'),
+          fetch(import.meta.env.VITE_API_URL + '/api/uk/requests')
+        ]);
+        const objData = await objRes.json();
+        const reqData = await reqRes.json();
+        if (Array.isArray(objData)) setHouses(objData);
+        if (Array.isArray(reqData)) setRequests(reqData);
+      } catch (err) {
+        console.error('Failed to load map data', err);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const filteredHouses = houses.filter(h => {
+    if (filterStatus !== 'all' && h.status !== filterStatus) return false;
+    if (searchQuery && !h.full_address.toLowerCase().includes(searchQuery.toLowerCase())) return false;
     return true;
   });
 
-  const selectedHouse = mockHouses.find(h => h.id === selectedHouseId);
+  const selectedHouse = houses.find(h => h.address_id === selectedHouseId);
+  const selectedHouseRequests = requests.filter(r => r.address_id === selectedHouseId && r.status !== 'resolved');
 
-  // Bottom Sheet swipe logic
-  const touchStartY = useRef(0);
-  const handleTouchStart = (e: React.TouchEvent) => { touchStartY.current = e.touches[0].clientY; };
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (e.touches[0].clientY - touchStartY.current > 50) setSelectedHouseId(null);
-  };
-  const handleTouchEnd = () => {};
-
-  const handleMapClick = () => {
-    setSelectedHouseId(null);
-    setIsFilterOpen(false);
-  };
-
-  const getPinIcon = (status: HouseStatus) => {
+  const getPinColor = (status: HouseStatus) => {
     switch (status) {
-      case 'critical': return (
-        <svg className={styles.pinIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
-        </svg>
-      );
-      case 'repair': return (
-        <svg className={styles.pinIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-        </svg>
-      );
-      case 'ok': return (
-        <svg className={styles.pinIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-          <polyline points="9 22 9 12 15 12 15 22" />
-        </svg>
-      );
+      case 'critical': return '#EF4444';
+      case 'repair': return '#F59E0B';
+      case 'ok': return '#10B981';
+      default: return '#10B981';
     }
   };
 
-  const getProblemIcon = (type: HouseStatus | 'info') => {
-    if (type === 'critical') return getPinIcon('critical');
-    if (type === 'repair') return getPinIcon('repair');
+  const getProblemIcon = (type: string) => {
     return (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="12" cy="12" r="10" />
@@ -123,10 +78,37 @@ export const UKObjectsScreen: React.FC = () => {
     );
   };
 
+  const handleMapClick = () => {
+    setSelectedHouseId(null);
+    setIsFilterOpen(false);
+  };
+
   return (
     <div className={styles.container}>
-      {/* Background click catcher */}
-      <div className={styles.mapBase} onClick={handleMapClick} />
+      {/* Background Map */}
+      <div className={styles.mapBase}>
+        <YMaps query={{ apikey: 'fe27ea2a-71dd-444a-95ec-3c22b1dc85bd' }}>
+          <Map 
+            defaultState={{ center: [47.2313, 39.7233], zoom: 12 }} 
+            width="100%" 
+            height="100%"
+            onClick={handleMapClick}
+            options={{ suppressMapOpenBlock: true }}
+          >
+            {filteredHouses.map(house => (
+              <Placemark
+                key={house.address_id}
+                geometry={[house.lat, house.lng]}
+                options={{
+                  preset: 'islands#circleIcon',
+                  iconColor: getPinColor(house.status)
+                }}
+                onClick={() => setSelectedHouseId(house.address_id)}
+              />
+            ))}
+          </Map>
+        </YMaps>
+      </div>
 
       {/* Floating Top Bar */}
       <div className={styles.topBar}>
@@ -138,7 +120,7 @@ export const UKObjectsScreen: React.FC = () => {
           <input 
             type="text" 
             className={styles.searchInput} 
-            placeholder="Найти адрес: ул. Космонавтов..." 
+            placeholder="Поиск адреса..." 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -159,63 +141,19 @@ export const UKObjectsScreen: React.FC = () => {
           </button>
           
           <div className={`${styles.filterDropdown} ${isFilterOpen ? styles.open : ''}`}>
-            
             <div className={styles.filterGroup}>
               <div className={styles.filterGroupTitle}>Статус</div>
-              <button className={`${styles.filterOption} ${filterStatus === 'all' ? styles.active : ''}`} onClick={() => setFilterStatus('all')}>
-                Любой статус {filterStatus === 'all' && <span>✓</span>}
-              </button>
-              <button className={`${styles.filterOption} ${filterStatus === 'critical' ? styles.active : ''}`} onClick={() => setFilterStatus('critical')}>
-                Аварии {filterStatus === 'critical' && <span>✓</span>}
-              </button>
-              <button className={`${styles.filterOption} ${filterStatus === 'repair' ? styles.active : ''}`} onClick={() => setFilterStatus('repair')}>
-                В ремонте {filterStatus === 'repair' && <span>✓</span>}
-              </button>
-              <button className={`${styles.filterOption} ${filterStatus === 'ok' ? styles.active : ''}`} onClick={() => setFilterStatus('ok')}>
-                Штатно {filterStatus === 'ok' && <span>✓</span>}
-              </button>
+              <button className={`${styles.filterOption} ${filterStatus === 'all' ? styles.active : ''}`} onClick={() => setFilterStatus('all')}>Все</button>
+              <button className={`${styles.filterOption} ${filterStatus === 'critical' ? styles.active : ''}`} onClick={() => setFilterStatus('critical')}>Критично</button>
+              <button className={`${styles.filterOption} ${filterStatus === 'repair' ? styles.active : ''}`} onClick={() => setFilterStatus('repair')}>В ремонте</button>
+              <button className={`${styles.filterOption} ${filterStatus === 'ok' ? styles.active : ''}`} onClick={() => setFilterStatus('ok')}>ОК</button>
             </div>
-
-            <div className={styles.filterGroup}>
-              <div className={styles.filterGroupTitle}>Категория</div>
-              <button className={`${styles.filterOption} ${filterCategory === 'all' ? styles.active : ''}`} onClick={() => setFilterCategory('all')}>
-                Все категории {filterCategory === 'all' && <span>✓</span>}
-              </button>
-              <button className={`${styles.filterOption} ${filterCategory === 'water' ? styles.active : ''}`} onClick={() => setFilterCategory('water')}>
-                Водоснабжение {filterCategory === 'water' && <span>✓</span>}
-              </button>
-              <button className={`${styles.filterOption} ${filterCategory === 'electricity' ? styles.active : ''}`} onClick={() => setFilterCategory('electricity')}>
-                Электричество {filterCategory === 'electricity' && <span>✓</span>}
-              </button>
-            </div>
-
           </div>
         </div>
       </div>
 
-      {/* Map Pins */}
-      {filteredHouses.map(house => (
-        <div 
-          key={house.id}
-          className={`${styles.pin} ${styles[house.status]} ${selectedHouseId === house.id ? styles.selected : ''}`} 
-          style={{ top: house.top, left: house.left }}
-          onClick={(e) => {
-            e.stopPropagation();
-            setSelectedHouseId(house.id);
-            setIsFilterOpen(false);
-          }}
-        >
-          {getPinIcon(house.status)}
-        </div>
-      ))}
-
       {/* Bottom Sheet */}
-      <div 
-        className={`${styles.bottomSheet} ${selectedHouse ? styles.show : ''}`}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-      >
+      <div className={`${styles.bottomSheet} ${selectedHouse ? styles.show : ''}`}>
         <div className={styles.grabberWrap} onClick={() => setSelectedHouseId(null)}>
           <div className={styles.grabber} />
         </div>
@@ -223,7 +161,7 @@ export const UKObjectsScreen: React.FC = () => {
         {selectedHouse && (
           <>
             <div className={styles.sheetHeader}>
-              <h2 className={styles.sheetTitle}>{selectedHouse.address}</h2>
+              <h2 className={styles.sheetTitle}>{selectedHouse.full_address}</h2>
               <button className={styles.closeBtn} onClick={() => setSelectedHouseId(null)}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="18" y1="6" x2="6" y2="18" />
@@ -232,28 +170,23 @@ export const UKObjectsScreen: React.FC = () => {
               </button>
             </div>
             
-            {selectedHouse.problems.length > 0 ? (
+            {selectedHouseRequests.length > 0 ? (
               <div className={styles.cardList}>
-                {selectedHouse.problems.map(prob => (
+                {selectedHouseRequests.map(prob => (
                   <div key={prob.id} className={styles.problemCard}>
-                    <div className={`${styles.cardIconWrap} ${styles[prob.type]}`}>
+                    <div className={`${styles.cardIconWrap} ${styles.critical}`}>
                       {getProblemIcon(prob.type)}
                     </div>
                     <div className={styles.cardContent}>
                       <div className={styles.cardTitle}>{prob.title}</div>
-                      <div className={styles.cardDesc}>{prob.desc}</div>
+                      <div className={styles.cardDesc}>{prob.description}</div>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
               <div className={styles.emptyState}>
-                <svg className={styles.emptyIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                  <polyline points="22 4 12 14.01 9 11.01" />
-                </svg>
-                <div className={styles.emptyTitle}>Всё в порядке</div>
-                <div className={styles.emptyDesc}>На объекте штатная ситуация. Проблем и активных рассылок нет.</div>
+                Проблем нет. Дом в хорошем состоянии.
               </div>
             )}
           </>
