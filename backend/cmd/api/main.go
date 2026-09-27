@@ -73,6 +73,7 @@ func main() {
 	mux.HandleFunc("POST /api/uk/broadcast", handlers.BroadcastHandler)
 	mux.HandleFunc("GET /api/uk/objects", handlers.GetUKObjectsHandler)
 	mux.HandleFunc("GET /api/uk/analytics", handlers.GetUKAnalyticsHandler)
+	mux.HandleFunc("POST /api/max/webhook", handlers.MaxWebhookHandler)
 
 	port := os.Getenv("PORT")
 	if port == "" {
