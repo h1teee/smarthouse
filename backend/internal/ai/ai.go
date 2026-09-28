@@ -101,17 +101,6 @@ func callGigaChat(systemPrompt string, userMessage string) (string, error) {
 }
 
 func ParseAnnouncement(base64Image string) (*models.Request, error) {
-	if os.Getenv("USE_MOCK_AI") == "true" {
-		time.Sleep(1 * time.Second)
-		return &models.Request{
-			Type:        "water",
-			Title:       "Отключение горячей воды",
-			Description: "Завтра с 10:00 до 15:00 планируется отключение горячей воды.",
-			StartDate:   "Завтра 10:00",
-			EndDate:     "Завтра 15:00",
-		}, nil
-	}
-
 	result, err := callGigaChat(
 		"Вы помощник по разбору объявлений. Выведи строго JSON: {\"type\": \"water/electricity/other\", \"title\": \"...\", \"start_date\": \"...\", \"end_date\": \"...\", \"description\": \"...\"}.",
 		"Я прикрепил текст из объявления. Найди в нем суть и выведи информацию об отключениях. Текст объявления: Уведомляем вас, что в связи с ремонтом с 15 по 19 сентября 2026 г. будет полностью прекращена подача ГОРЯЧЕГО ВОДОСНАБЖЕНИЯ по адресу: ул. Пушкинская, д. 34А.",
@@ -119,130 +108,55 @@ func ParseAnnouncement(base64Image string) (*models.Request, error) {
 	if err != nil {
 		return &models.Request{
 			Type:        "water",
-			Title:       "Отключение ГВС",
-			Description: "Не удалось распознать текст автоматически.",
+			Title:       "Отключение горячей воды",
+			Description: "Случилась ошибка при обращении к GigaChat. Скорее всего, токен протух или не задан.",
 		}, err
 	}
 
 	var req models.Request
 	json.Unmarshal([]byte(result), &req)
 	if req.Title == "" {
-		req.Title = "Распознанное объявление"
-		req.Description = result
-		req.Type = "water"
+		req.Title = "Новое объявление"
 	}
 	return &req, nil
 }
 
-func AnalyzeBill(billID int) (*models.AIAnalysis, error) {
-	if os.Getenv("USE_MOCK_AI") == "true" {
-		time.Sleep(2 * time.Second)
-		return &models.AIAnalysis{Summary: "Ваш счет в пределах нормы. Вы потратили 4500 рублей в текущем месяце."}, nil
-	}
-
+func AnalyzeBill(billID int) (string, error) {
 	var amount float64
-	var month string
-	err := storage.DB.QueryRow("SELECT amount, month FROM bills WHERE id = $1", billID).Scan(&amount, &month)
+	var isPaid bool
+	err := storage.DB.QueryRow("SELECT amount, is_paid FROM bills WHERE id = $1", billID).Scan(&amount, &isPaid)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("bill not found")
-		}
-		return nil, err
+		return "", err
 	}
 
-	prompt := fmt.Sprintf("Сумма платежа ЖКХ за %s составляет %.2f руб. Объясни в двух словах пользователю (вода, свет, отопление), дай советы об экономии. Будь краток, 3-4 предложения.", month, amount)
-
-	result, err := callGigaChat(
-		"Вы эксперт в коммунальных платежах ЖКХ. Ваша цель - понятно объяснить пользователю его счет.",
-		prompt,
-	)
+	prompt := fmt.Sprintf("Проанализируй квитанцию на сумму %.2f руб. Оплачена: %v. Ответь коротко (2-3 предложения), дай совет по экономии.", amount, isPaid)
+	
+	result, err := callGigaChat("Ты умный помощник ЖКХ.", prompt)
 	if err != nil {
-		return nil, err
+		return "Ошибка при анализе квитанции. Возможно, проблемы с GigaChat.", err
 	}
+	return result, nil
+}
 
-	return &models.AIAnalysis{Summary: result}, nil
+func AIWeeklyAnalysis() (string, error) {
+	var reqCount int
+	storage.DB.QueryRow("SELECT COUNT(*) FROM requests WHERE created_at >= NOW() - INTERVAL '7 days'").Scan(&reqCount)
+
+	prompt := fmt.Sprintf("За неделю поступило %d заявок от жителей. Дай короткий комментарий (2 предложения) для директора УК, как улучшить работу.", reqCount)
+	result, err := callGigaChat("Ты аналитик УК.", prompt)
+	if err != nil {
+		return "Слишком много заявок, рекомендуется усилить контроль диспетчерской (Mock).", err
+	}
+	return result, nil
 }
 
 func ImproveText(text string) (string, error) {
-	token, err := getGigaChatToken()
+	result, err := callGigaChat(
+		"Ты помощник управляющей компании ЖКХ. Улучши текст рассылки для жителей: исправь грамматику, сделай более информативным и официальным. Ответь только улучшенным текстом без пояснений.",
+		text,
+	)
 	if err != nil {
 		return text, err
 	}
-
-	payload := map[string]interface{}{
-		"model": "GigaChat",
-		"messages": []map[string]interface{}{
-			{"role": "system", "content": "Ты помощник управляющей компании ЖКХ. Улучши текст рассылки для жителей: исправь грамматику, сделай более информативным и официальным. Ответь только улучшенным текстом без пояснений."},
-			{"role": "user", "content": text},
-		},
-	}
-	body, _ := json.Marshal(payload)
-	req, _ := http.NewRequest("POST", "https://gigachat.devices.sberbank.ru/api/v1/chat/completions", bytes.NewBuffer(body))
-	req.Header.Set("Authorization", "Bearer "+token)
-	req.Header.Set("Content-Type", "application/json")
-
-	tr := &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}
-	client := &http.Client{Transport: tr}
-	resp, err := client.Do(req)
-	if err != nil || resp.StatusCode != 200 {
-		return text, fmt.Errorf("gigachat error")
-	}
-	defer resp.Body.Close()
-
-	respBody, _ := io.ReadAll(resp.Body)
-	var routerResp struct {
-		Choices []struct {
-			Message struct {
-				Content string `json:"content"`
-			} `json:"message"`
-		} `json:"choices"`
-	}
-	json.Unmarshal(respBody, &routerResp)
-	if len(routerResp.Choices) > 0 {
-		return routerResp.Choices[0].Message.Content, nil
-	}
-	return text, nil
-}
-
-func WeeklyAnalysis(reqCount int, amount float64) (string, error) {
-	token, err := getGigaChatToken()
-	if err != nil {
-		return "Ошибка токена", err
-	}
-
-	prompt := fmt.Sprintf("Сделай краткую еженедельную аналитику для УК: За неделю поступило %d заявок, общая сумма по счетам %.2f руб. Опиши динамику, дай 1 совет УК.", reqCount, amount)
-
-	payload := map[string]interface{}{
-		"model": "GigaChat",
-		"messages": []map[string]interface{}{
-			{"role": "system", "content": "Ты финансовый и операционный аналитик управляющей компании."},
-			{"role": "user", "content": prompt},
-		},
-	}
-	body, _ := json.Marshal(payload)
-	req, _ := http.NewRequest("POST", "https://gigachat.devices.sberbank.ru/api/v1/chat/completions", bytes.NewBuffer(body))
-	req.Header.Set("Authorization", "Bearer "+token)
-	req.Header.Set("Content-Type", "application/json")
-
-	tr := &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}
-	client := &http.Client{Transport: tr}
-	resp, err := client.Do(req)
-	if err != nil || resp.StatusCode != 200 {
-		return "Ошибка gigachat", fmt.Errorf("gigachat error")
-	}
-	defer resp.Body.Close()
-
-	respBody, _ := io.ReadAll(resp.Body)
-	var routerResp struct {
-		Choices []struct {
-			Message struct {
-				Content string `json:"content"`
-			} `json:"message"`
-		} `json:"choices"`
-	}
-	json.Unmarshal(respBody, &routerResp)
-	if len(routerResp.Choices) > 0 {
-		return routerResp.Choices[0].Message.Content, nil
-	}
-	return "Нет ответа", nil
+	return result, nil
 }
