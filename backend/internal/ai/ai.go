@@ -72,7 +72,7 @@ func callGigaChat(systemPrompt, userText string) (string, error) {
 	req.Header.Set("Content-Type", "application/json")
 
 	tr := &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}
-	client := &http.Client{Transport: tr}
+	client := &http.Client{Timeout: 30 * time.Second, Transport: tr}
 	resp, err := client.Do(req)
 	if err != nil || resp.StatusCode != 200 {
 		return "", fmt.Errorf("gigachat error")
@@ -200,11 +200,8 @@ func ChatAboutBill(billID int, message string) (string, error) {
 	return result, nil
 }
 
-func AIWeeklyAnalysis() (string, error) {
-	var reqCount int
-	storage.DB.QueryRow("SELECT COUNT(*) FROM requests WHERE created_at >= NOW() - INTERVAL '7 days'").Scan(&reqCount)
-
-	prompt := fmt.Sprintf("За неделю поступило %d заявок от жителей. Дай короткий комментарий (2 предложения) для директора УК, как улучшить работу.", reqCount)
+func WeeklyAnalysis(reqCount int, amount float64) (string, error) {
+	prompt := fmt.Sprintf("За неделю поступило %d заявок от жителей. Общая сумма выставленных счетов %.2f руб. Дай короткий комментарий (2 предложения) для директора УК, как улучшить работу.", reqCount, amount)
 	result, err := callGigaChat("Ты аналитик УК.", prompt)
 	if err != nil {
 		return "Слишком много заявок, рекомендуется усилить контроль диспетчерской (Mock).", err

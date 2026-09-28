@@ -45,6 +45,14 @@ func GetBillsHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(bills)
 }
 
+func PayBillHandler(w http.ResponseWriter, r *http.Request) {
+	billID := r.PathValue("id")
+	storage.DB.Exec("UPDATE bills SET is_paid = true WHERE id = $1", billID)
+	
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"status": "paid"})
+}
+
 func BillAIAnalysisHandler(w http.ResponseWriter, r *http.Request) {
 	billIDStr := r.PathValue("id")
 	billID, _ := strconv.Atoi(billIDStr)
