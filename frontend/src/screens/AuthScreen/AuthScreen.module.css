@@ -29,15 +29,22 @@
   transform: translateX(-50%);
   width: 250px;
   height: 250px;
-  background: radial-gradient(circle, rgba(10, 132, 255, 0.15) 0%, rgba(10,132,255,0) 70%);
+  background: radial-gradient(circle, rgba(191, 90, 242, 0.15) 0%, rgba(191, 90, 242, 0) 70%);
   z-index: 0;
   pointer-events: none;
 }
 
-.textBlock {
+.header {
   margin-bottom: 40px;
   position: relative;
   z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.logoIcon {
+  margin-bottom: 16px;
 }
 
 .title {
@@ -85,7 +92,7 @@
 }
 
 .input:focus {
-  border-color: #0A84FF;
+  border-color: #BF5AF2;
 }
 
 .error {
@@ -95,7 +102,7 @@
 }
 
 .submitBtn {
-  background: #0A84FF;
+  background: #BF5AF2;
   color: white;
   border: none;
   border-radius: 12px;
@@ -103,14 +110,29 @@
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
-  margin-top: 10px;
-  transition: opacity 0.2s;
+  transition: background 0.2s;
+}
+
+.submitBtn:hover {
+  background: #a94ae1;
 }
 
 .submitBtn:disabled {
-  opacity: 0.5;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.3);
+  cursor: not-allowed;
 }
 
-.submitBtn:active {
-  opacity: 0.8;
+.demoNote {
+  margin-top: auto;
+  padding-top: 40px;
+  text-align: center;
+  font-size: 13px;
+  color: rgba(235, 235, 245, 0.3);
+  line-height: 1.5;
+}
+
+.demoNote b {
+  font-weight: 600;
+  color: rgba(235, 235, 245, 0.5);
 }
