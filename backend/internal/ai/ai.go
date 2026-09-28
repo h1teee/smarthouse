@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"strings"
 	"time"
@@ -93,15 +94,58 @@ func callGigaChat(systemPrompt, userText string) (string, error) {
 	return "", fmt.Errorf("empty response")
 }
 
+func extractTextWithOCR(base64Image string) string {
+	if !strings.HasPrefix(base64Image, "data:image") {
+		base64Image = "data:image/jpeg;base64," + base64Image
+	}
+
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+	writer.WriteField("apikey", "helloworld")
+	writer.WriteField("language", "rus")
+	writer.WriteField("base64Image", base64Image)
+	writer.Close()
+
+	req, err := http.NewRequest("POST", "https://api.ocr.space/parse/image", body)
+	if err != nil {
+		return ""
+	}
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+
+	client := &http.Client{Timeout: 15 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil || resp.StatusCode != 200 {
+		return ""
+	}
+	defer resp.Body.Close()
+
+	var data struct {
+		ParsedResults []struct {
+			ParsedText string `json:"ParsedText"`
+		} `json:"ParsedResults"`
+	}
+	json.NewDecoder(resp.Body).Decode(&data)
+
+	if len(data.ParsedResults) > 0 {
+		return data.ParsedResults[0].ParsedText
+	}
+	return ""
+}
+
 func ParseAnnouncement(base64Image string) (*models.Request, error) {
+	extractedText := extractTextWithOCR(base64Image)
+	if extractedText == "" {
+		extractedText = "Текст не распознан. Пожалуйста, попросите пользователя ввести текст вручную."
+	}
+
 	result, err := callGigaChat(
-		"Вы помощник по разбору объявлений. Выведи строго JSON: {\"type\": \"water/electricity/other\", \"title\": \"...\", \"start_date\": \"...\", \"end_date\": \"...\", \"description\": \"...\"}.",
-		"Я прикрепил текст из объявления. Найди в нем суть и выведи информацию об отключениях. Текст объявления: Уведомляем вас, что в связи с ремонтом с 15 по 19 сентября 2026 г. будет полностью прекращена подача ГОРЯЧЕГО ВОДОСНАБЖЕНИЯ по адресу: ул. Пушкинская, д. 34А.",
+		"Вы помощник по разбору объявлений. Выведи строго JSON без markdown: {\"type\": \"water/electricity/other\", \"title\": \"...\", \"start_date\": \"...\", \"end_date\": \"...\", \"description\": \"...\"}.",
+		"Я прикрепил текст из объявления, полученный через OCR. Найди в нем суть и выведи информацию об отключениях или событиях.\nТекст объявления:\n" + extractedText,
 	)
 	if err != nil {
 		return &models.Request{
 			Type:        "water",
-			Title:       "Отключение воды",
+			Title:       "Ошибка распознавания",
 			Description: "Случилась ошибка при обращении к GigaChat.",
 		}, err
 	}
@@ -115,7 +159,7 @@ func ParseAnnouncement(base64Image string) (*models.Request, error) {
 	var req models.Request
 	json.Unmarshal([]byte(result), &req)
 	if req.Title == "" {
-		req.Title = "Новое объявление"
+		req.Title = "Распознанное объявление"
 		req.Description = result
 	}
 	return &req, nil
