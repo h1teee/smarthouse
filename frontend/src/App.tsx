@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import './App.css';
 import bridge from '@vkontakte/vk-bridge';
 import { AuthScreen } from '@/screens/AuthScreen';
 import { AddressScreen } from '@/screens/AddressScreen';
