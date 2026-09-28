@@ -57,7 +57,7 @@ const OFFERS: Offer[] = [
   }
 ];
 
-export const ProfileScreen: React.FC = () => {
+export const ProfileScreen: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
   const [debt, setDebt] = useState<number>(0);
   const [cashback, setCashback] = useState<number>(4850);
   const [notifications, setNotifications] = useState<boolean>(true);
@@ -632,7 +632,8 @@ export const ProfileScreen: React.FC = () => {
               className={styles.destructiveBtn}
               onClick={() => {
                 setShowLogout(false);
-                notify('Сессия завершена');
+                localStorage.clear();
+                if (onLogout) onLogout();
               }}
             >
               Выйти

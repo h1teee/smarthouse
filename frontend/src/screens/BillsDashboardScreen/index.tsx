@@ -60,6 +60,23 @@ export const BillsDashboardScreen: React.FC<BillsDashboardScreenProps> = ({ onDe
 
   const swipeHandlers = useSwipeClose(() => setSelectedReceiptId(null));
 
+  const [paying, setPaying] = useState(false);
+
+  const handlePay = async () => {
+    if (!unpaidBill || paying) return;
+    setPaying(true);
+    try {
+      await fetch(import.meta.env.VITE_API_URL + '/api/bills/' + unpaidBill.id + '/pay', { method: 'POST' });
+      // Refetch bills
+      const res = await fetch(import.meta.env.VITE_API_URL + '/api/bills');
+      if (res.ok) {
+        const data = await res.json();
+        setBills(data || []);
+      }
+    } catch (err) {}
+    setPaying(false);
+  };
+
   return (
     <div className={styles.container}>
       <div className={styles.ambientGlow} />
@@ -107,8 +124,8 @@ export const BillsDashboardScreen: React.FC<BillsDashboardScreenProps> = ({ onDe
               </div>
             </div>
             
-            <button className={styles.payButton}>
-              Оплатить
+            <button className={styles.payButton} onClick={handlePay} disabled={paying}>
+              {paying ? 'Оплата...' : 'Оплатить'}
             </button>
           </div>
         ) : (

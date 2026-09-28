@@ -3,9 +3,10 @@ import styles from './UKProfileScreen.module.css';
 
 interface UKProfileScreenProps {
   onNavigate: (screen: any) => void;
+  onLogout?: () => void;
 }
 
-export const UKProfileScreen: React.FC<UKProfileScreenProps> = ({ onNavigate }) => {
+export const UKProfileScreen: React.FC<UKProfileScreenProps> = ({ onNavigate, onLogout }) => {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
   return (
@@ -92,7 +93,7 @@ export const UKProfileScreen: React.FC<UKProfileScreenProps> = ({ onNavigate }) 
         </section>
 
         <section className={styles.animateStagger4}>
-          <div className={styles.logoutCard}>
+          <div className={styles.logoutCard} onClick={() => { localStorage.clear(); if (onLogout) onLogout(); }} style={{cursor: 'pointer'}}>
             <span className={styles.logoutText}>Завершить смену</span>
           </div>
         </section>

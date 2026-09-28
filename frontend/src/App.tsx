@@ -201,7 +201,7 @@ const App: React.FC = () => {
 
         {/* Профиль */}
         <div className={`screenWrapper ${getScreenClass('profile')}`}>
-          <ProfileScreen />
+          <ProfileScreen onLogout={() => navigateTo('auth')} />
         </div>
 
         {/* Экран 2.2: Камера */}
@@ -243,7 +243,7 @@ const App: React.FC = () => {
 
         {/* Экран 3.5: Профиль УК */}
         <div className={`screenWrapper ${getScreenClass('ukProfile')}`}>
-          <UKProfileScreen onNavigate={navigateTo} />
+          <UKProfileScreen onNavigate={navigateTo} onLogout={() => navigateTo('auth')} />
         </div>
 
         {/* Экран Аналитики УК */}
