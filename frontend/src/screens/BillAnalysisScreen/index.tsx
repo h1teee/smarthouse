@@ -1,15 +1,15 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styles from './BillAnalysisScreen.module.css';
+
+interface BillAnalysisScreenProps {
+  onBack: () => void;
+}
 
 interface Message {
   id: number;
   sender: 'ai' | 'user';
   text: string;
   isChart?: boolean;
-}
-
-interface BillAnalysisScreenProps {
-  onBack: () => void;
 }
 
 interface ExpenseItem {
@@ -21,12 +21,10 @@ interface ExpenseItem {
 }
 
 const expenseHistory: ExpenseItem[] = [
-  { id: 'mar', month: 'РњР°СЂС‚', amount: '4 200 в‚Ѕ', percentage: 55 },
-  { id: 'apr', month: 'РђРїСЂРµР»СЊ', amount: '4 150 в‚Ѕ', percentage: 54 },
-  { id: 'may', month: 'РњР°Р№', amount: '4 300 в‚Ѕ', percentage: 56 },
-  { id: 'jun', month: 'РСЋРЅСЊ', amount: '4 500 в‚Ѕ', percentage: 59 },
-  { id: 'jul', month: 'РСЋР»СЊ', amount: '4 580 в‚Ѕ', percentage: 60 },
-  { id: 'aug', month: 'РђРІРіСѓСЃС‚', amount: '5 430 в‚Ѕ', percentage: 85, isCurrent: true },
+  { id: '1', month: 'Май', amount: '4 120 ₽', percentage: 65 },
+  { id: '2', month: 'Июнь', amount: '4 550 ₽', percentage: 72 },
+  { id: '3', month: 'Июль', amount: '5 300 ₽', percentage: 85 },
+  { id: '4', month: 'Август', amount: '6 430 ₽', percentage: 100, isCurrent: true },
 ];
 
 export const BillAnalysisScreen: React.FC<BillAnalysisScreenProps> = ({ onBack }) => {
@@ -81,21 +79,21 @@ export const BillAnalysisScreen: React.FC<BillAnalysisScreenProps> = ({ onBack }
     setShowQuickReplies(false);
     
     if (type === 'details') {
-      setMessages(prev => [...prev, { id: Date.now(), sender: 'user', text: 'РџРѕРґСЂРѕР±РЅРµРµ' }]);
+      setMessages(prev => [...prev, { id: Date.now(), sender: 'user', text: 'Подробнее' }]);
       setTimeout(() => {
         setMessages(prev => [...prev, { 
           id: Date.now(), 
           sender: 'ai', 
-          text: 'Р”РµС‚Р°Р»РёР·Р°С†РёСЏ:\n1. Р“РѕСЂСЏС‡Р°СЏ РІРѕРґР°: С‚Р°СЂРёС„ 234 в‚Ѕ/РјВі. Р Р°СЃС…РѕРґ 8 РјВі (РІ РёСЋР»Рµ Р±С‹Р»Рѕ 5 РјВі).\n2. Р­Р»РµРєС‚СЂРёС‡РµСЃС‚РІРѕ: С‚Р°СЂРёС„ 6.43 в‚Ѕ/РєР’С‚С‡. Р Р°СЃС…РѕРґ 233 РєР’С‚С‡ (Р±РµР· РёР·РјРµРЅРµРЅРёР№).\n3. РћС‚РѕРїР»РµРЅРёРµ: С„РёРєСЃРёСЂРѕРІР°РЅРЅР°СЏ СЃС‚Р°РІРєР° РїРѕ РЅРѕСЂРјР°С‚РёРІСѓ (РёР·РјРµРЅРµРЅРёР№ РЅРµС‚).\nР•СЃР»Рё РІС‹ РЅРµ РїРµСЂРµРґР°РІР°Р»Рё РїРѕРєР°Р·Р°РЅРёСЏ, Р±С‹Р» РїСЂРѕРёР·РІРµРґРµРЅ СЂР°СЃС‡РµС‚ РїРѕ СЃСЂРµРґРЅРµРјСѓ.' 
+          text: 'Детализация:\n1. Горячая вода: тариф 234 ₽/м³. Расход 8 м³ (в июле было 5 м³).\n2. Электричество: тариф 6.43 ₽/кВтч. Расход 233 кВтч (без изменений).\n3. Отопление: фиксированная ставка по нормативу (изменений нет).\nЕсли вы не передавали показания, был произведен расчет по среднему.' 
         }]);
       }, 600);
     } else {
-      setMessages(prev => [...prev, { id: Date.now(), sender: 'user', text: 'РћСЃРїРѕСЂРёС‚СЊ РЅР°С‡РёСЃР»РµРЅРёСЏ' }]);
+      setMessages(prev => [...prev, { id: Date.now(), sender: 'user', text: 'Оспорить начисления' }]);
       setTimeout(() => {
         setMessages(prev => [...prev, { 
           id: Date.now(), 
           sender: 'ai', 
-          text: 'РџРѕРЅСЏР»Р° РІР°СЃ. Р¤РѕСЂРјРёСЂСѓСЋ РѕС„РёС†РёР°Р»СЊРЅСѓСЋ Р·Р°СЏРІРєСѓ РІ РЈРљ РЅР° РїРµСЂРµСЂР°СЃС‡РµС‚ Рё РїСЂРѕРІРµСЂРєСѓ СЃС‡РµС‚С‡РёРєРѕРІ РІРѕРґС‹. РћР¶РёРґР°Р№С‚Рµ СѓРІРµРґРѕРјР»РµРЅРёРµ СЃ РЅРѕРјРµСЂРѕРј РѕР±СЂР°С‰РµРЅРёСЏ.' 
+          text: 'Поняла вас. Формирую официальную заявку в УК на перерасчет и проверку счетчиков воды. Ожидайте уведомление с номером обращения.' 
         }]);
       }, 600);
     }
@@ -111,9 +109,9 @@ export const BillAnalysisScreen: React.FC<BillAnalysisScreenProps> = ({ onBack }
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
-          РќР°Р·Р°Рґ
+          Назад
         </button>
-        <h2 className={styles.navTitle}>Р Р°Р·Р±РѕСЂ РєРІРёС‚Р°РЅС†РёРё</h2>
+        <h2 className={styles.navTitle}>Разбор квитанции</h2>
         <div className={styles.navSpacer} />
       </header>
 
@@ -124,9 +122,9 @@ export const BillAnalysisScreen: React.FC<BillAnalysisScreenProps> = ({ onBack }
               {msg.isChart ? (
                 <div className={styles.chartCard}>
                   <div className={styles.chartHeader}>
-                    <h3 className={styles.chartTitle}>Р”РёРЅР°РјРёРєР° СЂР°СЃС…РѕРґРѕРІ</h3>
+                    <h3 className={styles.chartTitle}>Динамика расходов</h3>
                     <button className={styles.chartToggleBtn} onClick={() => setShowExtendedChart(!showExtendedChart)}>
-                      {showExtendedChart ? 'РЎРІРµСЂРЅСѓС‚СЊ' : 'РџРѕРґСЂРѕР±РЅРµРµ'}
+                      {showExtendedChart ? 'Свернуть' : 'Подробнее'}
                     </button>
                   </div>
                   
@@ -139,7 +137,7 @@ export const BillAnalysisScreen: React.FC<BillAnalysisScreenProps> = ({ onBack }
                         <div className={styles.chartLabelRow}>
                           <div className={styles.monthBadgeWrapper}>
                             <span className={styles.chartMonthName}>{item.month}</span>
-                            {item.isCurrent && <span className={styles.currentMonthBadge}>РўРµРєСѓС‰РёР№</span>}
+                            {item.isCurrent && <span className={styles.currentMonthBadge}>Текущий</span>}
                           </div>
                           <span className={styles.chartAmount}>{item.amount}</span>
                         </div>
@@ -167,8 +165,8 @@ export const BillAnalysisScreen: React.FC<BillAnalysisScreenProps> = ({ onBack }
       <div className={styles.bottomFixed} style={{ bottom: window.innerHeight < 600 ? 0 : undefined }}>
         {showQuickReplies && (
           <div className={styles.quickReplies}>
-            <button className={styles.quickReplyBtn} onClick={() => handleQuickReply('details')}>РџРѕРґСЂРѕР±РЅРµРµ</button>
-            <button className={styles.quickReplyBtn} onClick={() => handleQuickReply('dispute')}>РћСЃРїРѕСЂРёС‚СЊ</button>
+            <button className={styles.quickReplyBtn} onClick={() => handleQuickReply('details')}>Подробнее</button>
+            <button className={styles.quickReplyBtn} onClick={() => handleQuickReply('dispute')}>Оспорить</button>
           </div>
         )}
         
@@ -176,7 +174,7 @@ export const BillAnalysisScreen: React.FC<BillAnalysisScreenProps> = ({ onBack }
           <div className={styles.inputContainer}>
             <input 
               type="text" 
-              placeholder="РЎРїСЂРѕСЃРёС‚СЊ РР Рѕ РєРІРёС‚Р°РЅС†РёРё..." 
+              placeholder="Спросить ИИ о квитанции..." 
               className={styles.inputField} 
             />
             <button className={styles.sendButton}>
@@ -190,4 +188,3 @@ export const BillAnalysisScreen: React.FC<BillAnalysisScreenProps> = ({ onBack }
     </div>
   );
 };
-

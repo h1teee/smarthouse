@@ -1,58 +1,58 @@
 package ai
 
 import (
+	"backend/internal/models"
+	"backend/internal/storage"
 	"bytes"
 	"crypto/tls"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
-	"os"
+	"strings"
 	"time"
-
-	"backend/internal/models"
-	"backend/internal/storage"
 )
 
-type GigaChatAuth struct {
-	AccessToken string `json:"access_token"`
-	ExpiresAt   int64  `json:"expires_at"`
-}
-
-var currentToken GigaChatAuth
+var cachedToken string
+var tokenExpiresAt time.Time
 
 func getGigaChatToken() (string, error) {
-	if currentToken.AccessToken != "" && currentToken.ExpiresAt > time.Now().UnixMilli() {
-		return currentToken.AccessToken, nil
+	if time.Now().Before(tokenExpiresAt) && cachedToken != "" {
+		return cachedToken, nil
 	}
 
-	authData := os.Getenv("GIGACHAT_AUTH_DATA")
-	if authData == "" {
-		return "", fmt.Errorf("GIGACHAT_AUTH_DATA is not set")
-	}
-
-	req, _ := http.NewRequest("POST", "https://ngw.devices.sberbank.ru:9443/api/v2/oauth", bytes.NewBufferString("scope=GIGACHAT_API_PERS"))
-	req.Header.Set("Authorization", "Basic "+authData)
-	req.Header.Set("RqUID", "6f0b1291-c7f3-43c6-bb2e-9f3efb2dc98e")
+	authData := "MDFhMGRkOGQtYzhiYS03ZDRlLThjYzctYWU1NDYwMzgwNmJlOmMxY2IzNWVlLTdjMzItNGNlZC05YWRmLWNiMWE2OWFhYWE2MQ=="
+	
+	req, _ := http.NewRequest("POST", "https://ngw.devices.sberbank.ru:9443/api/v2/oauth", strings.NewReader("scope=GIGACHAT_API_PERS"))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("RqUID", "6f0b1291-c7f3-4cb4-971e-a61622243e1f")
+	req.Header.Set("Authorization", "Basic "+authData)
 
 	tr := &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}
 	client := &http.Client{Transport: tr}
-
+	
 	resp, err := client.Do(req)
-	if err != nil || resp.StatusCode != 200 {
-		return "", fmt.Errorf("failed to auth gigachat")
+	if err != nil {
+		return "", err
 	}
 	defer resp.Body.Close()
 
-	body, _ := io.ReadAll(resp.Body)
-	json.Unmarshal(body, &currentToken)
+	if resp.StatusCode != 200 {
+		return "", fmt.Errorf("auth error: status %d", resp.StatusCode)
+	}
 
-	return currentToken.AccessToken, nil
+	var data struct {
+		AccessToken string `json:"access_token"`
+		ExpiresAt   int64  `json:"expires_at"`
+	}
+	json.NewDecoder(resp.Body).Decode(&data)
+	cachedToken = data.AccessToken
+	tokenExpiresAt = time.UnixMilli(data.ExpiresAt)
+	return cachedToken, nil
 }
 
-func callGigaChat(systemPrompt string, userMessage string) (string, error) {
+func callGigaChat(systemPrompt, userText string) (string, error) {
 	token, err := getGigaChatToken()
 	if err != nil {
 		return "", err
@@ -62,27 +62,21 @@ func callGigaChat(systemPrompt string, userMessage string) (string, error) {
 		"model": "GigaChat",
 		"messages": []map[string]interface{}{
 			{"role": "system", "content": systemPrompt},
-			{"role": "user", "content": userMessage},
+			{"role": "user", "content": userText},
 		},
 	}
-
 	body, _ := json.Marshal(payload)
 	req, _ := http.NewRequest("POST", "https://gigachat.devices.sberbank.ru/api/v1/chat/completions", bytes.NewBuffer(body))
 	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("Content-Type", "application/json")
 
 	tr := &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}
-	client := &http.Client{Transport: tr, Timeout: 30 * time.Second}
-
+	client := &http.Client{Transport: tr}
 	resp, err := client.Do(req)
-	if err != nil {
-		return "", err
+	if err != nil || resp.StatusCode != 200 {
+		return "", fmt.Errorf("gigachat error")
 	}
 	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		return "", fmt.Errorf("gigachat returned status %d", resp.StatusCode)
-	}
 
 	respBody, _ := io.ReadAll(resp.Body)
 	var routerResp struct {
@@ -93,11 +87,10 @@ func callGigaChat(systemPrompt string, userMessage string) (string, error) {
 		} `json:"choices"`
 	}
 	json.Unmarshal(respBody, &routerResp)
-
 	if len(routerResp.Choices) > 0 {
 		return routerResp.Choices[0].Message.Content, nil
 	}
-	return "", fmt.Errorf("no response from gigachat")
+	return "", fmt.Errorf("empty response")
 }
 
 func ParseAnnouncement(base64Image string) (*models.Request, error) {
@@ -108,15 +101,22 @@ func ParseAnnouncement(base64Image string) (*models.Request, error) {
 	if err != nil {
 		return &models.Request{
 			Type:        "water",
-			Title:       "Отключение горячей воды",
-			Description: "Случилась ошибка при обращении к GigaChat. Скорее всего, токен протух или не задан.",
+			Title:       "Отключение воды",
+			Description: "Случилась ошибка при обращении к GigaChat.",
 		}, err
 	}
+
+	result = strings.TrimSpace(result)
+	result = strings.TrimPrefix(result, "```json")
+	result = strings.TrimPrefix(result, "```")
+	result = strings.TrimSuffix(result, "```")
+	result = strings.TrimSpace(result)
 
 	var req models.Request
 	json.Unmarshal([]byte(result), &req)
 	if req.Title == "" {
 		req.Title = "Новое объявление"
+		req.Description = result // Сохраняем оригинальный ответ на случай если это не JSON
 	}
 	return &req, nil
 }

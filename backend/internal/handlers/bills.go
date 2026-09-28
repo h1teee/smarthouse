@@ -1,46 +1,48 @@
 package handlers
 
 import (
+	"backend/internal/ai"
+	"backend/internal/storage"
 	"encoding/json"
 	"net/http"
 	"strconv"
-
-	"backend/internal/ai"
-	"backend/internal/models"
-	"backend/internal/storage"
 )
 
+type Bill struct {
+	ID          int     `json:"id"`
+	UserID      int     `json:"user_id"`
+	Month       string  `json:"month"`
+	Amount      float64 `json:"amount"`
+	IsPaid      bool    `json:"is_paid"`
+}
+
 func GetBillsHandler(w http.ResponseWriter, r *http.Request) {
-	userID := getUserID(r) // Заглушка до внедрения JWT
-	rows, err := storage.DB.Query("SELECT id, month, amount, is_paid FROM bills WHERE user_id = $1 ORDER BY month DESC", userID)
+	userID := getUserID(r)
+	if userID == 0 {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	rows, err := storage.DB.Query("SELECT id, month, amount, is_paid FROM bills WHERE user_id = $1 ORDER BY id DESC", userID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer rows.Close()
 
-	var bills []models.Bill
+	var bills []Bill
 	for rows.Next() {
-		var b models.Bill
+		var b Bill
 		if err := rows.Scan(&b.ID, &b.Month, &b.Amount, &b.IsPaid); err == nil {
 			bills = append(bills, b)
 		}
 	}
-	
 	if bills == nil {
-		bills = []models.Bill{}
+		bills = []Bill{}
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(bills)
-}
-
-func PayBillHandler(w http.ResponseWriter, r *http.Request) {
-	billID := r.PathValue("id")
-	storage.DB.Exec("UPDATE bills SET is_paid = true WHERE id = $1", billID)
-	
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"status": "paid"})
 }
 
 func BillAIAnalysisHandler(w http.ResponseWriter, r *http.Request) {
@@ -54,5 +56,5 @@ func BillAIAnalysisHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(analysis)
+	json.NewEncoder(w).Encode(map[string]string{"summary": analysis})
 }

@@ -59,7 +59,8 @@ const mockRequests = [
 const statusLabels: Record<string, { label: string; colorClass: string }> = {
   pending: { label: 'Ожидает', colorClass: styles.statusPending },
   approved: { label: 'Подтверждено', colorClass: styles.statusApproved },
-  rejected: { label: 'Отклонено', colorClass: styles.statusRejected }
+  rejected: { label: 'Отклонено', colorClass: styles.statusRejected },
+  resolved: { label: 'Решено', colorClass: styles.statusApproved } // Added resolved to prevent crash
 };
 
 export const UKDashboardScreen: React.FC<UKDashboardScreenProps> = ({ onOpenRequest, onNavigate }) => {
@@ -92,8 +93,8 @@ export const UKDashboardScreen: React.FC<UKDashboardScreenProps> = ({ onOpenRequ
     if (activeFilter === 'all') return true;
     if (activeFilter === 'new') return req.isNew;
     if (activeFilter === 'pending') return req.status === 'pending';
-    if (activeFilter === 'verified') return req.status === 'approved' || req.status === 'rejected';
-    if (activeFilter === 'archive') return req.status === 'rejected'; // Mock archive logic
+    if (activeFilter === 'verified') return req.status === 'approved' || req.status === 'rejected' || req.status === 'resolved';
+    if (activeFilter === 'archive') return req.status === 'rejected' || req.status === 'resolved';
     return true;
   });
 
@@ -142,7 +143,9 @@ export const UKDashboardScreen: React.FC<UKDashboardScreenProps> = ({ onOpenRequ
           </section>
 
           <section className={`${styles.requestsList} ${styles.animateStagger3}`}>
-            {filteredRequests.map(req => (
+            {filteredRequests.map(req => {
+              const statusObj = statusLabels[req.status] || { label: req.status, colorClass: styles.statusPending };
+              return (
               <div 
                 key={req.id} 
                 className={styles.requestCard}
@@ -162,8 +165,8 @@ export const UKDashboardScreen: React.FC<UKDashboardScreenProps> = ({ onOpenRequ
                 <div className={styles.requestContent}>
                   <div className={styles.requestTitleRow}>
                     <span className={styles.requestTitle}>{req.title}</span>
-                    <span className={`${styles.requestStatus} ${statusLabels[req.status].colorClass}`}>
-                      {statusLabels[req.status].label}
+                    <span className={`${styles.requestStatus} ${statusObj.colorClass}`}>
+                      {statusObj.label}
                     </span>
                   </div>
                   <span className={styles.requestMeta}>{req.address}</span>
@@ -175,7 +178,7 @@ export const UKDashboardScreen: React.FC<UKDashboardScreenProps> = ({ onOpenRequ
                   </svg>
                 </div>
               </div>
-            ))}
+            )})}
           </section>
         </div>
       </div>
