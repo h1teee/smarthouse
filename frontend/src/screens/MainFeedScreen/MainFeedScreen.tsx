@@ -46,7 +46,7 @@ export const MainFeedScreen: React.FC<MainFeedScreenProps> = ({ onOpenCamera, on
   }, []);
 
   const actualItems = feedItems.filter((_, i) => i < 15);
-  const archiveItems = [];
+  const archiveItems: any[] = [];
 
   const renderCard = (item: FeedItem, isArchive: boolean) => {
     const isWait = item.category === 'water' || item.category === 'electricity';

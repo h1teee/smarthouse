@@ -18,6 +18,8 @@ import { BillsDashboardScreen } from '@/screens/BillsDashboardScreen';
 import { BillAnalysisScreen } from '@/screens/BillAnalysisScreen';
 import { ProfileScreen } from '@/screens/ProfileScreen';
 import { MetersScreen } from '@/screens/MetersScreen';
+import { TabBar } from '@/components/TabBar/TabBar';
+import { UKTabBar } from '@/components/UKTabBar/UKTabBar';
 
 type ScreenType = 
   | 'auth'
@@ -170,8 +172,8 @@ const App: React.FC = () => {
 
         <div className={`screenWrapper ${getScreenClass('camera')}`}>
           <CameraScreen 
-            onClose={() => navigateTo('mainFeed')} 
-            onCapture={(img) => {
+            onBack={() => navigateTo('mainFeed')} 
+            onPhotoTaken={(img: any) => {
               setCapturedPhoto(img);
               navigateTo('requestPreview');
             }} 
@@ -183,7 +185,7 @@ const App: React.FC = () => {
             <RequestPreviewScreen 
               onBack={() => navigateTo('camera')} 
               onSubmit={() => navigateTo('mainFeed')} 
-              capturedImage={capturedPhoto}
+              capturedImage={capturedPhoto || undefined}
             />
           )}
         </div>
@@ -228,7 +230,7 @@ const App: React.FC = () => {
       {['mainFeed', 'billsDashboard', 'billAnalysis', 'meters', 'profile'].includes(currentScreen) && !isKeyboardOpen && (
         <TabBar 
           currentTab={currentScreen === 'profile' ? 'account' : currentScreen === 'mainFeed' ? 'mainFeed' : 'billsDashboard'} 
-          onChangeTab={(tab) => {
+          onChangeTab={(tab: any) => {
             if (tab === 'mainFeed') navigateTo('mainFeed');
             if (tab === 'billsDashboard') navigateTo('billsDashboard');
             if (tab === 'account') navigateTo('profile');
@@ -243,7 +245,7 @@ const App: React.FC = () => {
             currentScreen === 'ukBroadcast' ? 'broadcast' : 
             currentScreen === 'ukObjects' ? 'objects' : 'profile'
           } 
-          onTabChange={(tab) => {
+          onTabChange={(tab: any) => {
             if (tab === 'requests') navigateTo('ukDashboard');
             if (tab === 'broadcast') navigateTo('ukBroadcast');
             if (tab === 'objects') navigateTo('ukObjects');

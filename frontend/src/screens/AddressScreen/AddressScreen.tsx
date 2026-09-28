@@ -7,7 +7,7 @@ interface AddressScreenProps {
 }
 
 interface AddressItem {
-  id: int;
+  id: number;
   full_address: string;
   lat: number;
   lng: number;
