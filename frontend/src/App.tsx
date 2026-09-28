@@ -228,7 +228,7 @@ const App: React.FC = () => {
 
         {/* Экран 3.1: Главная панель УК */}
         <div className={`screenWrapper ${getScreenClass('ukDashboard')}`}>
-          <UKDashboardScreen onOpenRequest={() => navigateTo('ukModeration')} onNavigate={navigateTo} />
+          <UKDashboardScreen onOpenRequest={(id?: number) => { if (id) localStorage.setItem('selectedRequestId', String(id)); navigateTo('ukModeration'); }} onNavigate={navigateTo} />
         </div>
 
         {/* Экран 3.3: Рассылка УК */}
