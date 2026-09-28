@@ -25,7 +25,6 @@ func enableCORS(next http.Handler) http.Handler {
 }
 
 func main() {
-	// Загружаем ENV. В докере переменные будут прокинуты напрямую.
 	godotenv.Load("../../.env")
 
 	dbURL := os.Getenv("DB_URL")
@@ -40,39 +39,47 @@ func main() {
 		w.Write([]byte("OK"))
 	})
 
-	// Авторизация
+	// Auth
 	mux.HandleFunc("POST /api/auth/login", handlers.LoginHandler)
 	mux.HandleFunc("POST /api/auth/login-by-account", handlers.LoginByAccountHandler)
 	mux.HandleFunc("POST /api/user/link-address", handlers.LinkAddressHandler)
 
-	// Житель
+	// Resident data
 	mux.HandleFunc("GET /api/feed", handlers.GetFeedHandler)
 	mux.HandleFunc("GET /api/bills", handlers.GetBillsHandler)
 	mux.HandleFunc("POST /api/bills/{id}/pay", handlers.PayBillHandler)
-
-	// Эндпоинты по DATA-API.yml
-	mux.HandleFunc("GET /api/v1/profile/privileges", handlers.GetPrivilegesHandler)
-	mux.HandleFunc("GET /api/bills/{id}/ai-analysis", handlers.BillAIAnalysisHandler)
-	mux.HandleFunc("POST /api/requests/ai-recognize", handlers.AnalyzePhotoHandler)
-
 	mux.HandleFunc("GET /api/meters", handlers.GetMetersHandler)
 	mux.HandleFunc("POST /api/meters", handlers.PostMetersHandler)
+	mux.HandleFunc("GET /api/notifications", handlers.GetNotificationsHandler)
+
+	// AI endpoints
+	mux.HandleFunc("GET /api/bills/{id}/ai-analysis", handlers.BillAIAnalysisHandler)
+	mux.HandleFunc("POST /api/requests/ai-recognize", handlers.AnalyzePhotoHandler)
+	mux.HandleFunc("POST /api/ai/improve-text", handlers.ImproveTextHandler)
+	mux.HandleFunc("GET /api/uk/analytics/ai", handlers.AIWeeklyAnalysisHandler)
+
+	// Privileges
+	mux.HandleFunc("GET /api/v1/profile/privileges", handlers.GetPrivilegesHandler)
+
+	// Requests
 	mux.HandleFunc("POST /api/requests", handlers.CreateRequestHandler)
-
-	// УК
-	mux.HandleFunc("GET /api/uk/requests", handlers.GetUKRequestsHandler)
-	
-	// Эндпоинты по DATA-API.yml (УК/Модератор)
 	mux.HandleFunc("PATCH /api/requests/{id}/status", handlers.UpdateRequestStatusHandler)
-	mux.HandleFunc("GET /api/map/houses", handlers.GetMapHousesHandler)
 
-	// Старые эндпоинты для обратной совместимости, если где-то на фронте они захардкожены
+	// UK endpoints
+	mux.HandleFunc("GET /api/uk/requests", handlers.GetUKRequestsHandler)
 	mux.HandleFunc("POST /api/uk/requests/{id}/approve", handlers.ApproveRequestHandler)
 	mux.HandleFunc("POST /api/uk/requests/{id}/reject", handlers.RejectRequestHandler)
-
 	mux.HandleFunc("POST /api/uk/broadcast", handlers.BroadcastHandler)
 	mux.HandleFunc("GET /api/uk/objects", handlers.GetUKObjectsHandler)
 	mux.HandleFunc("GET /api/uk/analytics", handlers.GetUKAnalyticsHandler)
+
+	// Addresses
+	mux.HandleFunc("GET /api/addresses", handlers.GetAddressesHandler)
+
+	// Map
+	mux.HandleFunc("GET /api/map/houses", handlers.GetMapHousesHandler)
+
+	// MAX bot webhook
 	mux.HandleFunc("POST /api/max/webhook", handlers.MaxWebhookHandler)
 
 	port := os.Getenv("PORT")

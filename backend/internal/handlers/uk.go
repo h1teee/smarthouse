@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"backend/internal/ai"
 	"backend/internal/bot"
 	"backend/internal/models"
 	"backend/internal/storage"
@@ -37,26 +38,18 @@ func GetUKRequestsHandler(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var req models.Request
 		var sd, ed *string
-		if err := rows.Scan(&req.ID, &req.Type, &req.Title, &req.Description, &sd, &ed, &req.Status); err == nil {
-			if sd != nil {
-				req.StartDate = *sd
-			}
-			if ed != nil {
-				req.EndDate = *ed
-			}
+		if err := rows.Scan(&req.ID, &req.Type, &req.Title, &req.Description, &sd, &ed, &req.Status, &req.AddressID); err == nil {
+			if sd != nil { req.StartDate = *sd }
+			if ed != nil { req.EndDate = *ed }
 			requests = append(requests, req)
 		}
 	}
-	
-	if requests == nil {
-		requests = []models.Request{}
-	}
+	if requests == nil { requests = []models.Request{} }
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(requests)
 }
 
-// Устарело в пользу UpdateRequestStatusHandler, оставляем для обратной совместимости
 func ApproveRequestHandler(w http.ResponseWriter, r *http.Request) {
 	requestID := r.PathValue("id")
 	storage.DB.Exec("UPDATE requests SET status = 'approved' WHERE id = $1", requestID)
@@ -67,12 +60,10 @@ func ApproveRequestHandler(w http.ResponseWriter, r *http.Request) {
 		var vkIDs []string
 		for rows.Next() {
 			var vkID string
-			if err := rows.Scan(&vkID); err == nil {
-				vkIDs = append(vkIDs, vkID)
-			}
+			if err := rows.Scan(&vkID); err == nil { vkIDs = append(vkIDs, vkID) }
 		}
 		if len(vkIDs) > 0 {
-			bot.SendPushNotification(vkIDs, "Заявка подтверждена УК", requestID)
+			bot.SendPushNotification(vkIDs, "Заявка одобрена УК", requestID)
 		}
 	}
 
@@ -80,7 +71,6 @@ func ApproveRequestHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
 }
 
-// Устарело в пользу UpdateRequestStatusHandler
 func RejectRequestHandler(w http.ResponseWriter, r *http.Request) {
 	storage.DB.Exec("UPDATE requests SET status = 'rejected' WHERE id = $1", r.PathValue("id"))
 	w.Header().Set("Content-Type", "application/json")
@@ -104,16 +94,12 @@ func BroadcastHandler(w http.ResponseWriter, r *http.Request) {
 		if err == nil {
 			for rows.Next() {
 				var vkID string
-				if err := rows.Scan(&vkID); err == nil {
-					allVkIDs = append(allVkIDs, vkID)
-				}
+				if err := rows.Scan(&vkID); err == nil { allVkIDs = append(allVkIDs, vkID) }
 			}
 			rows.Close()
 		}
-
-		// Добавляем в ленту
 		storage.DB.Exec("INSERT INTO feed_items (address_id, title, body, category) VALUES ($1, $2, $3, $4)",
-			addrId, "Новое уведомление от УК", req.Text, req.Category)
+			addrId, "Рассылка от УК", req.Text, req.Category)
 	}
 
 	if len(allVkIDs) > 0 {
@@ -150,16 +136,47 @@ func GetUKObjectsHandler(w http.ResponseWriter, r *http.Request) {
 			objects = append(objects, obj)
 		}
 	}
-	
-	if objects == nil {
-		objects = []models.MapObject{}
-	}
+	if objects == nil { objects = []models.MapObject{} }
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(objects)
 }
 
 func GetUKAnalyticsHandler(w http.ResponseWriter, r *http.Request) {
+	var totalRequests, pending, approved, rejected int
+	storage.DB.QueryRow("SELECT COUNT(*) FROM requests").Scan(&totalRequests)
+	storage.DB.QueryRow("SELECT COUNT(*) FROM requests WHERE status = 'pending'").Scan(&pending)
+	storage.DB.QueryRow("SELECT COUNT(*) FROM requests WHERE status = 'approved'").Scan(&approved)
+	storage.DB.QueryRow("SELECT COUNT(*) FROM requests WHERE status = 'rejected'").Scan(&rejected)
+
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{"csi": 4.8, "resolved_speed": "2h"})
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"total_requests": totalRequests,
+		"pending":        pending,
+		"approved":       approved,
+		"rejected":       rejected,
+	})
+}
+
+func ImproveTextHandler(w http.ResponseWriter, r *http.Request) {
+	var req struct { Text string `json:"text"` }
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	improved, err := ai.ImproveText(req.Text)
+	if err != nil {
+		improved = req.Text
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"improved_text": improved})
+}
+
+func AIWeeklyAnalysisHandler(w http.ResponseWriter, r *http.Request) {
+	analysis, err := ai.WeeklyAnalysis()
+	if err != nil {
+		analysis = "Анализ временно недоступен"
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"analysis": analysis})
 }

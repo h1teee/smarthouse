@@ -1,0 +1,18 @@
+cat | sed -e 's/fix(frontend): add --legacy-peer-deps to dockerfile to fix build/Исправление: добавлен флаг --legacy-peer-deps в Dockerfile/g' \
+    -e 's/feat(frontend): integrate yandex maps with real db addresses/Новое: интеграция Яндекс Карт с реальными адресами/g' \
+    -e 's/fix(uk): include address_id in uk requests/Исправление: добавлен address_id в заявки УК/g' \
+    -e 's/fix(bot): point max bot api to platform-api2.max.ru/Исправление: обновлен URL API мессенджера Макс/g' \
+    -e 's/feat(max): add max messenger webhook handler/Новое: добавлен вебхук для бота Макс/g' \
+    -e 's/fix(encoding): write auth.go in strict utf-8 without BOM/Исправление: кодировка auth.go в UTF-8/g' \
+    -e 's/fix(cors): allow X-User-ID header/Исправление: CORS разрешен X-User-ID/g' \
+    -e 's/feat(auth): add real login-by-account logic on both frontend and backend/Новое: вход по лицевому счету/g' \
+    -e 's/fix(ui): restore original UKObjectsScreen layout with proper css modules and swipeable bottom sheet/Исправление: восстановлен дизайн карты объектов УК со шторкой/g' \
+    -e 's/fix(ui): use correct template literals to avoid build errors/Исправление: поправлен синтаксис в компонентах UI/g' \
+    -e 's/chore: remove script.js/Очистка: удален script.js/g' \
+    -e 's/fix(encoding): use node to strictly generate UTF-8 russian strings for ui components/Исправление: восстановлены русские тексты в интерфейсе/g' \
+    -e 's/chore: remove old temporary backup files/Очистка: удалены временные файлы/g' \
+    -e 's/fix(ui): restore original designs for bills, uk dashboard and uk objects map with integrated api/Исправление: дизайн счетов и панели УК подключен к API/g' \
+    -e 's/feat: rewire RequestPreviewScreen to use AI parse endpoint/Новое: создание заявки подключено к ИИ/g' \
+    -e 's/fix(db): add missing quotes in address seeder/Исправление: кавычки в скрипте БД/g' \
+    -e 's/fix(db): add robust error handling to address fetcher/Исправление: обработка ошибок парсинга адресов/g' \
+    -e 's/fix(db): update seed script and database setup/Исправление: обновлен скрипт сидирования базы данных/g'
