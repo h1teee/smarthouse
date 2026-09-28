@@ -58,3 +58,25 @@ func BillAIAnalysisHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"summary": analysis})
 }
+
+func BillAIChatHandler(w http.ResponseWriter, r *http.Request) {
+	billIDStr := r.PathValue("id")
+	billID, _ := strconv.Atoi(billIDStr)
+
+	var req struct {
+		Message string `json:"message"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	reply, err := ai.ChatAboutBill(billID, req.Message)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"reply": reply})
+}

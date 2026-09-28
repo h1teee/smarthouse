@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, FormEvent } from 'react';
 import styles from './BillAnalysisScreen.module.css';
 
 interface BillAnalysisScreenProps {
@@ -20,13 +20,6 @@ interface ExpenseItem {
   isCurrent?: boolean;
 }
 
-const expenseHistory: ExpenseItem[] = [
-  { id: '1', month: 'Май', amount: '4 120 ₽', percentage: 65 },
-  { id: '2', month: 'Июнь', amount: '4 550 ₽', percentage: 72 },
-  { id: '3', month: 'Июль', amount: '5 300 ₽', percentage: 85 },
-  { id: '4', month: 'Август', amount: '6 430 ₽', percentage: 100, isCurrent: true },
-];
-
 export const BillAnalysisScreen: React.FC<BillAnalysisScreenProps> = ({ onBack }) => {
   const [messages, setMessages] = useState<Message[]>([
     { 
@@ -36,36 +29,70 @@ export const BillAnalysisScreen: React.FC<BillAnalysisScreenProps> = ({ onBack }
     }
   ]);
   const [, setIsTyping] = useState(true);
+  const [expenseHistory, setExpenseHistory] = useState<ExpenseItem[]>([]);
+  const [showExtendedChart, setShowExtendedChart] = useState(false);
+  const [showQuickReplies, setShowQuickReplies] = useState(true);
+  const [inputText, setInputText] = useState('');
+  const [isSending, setIsSending] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const fetchAi = async () => {
+    const loadData = async () => {
       const billId = localStorage.getItem('selectedBillId');
       if (!billId) {
         setMessages([{ id: 1, sender: 'ai', text: 'Ошибка: квитанция не выбрана' }]);
         setIsTyping(false);
         return;
       }
+      
       try {
-        const res = await fetch(import.meta.env.VITE_API_URL + '/api/bills/' + billId + '/ai-analysis');
-        if (res.ok) {
-          const data = await res.json();
-          setMessages([
-            { id: 1, sender: 'ai', text: data.summary },
-            { id: 2, sender: 'ai', text: '', isChart: true }
-          ]);
+        // Fetch AI analysis
+        const resAi = await fetch(import.meta.env.VITE_API_URL + '/api/bills/' + billId + '/ai-analysis');
+        let summaryText = 'Не удалось получить анализ.';
+        if (resAi.ok) {
+          const dataAi = await resAi.json();
+          summaryText = dataAi.summary || summaryText;
         }
+
+        // Fetch bills for chart
+        const resBills = await fetch(import.meta.env.VITE_API_URL + '/api/bills');
+        let history: ExpenseItem[] = [];
+        if (resBills.ok) {
+          const dataBills = await resBills.json();
+          // dataBills is sorted DESC by ID, let's reverse to ASC for chart
+          const sorted = [...(dataBills || [])].reverse();
+          
+          if (sorted.length > 0) {
+            // Find max amount to calculate percentage
+            let maxAmount = 0;
+            sorted.forEach((b: any) => {
+              if (b.amount > maxAmount) maxAmount = b.amount;
+            });
+            
+            history = sorted.map((b: any) => ({
+              id: String(b.id),
+              month: b.month,
+              amount: b.amount.toFixed(2) + ' ₽',
+              percentage: maxAmount > 0 ? (b.amount / maxAmount) * 100 : 0,
+              isCurrent: String(b.id) === billId
+            }));
+          }
+        }
+
+        setExpenseHistory(history);
+        setMessages([
+          { id: 1, sender: 'ai', text: summaryText },
+          { id: 2, sender: 'ai', text: '', isChart: true }
+        ]);
+
       } catch (err) {
-        setMessages([{ id: 1, sender: 'ai', text: 'Не удалось получить ответ от ИИ.' }]);
+        setMessages([{ id: 1, sender: 'ai', text: 'Сетевая ошибка при обращении к серверу.' }]);
       } finally {
         setIsTyping(false);
       }
     };
-    fetchAi();
+    loadData();
   }, []);
-  
-  const [showExtendedChart, setShowExtendedChart] = useState(false);
-  const [showQuickReplies, setShowQuickReplies] = useState(true);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -75,27 +102,50 @@ export const BillAnalysisScreen: React.FC<BillAnalysisScreenProps> = ({ onBack }
     scrollToBottom();
   }, [messages]);
 
-  const handleQuickReply = (type: 'details' | 'dispute') => {
+  const sendMessage = async (text: string) => {
+    if (!text.trim()) return;
+    const billId = localStorage.getItem('selectedBillId');
+    if (!billId) return;
+
     setShowQuickReplies(false);
-    
+    setIsSending(true);
+    setInputText('');
+
+    // Add user message
+    setMessages(prev => [...prev, { id: Date.now(), sender: 'user', text }]);
+
+    try {
+      const res = await fetch(import.meta.env.VITE_API_URL + '/api/bills/' + billId + '/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text })
+      });
+      
+      let replyText = 'Ошибка при ответе от ИИ.';
+      if (res.ok) {
+        const data = await res.json();
+        replyText = data.reply || replyText;
+      }
+      setMessages(prev => [...prev, { id: Date.now(), sender: 'ai', text: replyText }]);
+    } catch (e) {
+      setMessages(prev => [...prev, { id: Date.now(), sender: 'ai', text: 'Ошибка сети.' }]);
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  const handleQuickReply = (type: 'details' | 'dispute') => {
     if (type === 'details') {
-      setMessages(prev => [...prev, { id: Date.now(), sender: 'user', text: 'Подробнее' }]);
-      setTimeout(() => {
-        setMessages(prev => [...prev, { 
-          id: Date.now(), 
-          sender: 'ai', 
-          text: 'Детализация:\n1. Горячая вода: тариф 234 ₽/м³. Расход 8 м³ (в июле было 5 м³).\n2. Электричество: тариф 6.43 ₽/кВтч. Расход 233 кВтч (без изменений).\n3. Отопление: фиксированная ставка по нормативу (изменений нет).\nЕсли вы не передавали показания, был произведен расчет по среднему.' 
-        }]);
-      }, 600);
+      sendMessage('Подробнее о начислениях');
     } else {
-      setMessages(prev => [...prev, { id: Date.now(), sender: 'user', text: 'Оспорить начисления' }]);
-      setTimeout(() => {
-        setMessages(prev => [...prev, { 
-          id: Date.now(), 
-          sender: 'ai', 
-          text: 'Поняла вас. Формирую официальную заявку в УК на перерасчет и проверку счетчиков воды. Ожидайте уведомление с номером обращения.' 
-        }]);
-      }, 600);
+      sendMessage('Оспорить начисления');
+    }
+  };
+
+  const handleFormSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    if (!isSending) {
+      sendMessage(inputText);
     }
   };
 
@@ -123,32 +173,38 @@ export const BillAnalysisScreen: React.FC<BillAnalysisScreenProps> = ({ onBack }
                 <div className={styles.chartCard}>
                   <div className={styles.chartHeader}>
                     <h3 className={styles.chartTitle}>Динамика расходов</h3>
-                    <button className={styles.chartToggleBtn} onClick={() => setShowExtendedChart(!showExtendedChart)}>
-                      {showExtendedChart ? 'Свернуть' : 'Подробнее'}
-                    </button>
+                    {expenseHistory.length > 2 && (
+                      <button className={styles.chartToggleBtn} onClick={() => setShowExtendedChart(!showExtendedChart)}>
+                        {showExtendedChart ? 'Свернуть' : 'Подробнее'}
+                      </button>
+                    )}
                   </div>
                   
                   <div className={styles.chartList}>
-                    {(showExtendedChart ? expenseHistory : expenseHistory.slice(-2)).map((item) => (
-                      <div
-                        key={item.id}
-                        className={`${styles.chartRow} ${item.isCurrent ? styles.chartRowCurrent : ''}`}
-                      >
-                        <div className={styles.chartLabelRow}>
-                          <div className={styles.monthBadgeWrapper}>
-                            <span className={styles.chartMonthName}>{item.month}</span>
-                            {item.isCurrent && <span className={styles.currentMonthBadge}>Текущий</span>}
+                    {expenseHistory.length === 0 ? (
+                      <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13, textAlign: 'center', padding: 10 }}>Нет данных для графика</p>
+                    ) : (
+                      (showExtendedChart ? expenseHistory : expenseHistory.slice(-2)).map((item) => (
+                        <div
+                          key={item.id}
+                          className={`${styles.chartRow} ${item.isCurrent ? styles.chartRowCurrent : ''}`}
+                        >
+                          <div className={styles.chartLabelRow}>
+                            <div className={styles.monthBadgeWrapper}>
+                              <span className={styles.chartMonthName}>{item.month}</span>
+                              {item.isCurrent && <span className={styles.currentMonthBadge}>Текущий</span>}
+                            </div>
+                            <span className={styles.chartAmount}>{item.amount}</span>
                           </div>
-                          <span className={styles.chartAmount}>{item.amount}</span>
+                          <div className={styles.barTrack}>
+                            <div
+                              className={item.isCurrent ? styles.barFillCurrent : styles.barFillBlue}
+                              style={{ width: `${item.percentage}%` }}
+                            />
+                          </div>
                         </div>
-                        <div className={styles.barTrack}>
-                          <div
-                            className={item.isCurrent ? styles.barFillCurrent : styles.barFillBlue}
-                            style={{ width: `${item.percentage}%` }}
-                          />
-                        </div>
-                      </div>
-                    ))}
+                      ))
+                    )}
                   </div>
                 </div>
               ) : (
@@ -158,6 +214,13 @@ export const BillAnalysisScreen: React.FC<BillAnalysisScreenProps> = ({ onBack }
               )}
             </div>
           ))}
+          {isSending && (
+            <div className={`${styles.messageWrapper} ${styles.messageAi}`}>
+              <div className={styles.chatBubble}>
+                <p>Печатает...</p>
+              </div>
+            </div>
+          )}
           <div ref={messagesEndRef} />
         </div>
       </div>
@@ -171,18 +234,21 @@ export const BillAnalysisScreen: React.FC<BillAnalysisScreenProps> = ({ onBack }
         )}
         
         <div className={styles.inputArea}>
-          <div className={styles.inputContainer}>
+          <form className={styles.inputContainer} onSubmit={handleFormSubmit}>
             <input 
               type="text" 
               placeholder="Спросить ИИ о квитанции..." 
               className={styles.inputField} 
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              disabled={isSending}
             />
-            <button className={styles.sendButton}>
+            <button type="submit" className={styles.sendButton} disabled={isSending || !inputText.trim()}>
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M12 19V5M12 5L5 12M12 5L19 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </button>
-          </div>
+          </form>
         </div>
       </div>
     </div>

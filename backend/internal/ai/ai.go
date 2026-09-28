@@ -116,7 +116,7 @@ func ParseAnnouncement(base64Image string) (*models.Request, error) {
 	json.Unmarshal([]byte(result), &req)
 	if req.Title == "" {
 		req.Title = "Новое объявление"
-		req.Description = result // Сохраняем оригинальный ответ на случай если это не JSON
+		req.Description = result
 	}
 	return &req, nil
 }
@@ -134,6 +134,24 @@ func AnalyzeBill(billID int) (string, error) {
 	result, err := callGigaChat("Ты умный помощник ЖКХ.", prompt)
 	if err != nil {
 		return "Ошибка при анализе квитанции. Возможно, проблемы с GigaChat.", err
+	}
+	return result, nil
+}
+
+func ChatAboutBill(billID int, message string) (string, error) {
+	var amount float64
+	var isPaid bool
+	var month string
+	err := storage.DB.QueryRow("SELECT amount, is_paid, month FROM bills WHERE id = $1", billID).Scan(&amount, &isPaid, &month)
+	if err != nil {
+		return "", err
+	}
+
+	prompt := fmt.Sprintf("Пользователь спрашивает про квитанцию за %s (Сумма: %.2f руб, Оплачена: %v).\nСообщение: %s\nОтветь коротко и по делу.", month, amount, isPaid, message)
+	
+	result, err := callGigaChat("Ты умный помощник ЖКХ. Отвечай вежливо и по факту.", prompt)
+	if err != nil {
+		return "Произошла ошибка при обращении к ИИ.", err
 	}
 	return result, nil
 }

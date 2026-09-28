@@ -54,6 +54,7 @@ func main() {
 
 	// AI endpoints
 	mux.HandleFunc("GET /api/bills/{id}/ai-analysis", handlers.BillAIAnalysisHandler)
+	mux.HandleFunc("POST /api/bills/{id}/chat", handlers.BillAIChatHandler)
 	mux.HandleFunc("POST /api/requests/ai-recognize", handlers.AnalyzePhotoHandler)
 	mux.HandleFunc("POST /api/ai/improve-text", handlers.ImproveTextHandler)
 	mux.HandleFunc("GET /api/uk/analytics/ai", handlers.AIWeeklyAnalysisHandler)
