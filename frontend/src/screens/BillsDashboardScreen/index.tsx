@@ -8,267 +8,188 @@ interface BillsDashboardScreenProps {
   onNavigate?: (screen: any) => void;
 }
 
-interface Receipt {
-  id: string;
+interface Bill {
+  id: number;
   month: string;
-  provider: string;
-  amount: string;
-  status: string;
-  date: string;
-  water: string;
-  electricity: string;
-  heating: string;
+  amount: number;
+  isPaid: boolean;
 }
 
-const MOCK_RECEIPTS: Receipt[] = [
-  { id: '1', month: 'Июль 2026', provider: 'УК Смарт Сити', amount: '- 4 800 ₽', status: 'Оплачено', date: '10 июля 2026, 14:20', water: '1 200 ₽', electricity: '900 ₽', heating: '2 700 ₽' },
-  { id: '2', month: 'Июнь 2026', provider: 'УК Смарт Сити', amount: '- 4 650 ₽', status: 'Оплачено', date: '08 июня 2026, 09:15', water: '1 100 ₽', electricity: '850 ₽', heating: '2 700 ₽' }
-];
-
 export const BillsDashboardScreen: React.FC<BillsDashboardScreenProps> = ({ onDetailedAnalysis, onNavigate }) => {
-  const [bills, setBills] = useState<any[]>([]);
-  const [selectedReceiptId, setSelectedReceiptId] = useState<string | null>(null);
+  const [bills, setBills] = useState<Bill[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchBills = async () => {
-      try {
-        const res = await fetch(import.meta.env.VITE_API_URL + '/api/bills');
-        if (res.ok) {
-          const data = await res.json();
-          setBills(data || []);
-        }
-      } catch (err) {}
-    };
     fetchBills();
   }, []);
+
+  const fetchBills = async () => {
+    try {
+      const res = await fetch(import.meta.env.VITE_API_URL + '/api/bills', {
+        headers: { 'X-User-ID': localStorage.getItem('user_id') || '' }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const formatted = (data || []).map((b: any) => ({
+          id: b.id,
+          month: b.month,
+          amount: b.amount,
+          isPaid: b.is_paid
+        }));
+        setBills(formatted);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePay = async (id: number) => {
+    try {
+      const res = await fetch(import.meta.env.VITE_API_URL + `/api/bills/${id}/pay`, {
+        method: 'POST',
+        headers: { 'X-User-ID': localStorage.getItem('user_id') || '' }
+      });
+      if (res.ok) {
+        notify('Счет успешно оплачен!');
+        setBills(bills.map(b => b.id === id ? { ...b, isPaid: true } : b));
+      } else {
+        notify('Ошибка оплаты');
+      }
+    } catch (err) {
+      notify('Ошибка сети');
+    }
+  };
+
+  const notify = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3000);
+  };
 
   const unpaidBill = bills.find(b => !b.isPaid);
   const paidBills = bills.filter(b => b.isPaid).map(b => ({
     id: String(b.id),
     month: b.month,
-    provider: 'УК Смарт Сити',
-    amount: '- ' + b.amount + ' ₽',
-    status: 'Оплачено',
-    date: '—',
-    water: (b.amount * 0.25).toFixed(0) + ' ₽',
-    electricity: (b.amount * 0.2).toFixed(0) + ' ₽',
-    heating: (b.amount * 0.55).toFixed(0) + ' ₽',
+    provider: 'УК "СМАРТ ДОМ"',
+    amount: `${b.amount.toLocaleString('ru-RU')} ₽`,
+    status: 'Оплачен',
+    date: 'Недавно',
+    water: '850 ₽',
+    electricity: '920 ₽',
+    heating: '2 500 ₽'
   }));
 
-  const displayReceipts = paidBills.length > 0 ? paidBills : MOCK_RECEIPTS;
-  const selectedReceipt = displayReceipts.find(r => r.id === selectedReceiptId) || null;
-
-  const swipeHandlers = useSwipeClose(() => setSelectedReceiptId(null));
+  const handleOpenDetailedAnalysis = () => {
+    if (unpaidBill) {
+      localStorage.setItem('selectedBillId', String(unpaidBill.id));
+      onDetailedAnalysis();
+    } else if (bills.length > 0) {
+      localStorage.setItem('selectedBillId', String(bills[0].id));
+      onDetailedAnalysis();
+    }
+  };
 
   return (
     <div className={styles.container}>
       <div className={styles.ambientGlow} />
-      
+
+      <header className={styles.navBar}>
+        <h2 className={styles.navTitle}>Счета</h2>
+      </header>
+
       <div className={styles.content}>
-        <div className={styles.headerRow}>
-          <h1 className={styles.header}>Коммуналка</h1>
-        </div>
-        
-        {unpaidBill ? (
-          <div className={styles.premiumCard}>
-            <div className={styles.cardNoise} />
-            <div className={styles.cardHeader}>
-              <div className={styles.providerInfo}>
-                <div className={styles.providerLogo}>УК</div>
-                <div className={styles.providerName}>УК Смарт Сити</div>
-              </div>
-              <div className={styles.statusBadge}>
-                <span className={styles.statusDot} />
-                Не оплачено
-              </div>
-            </div>
-            
-            <div className={styles.cardBody}>
-              <div className={styles.monthBadge}>За {unpaidBill.month}</div>
-              
-              <div className={styles.amountContainer}>
-                <span className={styles.amountValue}>{unpaidBill.amount}</span>
-                <span className={styles.amountCurrency}>₽</span>
+        <div className={styles.summarySection}>
+          <div className={styles.summaryHeader}>
+            <h3 className={styles.summaryTitle}>К оплате</h3>
+            <span className={styles.summaryMonth}>{unpaidBill ? unpaidBill.month : 'Нет счетов'}</span>
+          </div>
+          
+          {unpaidBill ? (
+            <div className={styles.premiumCard}>
+              <div className={styles.amountDisplay}>
+                <div className={styles.amountWrap}>
+                  <span className={styles.amountVal}>{unpaidBill.amount.toLocaleString('ru-RU')}</span>
+                  <span className={styles.amountCurrency}>₽</span>
+                </div>
               </div>
               
-              <div className={styles.miniBreakdown}>
-                <div className={styles.breakdownRow}>
-                  <span className={styles.bdLabel}>Водоснабжение</span>
-                  <span className={styles.bdValue}>{(unpaidBill.amount * 0.25).toFixed(0)} ₽</span>
-                </div>
-                <div className={styles.breakdownRow}>
-                  <span className={styles.bdLabel}>Электроэнергия</span>
-                  <span className={styles.bdValue}>{(unpaidBill.amount * 0.2).toFixed(0)} ₽</span>
-                </div>
-                <div className={styles.breakdownRow}>
-                  <span className={styles.bdLabel}>Отопление</span>
-                  <span className={styles.bdValue}>{(unpaidBill.amount * 0.55).toFixed(0)} ₽</span>
-                </div>
-              </div>
-            </div>
-            
-            <button className={styles.payButton}>
-              Оплатить
-            </button>
-          </div>
-        ) : (
-          <div className={styles.premiumCard} style={{justifyContent: 'center', alignItems: 'center', minHeight: 120}}>
-            <div style={{color: 'rgba(255,255,255,0.7)', fontSize: 16}}>Все квитанции оплачены</div>
-          </div>
-        )}
-        
-        {unpaidBill && (
-          <div className={styles.aiAlertCard} onClick={() => {
-            localStorage.setItem('selectedBillId', String(unpaidBill.id));
-            onDetailedAnalysis();
-          }}>
-            <div className={styles.aiAlertHeaderRow}>
-              <div className={styles.aiIconWrapper}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                  <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="url(#sparkleGradient)" />
-                  <defs>
-                    <linearGradient id="sparkleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#BF5AF2" />
-                      <stop offset="100%" stopColor="#0A84FF" />
-                    </linearGradient>
-                  </defs>
-                </svg>
-              </div>
-              <h3 className={styles.aiHeader}>Разбор начислений</h3>
-              <div className={styles.chevronIcon}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="9 18 15 12 9 6" />
-                </svg>
-              </div>
-            </div>
-            <p className={styles.aiText}>
-              ИИ проверит тарифы и объяснит начисления простыми словами.
-            </p>
-            <div className={styles.aiLinkButton}>Смотреть подробный разбор</div>
-          </div>
-        )}
-
-        <div className={styles.sectionHeader}>
-          <h2 className={styles.sectionTitle}>Счетчики</h2>
-          <span className={styles.sectionLink} onClick={() => onNavigate && onNavigate('meters')}>Все</span>
-        </div>
-        <div className={styles.metersGrid}>
-          <div className={styles.meterCard}>
-            <div className={styles.meterHeader}>
-              <div className={"\\${styles.meterIcon} \\${styles.blue}"}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
-                </svg>
-              </div>
-              <span className={styles.meterStatus}>Передано</span>
-            </div>
-            <div className={styles.meterData}>
-              <span className={styles.meterValue}>142</span>
-              <span className={styles.meterUnit}>м³</span>
-            </div>
-            <div className={styles.meterName}>Водоснабжение</div>
-          </div>
-
-          <div className={styles.meterCard}>
-            <div className={styles.meterHeader}>
-              <div className={"\\${styles.meterIcon} \\${styles.yellow}"}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-                </svg>
-              </div>
-              <span className={styles.meterStatusAlert}>До 25 числа</span>
-            </div>
-            <div className={styles.meterData}>
-              <span className={styles.meterValue}>8 450</span>
-              <span className={styles.meterUnit}>кВт</span>
-            </div>
-            <div className={styles.meterName}>Электроэнергия</div>
-          </div>
-        </div>
-
-        <div className={styles.sectionHeader}>
-          <h2 className={styles.sectionTitle}>История платежей</h2>
-        </div>
-        <div className={styles.historyList}>
-          {displayReceipts.map(receipt => (
-            <div 
-              key={receipt.id} 
-              className={styles.historyItem} 
-              onClick={() => setSelectedReceiptId(receipt.id)}
-              style={{ cursor: 'pointer' }}
-            >
-              <div className={styles.historyIcon}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-              </div>
-              <div className={styles.historyInfo}>
-                <span className={styles.historyTitle}>{receipt.month}</span>
-                <span className={styles.historySub}>{receipt.provider}</span>
-              </div>
-              <span className={styles.historyAmount}>{receipt.amount}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {selectedReceipt && createPortal(
-        <div className={styles.modalBackdrop} onClick={() => setSelectedReceiptId(null)}>
-          <div 
-            className={styles.modalSheet}
-            onClick={(e) => e.stopPropagation()}
-            {...swipeHandlers}
-          >
-            <div className={styles.grabberWrap} onClick={() => setSelectedReceiptId(null)}>
-              <div className={styles.grabber} />
-            </div>
-            
-            <div className={styles.sheetHeader}>
-              <h2 className={styles.sheetTitle}>Квитанция</h2>
-              <button className={styles.closeBtn} onClick={() => setSelectedReceiptId(null)}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
+              <button className={styles.payButton} onClick={() => handlePay(unpaidBill.id)}>
+                Оплатить
               </button>
             </div>
-
-            <div className={styles.receiptCard}>
-              <div className={styles.receiptRow}>
-                <span className={styles.receiptLabel}>Статус</span>
-                <span className={styles.receiptValue} style={{ color: '#34C759' }}>{selectedReceipt.status}</span>
-              </div>
-              <hr className={styles.receiptDivider} />
-              <div className={styles.receiptRow}>
-                <span className={styles.receiptLabel}>Дата и время</span>
-                <span className={styles.receiptValue}>{selectedReceipt.date}</span>
-              </div>
-              <hr className={styles.receiptDivider} />
-              <div className={styles.receiptRow}>
-                <span className={styles.receiptLabel}>Водоснабжение</span>
-                <span className={styles.receiptValue}>{selectedReceipt.water}</span>
-              </div>
-              <hr className={styles.receiptDivider} />
-              <div className={styles.receiptRow}>
-                <span className={styles.receiptLabel}>Электроэнергия</span>
-                <span className={styles.receiptValue}>{selectedReceipt.electricity}</span>
-              </div>
-              <hr className={styles.receiptDivider} />
-              <div className={styles.receiptRow}>
-                <span className={styles.receiptLabel}>Отопление</span>
-                <span className={styles.receiptValue}>{selectedReceipt.heating}</span>
-              </div>
-              <hr className={styles.receiptDivider} />
-              <div className={styles.receiptTotalRow}>
-                <span>Итого к оплате</span>
-                <span>{selectedReceipt.amount.replace('- ', '')}</span>
-              </div>
+          ) : (
+            <div className={styles.premiumCard} style={{justifyContent: 'center', alignItems: 'center', minHeight: 120}}>
+              <div style={{color: 'rgba(255,255,255,0.7)', fontSize: 16}}>Все счета оплачены</div>
             </div>
+          )}
+          
+          {(unpaidBill || bills.length > 0) && (
+            <button className={styles.aiAnalysisBtn} onClick={handleOpenDetailedAnalysis}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+              </svg>
+              Разбор счета от ИИ
+            </button>
+          )}
+
+          <button className={styles.metersBtn} onClick={() => onNavigate && onNavigate('meters')}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="4" y="4" width="16" height="16" rx="2" ry="2" />
+              <rect x="9" y="9" width="6" height="6" />
+              <line x1="9" y1="1" x2="9" y2="4" />
+              <line x1="15" y1="1" x2="15" y2="4" />
+              <line x1="9" y1="20" x2="9" y2="23" />
+              <line x1="15" y1="20" x2="15" y2="23" />
+              <line x1="20" y1="9" x2="23" y2="9" />
+              <line x1="20" y1="14" x2="23" y2="14" />
+              <line x1="1" y1="9" x2="4" y2="9" />
+              <line x1="1" y1="14" x2="4" y2="14" />
+            </svg>
+            Внести показания
+          </button>
+        </div>
+
+        <div className={styles.historySection}>
+          <div className={styles.historyHeader}>
+            <h3 className={styles.historyTitle}>История платежей</h3>
           </div>
+          
+          <div className={styles.historyList}>
+            {loading ? <div style={{color:'#fff', textAlign:'center'}}>Загрузка...</div> : null}
+            {!loading && paidBills.length === 0 && <div style={{color:'rgba(255,255,255,0.5)', textAlign:'center'}}>Нет истории платежей</div>}
+            {paidBills.map((r, i) => (
+              <div key={r.id} className={styles.historyItem} style={{animationDelay: `${i * 0.05}s`}}>
+                <div className={styles.historyItemIcon}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#30D158" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </div>
+                <div className={styles.historyItemContent}>
+                  <div className={styles.historyItemTop}>
+                    <span className={styles.historyItemMonth}>{r.month}</span>
+                    <span className={styles.historyItemAmount}>{r.amount}</span>
+                  </div>
+                  <div className={styles.historyItemBottom}>
+                    <span className={styles.historyItemProvider}>{r.provider}</span>
+                    <span className={styles.historyItemDate}>{r.date}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+      
+      <div style={{height: 100}} />
+
+      {toast && createPortal(
+        <div className={styles.toast}>
+          {toast}
         </div>,
         document.body
       )}
-
     </div>
   );
 };

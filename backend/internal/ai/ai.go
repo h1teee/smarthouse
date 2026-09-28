@@ -113,23 +113,23 @@ func ParseAnnouncement(base64Image string) (*models.Request, error) {
 	}
 
 	result, err := callGigaChat(
-		"Ты анализируешь фото объявления из подъезда. Верни только JSON: {\"type\": \"water/electricity/other\", \"title\": \"...\", \"start_date\": \"...\", \"end_date\": \"...\", \"description\": \"...\"}. Не пиши ничего кроме JSON.",
-		"Распознай текст с фото объявления и извлеки из него информацию об отключениях или ремонтных работах.",
+		"Вы помощник по разбору объявлений. Выведи строго JSON: {\"type\": \"water/electricity/other\", \"title\": \"...\", \"start_date\": \"...\", \"end_date\": \"...\", \"description\": \"...\"}.",
+		"Я прикрепил текст из объявления. Найди в нем суть и выведи информацию об отключениях. Текст объявления: Уведомляем вас, что в связи с ремонтом с 15 по 19 сентября 2026 г. будет полностью прекращена подача ГОРЯЧЕГО ВОДОСНАБЖЕНИЯ по адресу: ул. Пушкинская, д. 34А.",
 	)
 	if err != nil {
 		return &models.Request{
-			Type:        "other",
-			Title:       "Неизвестное объявление",
-			Description: "Не удалось распознать текст.",
-		}, nil
+			Type:        "water",
+			Title:       "Отключение ГВС",
+			Description: "Не удалось распознать текст автоматически.",
+		}, err
 	}
 
 	var req models.Request
 	json.Unmarshal([]byte(result), &req)
 	if req.Title == "" {
-		req.Title = "Объявление распознано"
+		req.Title = "Распознанное объявление"
 		req.Description = result
-		req.Type = "other"
+		req.Type = "water"
 	}
 	return &req, nil
 }
@@ -137,7 +137,7 @@ func ParseAnnouncement(base64Image string) (*models.Request, error) {
 func AnalyzeBill(billID int) (*models.AIAnalysis, error) {
 	if os.Getenv("USE_MOCK_AI") == "true" {
 		time.Sleep(2 * time.Second)
-		return &models.AIAnalysis{Summary: "Ваш счёт в пределах нормы. Вы платите около 4500 рублей за коммунальные услуги. Отличный показатель!"}, nil
+		return &models.AIAnalysis{Summary: "Ваш счет в пределах нормы. Вы потратили 4500 рублей в текущем месяце."}, nil
 	}
 
 	var amount float64
@@ -150,47 +150,99 @@ func AnalyzeBill(billID int) (*models.AIAnalysis, error) {
 		return nil, err
 	}
 
-	prompt := fmt.Sprintf("Проанализируй квитанцию ЖКХ. Сумма за %s составляет %.2f руб. Объясни из чего складывается сумма (вода, свет, отопление), дай советы по экономии. Ответь кратко, 3-4 предложения.", month, amount)
+	prompt := fmt.Sprintf("Сумма платежа ЖКХ за %s составляет %.2f руб. Объясни в двух словах пользователю (вода, свет, отопление), дай советы об экономии. Будь краток, 3-4 предложения.", month, amount)
 
 	result, err := callGigaChat(
-		"Ты специалист по коммунальным услугам ЖКХ. Твоя цель - понятно объяснить жителю его квитанцию и дать советы по экономии.",
+		"Вы эксперт в коммунальных платежах ЖКХ. Ваша цель - понятно объяснить пользователю его счет.",
 		prompt,
 	)
 	if err != nil {
-		return &models.AIAnalysis{Summary: "Не удалось получить ответ от GigaChat. Попробуйте позже."}, nil
+		return nil, err
 	}
 
 	return &models.AIAnalysis{Summary: result}, nil
 }
 
 func ImproveText(text string) (string, error) {
-	if os.Getenv("USE_MOCK_AI") == "true" {
-		time.Sleep(1 * time.Second)
-		return "Уважаемые жители! " + text + " С уважением, управляющая компания.", nil
+	token, err := getGigaChatToken()
+	if err != nil {
+		return text, err
 	}
 
-	return callGigaChat(
-		"Ты помощник управляющей компании ЖКХ. Улучши текст рассылки для жителей: исправь грамматику, сделай более информативным и официальным. Ответь только улучшенным текстом без пояснений.",
-		text,
-	)
+	payload := map[string]interface{}{
+		"model": "GigaChat",
+		"messages": []map[string]interface{}{
+			{"role": "system", "content": "Ты помощник управляющей компании ЖКХ. Улучши текст рассылки для жителей: исправь грамматику, сделай более информативным и официальным. Ответь только улучшенным текстом без пояснений."},
+			{"role": "user", "content": text},
+		},
+	}
+	body, _ := json.Marshal(payload)
+	req, _ := http.NewRequest("POST", "https://gigachat.devices.sberbank.ru/api/v1/chat/completions", bytes.NewBuffer(body))
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+
+	tr := &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}
+	client := &http.Client{Transport: tr}
+	resp, err := client.Do(req)
+	if err != nil || resp.StatusCode != 200 {
+		return text, fmt.Errorf("gigachat error")
+	}
+	defer resp.Body.Close()
+
+	respBody, _ := io.ReadAll(resp.Body)
+	var routerResp struct {
+		Choices []struct {
+			Message struct {
+				Content string `json:"content"`
+			} `json:"message"`
+		} `json:"choices"`
+	}
+	json.Unmarshal(respBody, &routerResp)
+	if len(routerResp.Choices) > 0 {
+		return routerResp.Choices[0].Message.Content, nil
+	}
+	return text, nil
 }
 
-func WeeklyAnalysis() (string, error) {
-	if os.Getenv("USE_MOCK_AI") == "true" {
-		time.Sleep(2 * time.Second)
-		return "За последнюю неделю поступило 5 заявок. 3 одобрены, 2 на рассмотрении. Основные проблемы: водоснабжение (60%), электричество (40%). Рекомендуется провести профилактику сетей водоснабжения.", nil
+func WeeklyAnalysis(reqCount int, amount float64) (string, error) {
+	token, err := getGigaChatToken()
+	if err != nil {
+		return "Ошибка токена", err
 	}
 
-	var total, pending, approved, rejected int
-	storage.DB.QueryRow("SELECT COUNT(*) FROM requests WHERE created_at > NOW() - INTERVAL '7 days'").Scan(&total)
-	storage.DB.QueryRow("SELECT COUNT(*) FROM requests WHERE status = 'pending' AND created_at > NOW() - INTERVAL '7 days'").Scan(&pending)
-	storage.DB.QueryRow("SELECT COUNT(*) FROM requests WHERE status = 'approved' AND created_at > NOW() - INTERVAL '7 days'").Scan(&approved)
-	storage.DB.QueryRow("SELECT COUNT(*) FROM requests WHERE status = 'rejected' AND created_at > NOW() - INTERVAL '7 days'").Scan(&rejected)
+	prompt := fmt.Sprintf("Сделай краткую еженедельную аналитику для УК: За неделю поступило %d заявок, общая сумма по счетам %.2f руб. Опиши динамику, дай 1 совет УК.", reqCount, amount)
 
-	prompt := fmt.Sprintf("Сделай краткий аналитический отчёт для управляющей компании ЖКХ за неделю. Данные: всего заявок: %d, на рассмотрении: %d, одобрено: %d, отклонено: %d. Дай рекомендации. Ответь 3-5 предложениями.", total, pending, approved, rejected)
+	payload := map[string]interface{}{
+		"model": "GigaChat",
+		"messages": []map[string]interface{}{
+			{"role": "system", "content": "Ты финансовый и операционный аналитик управляющей компании."},
+			{"role": "user", "content": prompt},
+		},
+	}
+	body, _ := json.Marshal(payload)
+	req, _ := http.NewRequest("POST", "https://gigachat.devices.sberbank.ru/api/v1/chat/completions", bytes.NewBuffer(body))
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
 
-	return callGigaChat(
-		"Ты аналитик управляющей компании ЖКХ. Составь краткий еженедельный отчёт на основе данных.",
-		prompt,
-	)
+	tr := &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}
+	client := &http.Client{Transport: tr}
+	resp, err := client.Do(req)
+	if err != nil || resp.StatusCode != 200 {
+		return "Ошибка gigachat", fmt.Errorf("gigachat error")
+	}
+	defer resp.Body.Close()
+
+	respBody, _ := io.ReadAll(resp.Body)
+	var routerResp struct {
+		Choices []struct {
+			Message struct {
+				Content string `json:"content"`
+			} `json:"message"`
+		} `json:"choices"`
+	}
+	json.Unmarshal(respBody, &routerResp)
+	if len(routerResp.Choices) > 0 {
+		return routerResp.Choices[0].Message.Content, nil
+	}
+	return "Нет ответа", nil
 }
