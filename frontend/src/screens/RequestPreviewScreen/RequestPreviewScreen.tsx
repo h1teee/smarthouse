@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styles from './RequestPreviewScreen.module.css';
+import { DEFAULT_ANNOUNCEMENT_IMAGE } from '@/screens/CameraScreen/CameraScreen';
 
 interface RequestPreviewScreenProps {
   onBack?: () => void;
@@ -8,16 +9,16 @@ interface RequestPreviewScreenProps {
 }
 
 const ANALYSIS_STEPS = [
-  'Извлечение текста...',
-  'Анализ смысла...',
-  'Синхронизация...',
-  'Формирование события...'
+  'Распознавание текста на фото (OCR)...',
+  'Анализ смысла текста...',
+  'Извлечение дат и адресов...',
+  'Формирование заявки...'
 ];
 
 export const RequestPreviewScreen: React.FC<RequestPreviewScreenProps> = ({
   onBack,
   onSubmit,
-  capturedImage = '',
+  capturedImage = DEFAULT_ANNOUNCEMENT_IMAGE,
 }) => {
   const [isProcessing, setIsProcessing] = useState(true);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -29,145 +30,179 @@ export const RequestPreviewScreen: React.FC<RequestPreviewScreenProps> = ({
   const [description, setDescription] = useState('');
 
   const eventLabels: Record<string, string> = {
-    water: 'Отключение воды',
-    electricity: 'Отключение света',
+    water: 'Отключение горячей воды',
+    electricity: 'Отключение электричества',
     coldWater: 'Отключение холодной воды',
-    heating: 'Ремонт отопления',
-    other: 'Важное уведомление',
+    heating: 'Ремонт системы отопления',
+    other: 'Новое объявление',
   };
 
   useEffect(() => {
-    let interval: any;
-    if (isProcessing) {
-      interval = setInterval(() => {
-        setStepIndex(prev => prev < ANALYSIS_STEPS.length - 1 ? prev + 1 : prev);
-      }, 700);
+    if (!isProcessing) return;
 
-      const processImg = async () => {
-        try {
-          const res = await fetch(import.meta.env.VITE_API_URL + '/api/requests/ai-recognize', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ image_base64: capturedImage })
-          });
-          const data = await res.json();
-          setEventType(data.type || 'water');
-          setDates(data.date || 'Уточняется');
-          setProvider(data.provider || 'УК');
-          setDescription(data.description || 'ИИ распознал текст объявления');
-        } catch (err) {
-          console.error(err);
-          setEventType('water');
-          setDates('15 - 19 сентября 2026 г.');
-          setProvider('УК СМАРТ ДОМ');
-          setDescription('Отключение горячего водоснабжения в связи с ремонтными работами на 4 дня.');
-        } finally {
-          clearInterval(interval);
-          setStepIndex(ANALYSIS_STEPS.length - 1);
-          setTimeout(() => setIsProcessing(false), 500);
+    const stepInterval = setInterval(() => {
+      setStepIndex((prev) => {
+        if (prev < ANALYSIS_STEPS.length - 1) {
+          return prev + 1;
         }
-      };
-      processImg();
-    }
-    return () => clearInterval(interval);
-  }, [capturedImage, isProcessing]);
+        return prev;
+      });
+    }, 700);
 
-  const handleSubmit = async () => {
-    setIsSuccess(true);
-    setTimeout(() => {
-      if (onSubmit) onSubmit();
-    }, 2000);
+    const parseImage = async () => {
+      try {
+        const res = await fetch(import.meta.env.VITE_API_URL + '/api/requests/ai-recognize', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image_base64: capturedImage })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setEventType(data.type || 'other');
+          setDates(data.start_date && data.end_date ? data.start_date + ' — ' + data.end_date : 'Даты не найдены');
+          setDescription(data.description || 'ИИ не смог извлечь детали');
+          setProvider(data.title || 'Управляющая компания');
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setTimeout(() => setIsProcessing(false), 2000);
+      }
+    };
+    parseImage();
+
+    return () => clearInterval(stepInterval);
+  }, []);
+
+  const handleSkipAnalysis = () => {
+    setIsProcessing(false);
   };
+
+  const [isLoadingSend, setIsLoadingSend] = useState(false);
+  const handleSendToModeration = async () => {
+    setIsLoadingSend(true);
+    try {
+      await fetch(import.meta.env.VITE_API_URL + '/api/requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          type: eventType, 
+          title: provider, 
+          description: description + '\nДаты: ' + dates 
+        })
+      });
+      setIsSuccess(true);
+      setTimeout(() => {
+        onSubmit?.();
+      }, 2500);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsLoadingSend(false);
+    }
+  };
+
+  if (isProcessing) {
+    return (
+      <div className={styles.screen}>
+        <div className={styles.ambientGlow} aria-hidden="true" />
+        <div className={styles.processingContentCenter}>
+          <div className={styles.neuralHaloLarge} />
+          <h2 className={styles.processingTitleMain}>Анализ объявления</h2>
+          <p className={styles.processingSubtitleMain}>{ANALYSIS_STEPS[stepIndex]}</p>
+          <div className={styles.progressBarTrackCenter}>
+            <div 
+              className={styles.progressBarFillCenter} 
+              style={{ width: (((stepIndex + 1) / ANALYSIS_STEPS.length) * 100) + '%' }} 
+            />
+          </div>
+        </div>
+        <footer className={styles.footerProcessing}>
+          <button className={styles.demoContinueBtn} onClick={handleSkipAnalysis}>Продолжить</button>
+        </footer>
+      </div>
+    );
+  }
+
+  if (isSuccess) {
+    return (
+      <div className={styles.screen} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <div className={styles.ambientGlow} />
+        <div className={styles.successHalo} />
+        <div className={styles.successIconWrap}>
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        </div>
+        <h2 className={styles.successTitle}>Успешно!</h2>
+        <p className={styles.successSubtitle}>Заявка отправлена в УК.</p>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.screen}>
+      <div className={styles.ambientGlow} />
       <header className={styles.header}>
-        {!isProcessing && !isSuccess && (
-          <button className={styles.backBtn} onClick={onBack}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
-            Отмена
-          </button>
-        )}
+        <button className={styles.backBtn} onClick={onBack} aria-label="Назад">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+        </button>
+        <h1 className={styles.headerTitle}>Предпросмотр</h1>
+        <div style={{ width: 44 }} />
       </header>
-
-      {isProcessing && (
-        <div className={styles.processingState}>
-          <div className={styles.scannerWrapper}>
-            <img src={capturedImage} alt="Скан" className={styles.scanImage} />
-            <div className={styles.scanLine} />
+      <div className={styles.scrollContent}>
+        <div className={styles.photoSummaryCard}>
+          <div className={styles.photoContainer}>
+            <img src={capturedImage} alt="Captured snippet" className={styles.snippetImg} />
           </div>
-          <h2 className={styles.processingTitle}>GigaChat работает</h2>
-          <div className={styles.steps}>
-            {ANALYSIS_STEPS.map((step, idx) => {
-              const isActive = idx === stepIndex;
-              const isDone = idx < stepIndex;
-              return (
-                <div key={idx} className={`${styles.stepItem} ${isActive ? styles.stepActive : ''} ${isDone ? styles.stepDone : ''}`}>
-                  <div className={styles.stepIcon}>
-                    {isDone ? (
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                    ) : isActive ? (
-                      <div className={styles.spinnerSm} />
-                    ) : (
-                      <div className={styles.dot} />
-                    )}
-                  </div>
-                  <span>{step}</span>
-                </div>
-              );
-            })}
+          <div className={styles.detectedTypeRow}>
+            <div className={styles.detectedDot} />
+            <span className={styles.detectedTypeLabel}>{eventLabels[eventType] || eventType}</span>
           </div>
         </div>
-      )}
-
-      {!isProcessing && !isSuccess && (
-        <div className={styles.resultState}>
-          <h2 className={styles.resultTitle}>Распознано успешно</h2>
-          <p className={styles.resultDesc}>ИИ извлек данные. Проверьте и сохраните, мы напомним вам заранее.</p>
-
-          <div className={styles.cardBox}>
-            <div className={styles.cardRow}>
-              <div className={styles.cardLabel}>Тип события</div>
-              <div className={styles.cardValAlert}>
-                <span className={styles.dotRed} />
-                {eventLabels[eventType] || eventLabels.other}
-              </div>
-            </div>
-            <div className={styles.cardRow}>
-              <div className={styles.cardLabel}>Сроки работ</div>
-              <div className={styles.cardVal}>{dates}</div>
-            </div>
-            <div className={styles.cardRow}>
-              <div className={styles.cardLabel}>Организация</div>
-              <div className={styles.cardVal}>{provider}</div>
-            </div>
-            <div className={styles.cardRowBlock}>
-              <div className={styles.cardLabelBlock}>Суть объявления</div>
-              <div className={styles.cardText}>{description}</div>
-            </div>
-          </div>
-
-          <button className={styles.submitBtn} onClick={handleSubmit}>
-            Сохранить в события
-          </button>
-        </div>
-      )}
-
-      {isSuccess && (
-        <div className={styles.successState}>
-          <div className={styles.successCircle}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="20 6 9 17 4 12" />
+        <div className={styles.cardSection}>
+          <div className={styles.cardHeader}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.7 }}>
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+              <line x1="16" y1="2" x2="16" y2="6" />
+              <line x1="8" y1="2" x2="8" y2="6" />
+              <line x1="3" y1="10" x2="21" y2="10" />
             </svg>
+            <h3 className={styles.cardTitle}>Дата и время</h3>
           </div>
-          <h2 className={styles.successTitle}>Событие добавлено</h2>
-          <p className={styles.successDesc}>Оно появится в вашей ленте, и мы пришлем пуш-уведомление накануне.</p>
+          <div className={styles.cardBody}>
+            <div className={styles.fieldRow}>
+              <span className={styles.fieldValue}>{dates}</span>
+            </div>
+          </div>
         </div>
-      )}
+        <div className={styles.cardSection}>
+          <div className={styles.cardHeader}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.7 }}>
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="16" x2="12" y2="12" />
+              <line x1="12" y1="8" x2="12.01" y2="8" />
+            </svg>
+            <h3 className={styles.cardTitle}>Детали</h3>
+          </div>
+          <div className={styles.cardBody}>
+            <div className={styles.fieldRow}>
+              <span className={styles.fieldValue}>{description}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <footer className={styles.footerSticky}>
+        <button 
+          className={styles.primaryActionBtn} 
+          onClick={handleSendToModeration}
+          disabled={isLoadingSend}
+        >
+          {isLoadingSend ? 'Отправка...' : 'Отправить в УК'}
+        </button>
+      </footer>
     </div>
   );
 };

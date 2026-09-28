@@ -20,7 +20,7 @@ interface FeedItem {
 export const MainFeedScreen: React.FC<MainFeedScreenProps> = ({ onOpenCamera, onOpenNotifications }) => {
   const [activeTab, setActiveTab] = useState<'actual' | 'archive'>('actual');
   const [isAddressDropdownOpen, setIsAddressDropdownOpen] = useState(false);
-  const [activeAddress, setActiveAddress] = useState('ул. Пушкина, 34');
+  const [activeAddress, setActiveAddress] = useState('г. Ростов-на-Дону, ул. Садовая, 34');
   
   const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -28,10 +28,7 @@ export const MainFeedScreen: React.FC<MainFeedScreenProps> = ({ onOpenCamera, on
   useEffect(() => {
     const fetchFeed = async () => {
       try {
-        const userId = localStorage.getItem('user_id');
-        const res = await fetch(import.meta.env.VITE_API_URL + '/api/feed', {
-          headers: { 'X-User-ID': userId || '' }
-        });
+        const res = await fetch(import.meta.env.VITE_API_URL + '/api/feed');
         if (res.ok) {
           const data = await res.json();
           setFeedItems(data || []);
@@ -45,20 +42,20 @@ export const MainFeedScreen: React.FC<MainFeedScreenProps> = ({ onOpenCamera, on
     fetchFeed();
   }, []);
 
-  const actualItems = feedItems.filter((_, i) => i < 15);
-  const archiveItems: any[] = [];
+  const actualItems = feedItems.filter((_, i) => i < 5);
+  const archiveItems = feedItems.filter((_, i) => i >= 5);
 
   const renderCard = (item: FeedItem, isArchive: boolean) => {
-    const isWait = item.category === 'water' || item.category === 'electricity';
+    const isWait = item.category === 'water';
     let cardClass = styles.statusActive;
     let badgeText = 'В работе';
     
     if (isArchive) {
       cardClass = styles.statusArchive;
-      badgeText = 'Закрыто';
+      badgeText = 'Завершено';
     } else if (isWait) {
       cardClass = styles.statusWait;
-      badgeText = 'Внимание';
+      badgeText = 'Ожидание';
     }
 
     return (
@@ -71,90 +68,78 @@ export const MainFeedScreen: React.FC<MainFeedScreenProps> = ({ onOpenCamera, on
               ) : isWait ? (
                 <>
                   <circle cx="12" cy="12" r="10"></circle>
-                  <line x1="12" y1="8" x2="12" y2="12"></line>
-                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                  <polyline points="12 6 12 12 16 14"></polyline>
                 </>
               ) : (
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <>
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                  <line x1="12" y1="9" x2="12" y2="13"></line>
+                  <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </>
               )}
             </svg>
           </div>
-          <div className={styles.cardStatus}>{badgeText}</div>
-          <div className={styles.cardTime}>{new Date(item.created_at).toLocaleDateString()}</div>
+          <div className={styles.badge}>{badgeText}</div>
         </div>
-        <h3 className={styles.cardTitle}>{item.title}</h3>
-        <p className={styles.cardDesc}>{item.body}</p>
+        <div className={styles.cardContent}>
+          <h3 className={styles.cardTitle}>{item.title}</h3>
+          <p className={styles.cardSubtitle}>{item.body}</p>
+        </div>
       </div>
     );
   };
 
   return (
-    <div className={styles.container}>
-      <header className={styles.header}>
-        <div className={styles.headerTop}>
-          <div className={styles.addressSelectorWrap}>
-            <button 
-              className={styles.addressSelector}
+    <div className={styles.screen}>
+      <div className={styles.appBackground} aria-hidden="true" />
+
+      <div className={styles.contentLayer}>
+        <div className={styles.headerRow}>
+          <div className={styles.addressContainer}>
+            <div 
+              className={styles.addressWrap} 
               onClick={() => setIsAddressDropdownOpen(!isAddressDropdownOpen)}
             >
-              <span>{activeAddress}</span>
+              <span className={styles.addressText}>{activeAddress}</span>
               <svg 
-                className={`${styles.chevron} ${isAddressDropdownOpen ? styles.chevronOpen : ''}`} 
-                width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                className={styles.chevronIcon} 
+                style={{ transform: isAddressDropdownOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}
+                viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
               >
                 <polyline points="6 9 12 15 18 9"></polyline>
               </svg>
-            </button>
+            </div>
+            
             {isAddressDropdownOpen && (
               <div className={styles.addressDropdown}>
-                <div className={styles.dropdownItemActive}>{activeAddress}</div>
-                <div className={styles.dropdownItem} onClick={() => { setActiveAddress('ЖК «Лесной», д. 5'); setIsAddressDropdownOpen(false); }}>ЖК «Лесной», д. 5</div>
+                <div className={styles.addressDropdownItem} onClick={() => { setActiveAddress('г. Ростов-на-Дону, ул. Садовая, 34'); setIsAddressDropdownOpen(false); }}>
+                  <div className={styles.addressDropdownText}>
+                    <span style={{ color: activeAddress === 'г. Ростов-на-Дону, ул. Садовая, 34' ? 'var(--accent)' : 'inherit' }}>г. Ростов-на-Дону, ул. Садовая, 34</span>
+                  </div>
+                </div>
               </div>
             )}
           </div>
-          <button className={styles.bellBtn} onClick={onOpenNotifications}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          
+          <button className={styles.notificationBtn} onClick={onOpenNotifications}>
+            <div className={styles.notificationDot} />
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
               <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
             </svg>
-            <div className={styles.bellDot} />
           </button>
         </div>
-      </header>
 
-      <div className={styles.scrollContent}>
-        <div className={styles.cameraBanner} onClick={onOpenCamera}>
-          <div className={styles.cameraBannerBg} />
-          <div className={styles.cameraBannerContent}>
-            <div className={styles.cameraIconWrap}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
-                <circle cx="12" cy="13" r="4"></circle>
-              </svg>
-            </div>
-            <div className={styles.cameraTextWrap}>
-              <h3 className={styles.cameraTitle}>Распознавание ИИ</h3>
-              <p className={styles.cameraDesc}>Сфотографируйте объявление в подъезде для анализа</p>
-            </div>
-            <div className={styles.cameraArrow}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-                <polyline points="12 5 19 12 12 19"></polyline>
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        <div className={styles.tabContainer}>
-          <div className={styles.tabsBg}>
+        <div className={styles.segmentedControlWrapper}>
+          <div className={styles.segmentedControl}>
             <button 
-              className={`${styles.tab} ${activeTab === 'actual' ? styles.tabActive : ''}`}
+              className={`${styles.segment} ${activeTab === 'actual' ? styles.active : styles.inactive}`}
               onClick={() => setActiveTab('actual')}
             >
               Актуальное
             </button>
             <button 
-              className={`${styles.tab} ${activeTab === 'archive' ? styles.tabActive : ''}`}
+              className={`${styles.segment} ${activeTab === 'archive' ? styles.active : styles.inactive}`}
               onClick={() => setActiveTab('archive')}
             >
               Архив
@@ -164,24 +149,21 @@ export const MainFeedScreen: React.FC<MainFeedScreenProps> = ({ onOpenCamera, on
 
         <div className={styles.feedList}>
           {isLoading ? (
-            <div className={styles.emptyState}>Загрузка...</div>
-          ) : feedItems.length === 0 ? (
-            <div className={styles.emptyState}>
-              <div className={styles.emptyIcon}>
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="2">
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                </svg>
-              </div>
-              <h3>Пока здесь пусто</h3>
-              <p>Как только УК опубликует новости, они появятся в ленте.</p>
-            </div>
+            <div style={{ padding: 20, textAlign: 'center', color: '#888' }}>Загрузка...</div>
           ) : activeTab === 'actual' ? (
-            actualItems.map(item => renderCard(item, false))
+            actualItems.length > 0 ? actualItems.map(item => renderCard(item, false)) : <div style={{textAlign: 'center', opacity: 0.5, marginTop: 20}}>Нет актуальных новостей</div>
           ) : (
-            archiveItems.map(item => renderCard(item, true))
+            archiveItems.length > 0 ? archiveItems.map(item => renderCard(item, true)) : <div style={{textAlign: 'center', opacity: 0.5, marginTop: 20}}>Нет архива</div>
           )}
         </div>
       </div>
+
+      <button className={styles.fab} onClick={onOpenCamera}>
+        <svg className={styles.fabIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+      </button>
     </div>
   );
 };

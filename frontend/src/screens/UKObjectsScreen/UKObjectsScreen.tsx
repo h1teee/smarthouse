@@ -29,6 +29,7 @@ export const UKObjectsScreen: React.FC = () => {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [filterStatus, setFilterStatus] = useState<HouseStatus | 'all'>('all');
   
+  
   const [selectedHouseId, setSelectedHouseId] = useState<number | null>(null);
 
   useEffect(() => {
@@ -36,7 +37,7 @@ export const UKObjectsScreen: React.FC = () => {
       try {
         const [objRes, reqRes] = await Promise.all([
           fetch(import.meta.env.VITE_API_URL + '/api/uk/objects'),
-          fetch(import.meta.env.VITE_API_URL + '/api/uk/requests?status=all')
+          fetch(import.meta.env.VITE_API_URL + '/api/uk/requests')
         ]);
         const objData = await objRes.json();
         const reqData = await reqRes.json();
@@ -50,137 +51,147 @@ export const UKObjectsScreen: React.FC = () => {
   }, []);
 
   const filteredHouses = houses.filter(h => {
-    const matchesSearch = h.full_address.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesFilter = filterStatus === 'all' || h.status === filterStatus;
-    return matchesSearch && matchesFilter;
+    if (filterStatus !== 'all' && h.status !== filterStatus) return false;
+    if (searchQuery && !h.full_address.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+    return true;
   });
 
   const selectedHouse = houses.find(h => h.address_id === selectedHouseId);
   const selectedHouseRequests = requests.filter(r => r.address_id === selectedHouseId && r.status !== 'resolved');
 
-  const getStatusColor = (s: HouseStatus) => {
-    if (s === 'ok') return '#30D158';
-    if (s === 'repair') return '#FF9F0A';
-    if (s === 'critical') return '#FF453A';
-    return '#8E8E93';
+  const getPinColor = (status: HouseStatus) => {
+    switch (status) {
+      case 'critical': return '#EF4444';
+      case 'repair': return '#F59E0B';
+      case 'ok': return '#10B981';
+      default: return '#10B981';
+    }
   };
 
-  const getStatusLabel = (s: HouseStatus) => {
-    if (s === 'ok') return 'Всё в порядке';
-    if (s === 'repair') return 'Ремонт / Планово';
-    if (s === 'critical') return 'Критическая авария';
-    return 'Неизвестно';
+  const getProblemIcon = () => {
+    return (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10" />
+        <line x1="12" y1="16" x2="12" y2="12" />
+        <line x1="12" y1="8" x2="12.01" y2="8" />
+      </svg>
+    );
+  };
+
+  const handleMapClick = () => {
+    setSelectedHouseId(null);
+    setIsFilterOpen(false);
   };
 
   return (
     <div className={styles.container}>
-      <header className={styles.header}>
-        <h1 className={styles.title}>Объекты УК</h1>
-        <p className={styles.subtitle}>Карта домов и статус сетей</p>
-      </header>
-
-      <div className={styles.mapWrap}>
-        <div className={styles.searchPanel}>
-          <div className={styles.searchBar}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="8"></circle>
-              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-            </svg>
-            <input 
-              type="text" 
-              placeholder="Поиск адреса..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            <button className={styles.filterBtn} onClick={() => setIsFilterOpen(!isFilterOpen)}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
-              </svg>
-            </button>
-          </div>
-          {isFilterOpen && (
-            <div className={styles.filterMenu}>
-              <button 
-                className={`${styles.filterItem} ${filterStatus === 'all' ? styles.filterItemActive : ''}`}
-                onClick={() => setFilterStatus('all')}
-              >
-                Все
-              </button>
-              <button 
-                className={`${styles.filterItem} ${filterStatus === 'critical' ? styles.filterItemActive : ''}`}
-                onClick={() => setFilterStatus('critical')}
-              >
-                Аварии
-              </button>
-              <button 
-                className={`${styles.filterItem} ${filterStatus === 'repair' ? styles.filterItemActive : ''}`}
-                onClick={() => setFilterStatus('repair')}
-              >
-                В работе
-              </button>
-              <button 
-                className={`${styles.filterItem} ${filterStatus === 'ok' ? styles.filterItemActive : ''}`}
-                onClick={() => setFilterStatus('ok')}
-              >
-                В норме
-              </button>
-            </div>
-          )}
-        </div>
-
-        <YMaps query={{ apikey: 'd66d03f0-fc89-40ea-9ef9-ccba4585c2c7' }}>
+      {/* Background Map */}
+      <div className={styles.mapBase}>
+        <YMaps query={{ apikey: 'fe27ea2a-71dd-444a-95ec-3c22b1dc85bd' }}>
           <Map 
-            defaultState={{ center: [47.222078, 39.720358], zoom: 12 }} 
-            style={{ width: '100%', height: '100%' }}
+            defaultState={{ center: [47.2313, 39.7233], zoom: 12 }} 
+            width="100%" 
+            height="100%"
+            onClick={handleMapClick}
             options={{ suppressMapOpenBlock: true }}
           >
-            {filteredHouses.map(h => (
-              <Placemark 
-                key={h.address_id}
-                geometry={[h.lat, h.lng]}
+            {filteredHouses.map(house => (
+              <Placemark
+                key={house.address_id}
+                geometry={[house.lat, house.lng]}
                 options={{
-                  preset: h.status === 'ok' ? 'islands#greenCircleDotIcon' : h.status === 'critical' ? 'islands#redCircleDotIcon' : 'islands#yellowCircleDotIcon',
-                  iconColor: getStatusColor(h.status)
+                  preset: 'islands#circleIcon',
+                  iconColor: getPinColor(house.status)
                 }}
-                onClick={() => setSelectedHouseId(h.address_id)}
+                onClick={() => setSelectedHouseId(house.address_id)}
               />
             ))}
           </Map>
         </YMaps>
+      </div>
 
-        {selectedHouse && (
-          <div className={styles.bottomSheet}>
-            <div className={styles.grabber} />
-            <div className={styles.sheetHeader}>
-              <h2 className={styles.sheetTitle}>{selectedHouse.full_address}</h2>
-              <button className={styles.closeBtn} onClick={() => setSelectedHouseId(null)}>✕</button>
-            </div>
-            
-            <div className={styles.sheetStatusWrap}>
-              <div className={styles.sheetStatusDot} style={{ background: getStatusColor(selectedHouse.status) }} />
-              <span>{getStatusLabel(selectedHouse.status)}</span>
-            </div>
-
-            <div className={styles.sheetActiveRequests}>
-              <h3 className={styles.reqTitle}>Актуальные заявки</h3>
-              {selectedHouseRequests.length === 0 ? (
-                <p className={styles.noReqText}>Нет активных заявок или аварий.</p>
-              ) : (
-                <div className={styles.reqList}>
-                  {selectedHouseRequests.map(req => (
-                    <div key={req.id} className={styles.reqCard}>
-                      <div className={styles.reqCardType}>{req.type === 'water' ? 'Вода' : req.type === 'electricity' ? 'Электричество' : 'Прочее'}</div>
-                      <div className={styles.reqCardTitle}>{req.title}</div>
-                      <div className={styles.reqCardStatus}>{req.status === 'pending' ? 'Ожидает решения' : 'Одобрено (В работе)'}</div>
-                    </div>
-                  ))}
-                </div>
-              )}
+      {/* Floating Top Bar */}
+      <div className={styles.topBar}>
+        <div className={styles.searchWrap}>
+          <svg className={styles.searchIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input 
+            type="text" 
+            className={styles.searchInput} 
+            placeholder="Поиск адреса..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        <div className={styles.filterBtnWrapper}>
+          <button className={styles.filterBtn} onClick={() => setIsFilterOpen(!isFilterOpen)}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="4" y1="21" x2="4" y2="14" />
+              <line x1="4" y1="10" x2="4" y2="3" />
+              <line x1="12" y1="21" x2="12" y2="12" />
+              <line x1="12" y1="8" x2="12" y2="3" />
+              <line x1="20" y1="21" x2="20" y2="16" />
+              <line x1="20" y1="12" x2="20" y2="3" />
+              <line x1="1" y1="14" x2="7" y2="14" />
+              <line x1="9" y1="8" x2="15" y2="8" />
+              <line x1="17" y1="16" x2="23" y2="16" />
+            </svg>
+          </button>
+          
+          <div className={`${styles.filterDropdown} ${isFilterOpen ? styles.open : ''}`}>
+            <div className={styles.filterGroup}>
+              <div className={styles.filterGroupTitle}>Статус</div>
+              <button className={`${styles.filterOption} ${filterStatus === 'all' ? styles.active : ''}`} onClick={() => setFilterStatus('all')}>Все</button>
+              <button className={`${styles.filterOption} ${filterStatus === 'critical' ? styles.active : ''}`} onClick={() => setFilterStatus('critical')}>Критично</button>
+              <button className={`${styles.filterOption} ${filterStatus === 'repair' ? styles.active : ''}`} onClick={() => setFilterStatus('repair')}>В ремонте</button>
+              <button className={`${styles.filterOption} ${filterStatus === 'ok' ? styles.active : ''}`} onClick={() => setFilterStatus('ok')}>ОК</button>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Bottom Sheet */}
+      <div className={`${styles.bottomSheet} ${selectedHouse ? styles.show : ''}`}>
+        <div className={styles.grabberWrap} onClick={() => setSelectedHouseId(null)}>
+          <div className={styles.grabber} />
+        </div>
+        
+        {selectedHouse && (
+          <>
+            <div className={styles.sheetHeader}>
+              <h2 className={styles.sheetTitle}>{selectedHouse.full_address}</h2>
+              <button className={styles.closeBtn} onClick={() => setSelectedHouseId(null)}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+            
+            {selectedHouseRequests.length > 0 ? (
+              <div className={styles.cardList}>
+                {selectedHouseRequests.map(prob => (
+                  <div key={prob.id} className={styles.problemCard}>
+                    <div className={`${styles.cardIconWrap} ${styles.critical}`}>
+                      {getProblemIcon()}
+                    </div>
+                    <div className={styles.cardContent}>
+                      <div className={styles.cardTitle}>{prob.title}</div>
+                      <div className={styles.cardDesc}>{prob.description}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className={styles.emptyState}>
+                Проблем нет. Дом в хорошем состоянии.
+              </div>
+            )}
+          </>
         )}
       </div>
-      <div style={{height: 90}} />
     </div>
   );
 };

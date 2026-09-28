@@ -1,6 +1,5 @@
 import React, { useState, useEffect, TouchEvent } from 'react';
 import styles from './UKModerationScreen.module.css';
-import { createPortal } from 'react-dom';
 
 interface UKModerationScreenProps {
   onBack: () => void;
@@ -16,14 +15,13 @@ export const UKModerationScreen: React.FC<UKModerationScreenProps> = ({
   const [request, setRequest] = useState<any>(null);
   const [isLoadingConfirm, setIsLoadingConfirm] = useState(false);
   
+  // Sheet state
   const [isRejectSheetOpen, setIsRejectSheetOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
   const [isLoadingReject, setIsLoadingReject] = useState(false);
 
+  // Swipe logic
   const [touchStartY, setTouchStartY] = useState<number | null>(null);
-
-  const [isSuccess, setIsSuccess] = useState(false);
-  const [successMsg, setSuccessMsg] = useState('');
 
   useEffect(() => {
     const fetchRequest = async () => {
@@ -63,6 +61,9 @@ export const UKModerationScreen: React.FC<UKModerationScreenProps> = ({
     setTouchStartY(null);
   };
 
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [successMsg, setSuccessMsg] = useState('');
+
   const handleConfirm = async () => {
     if (!request) return;
     setIsLoadingConfirm(true);
@@ -100,85 +101,77 @@ export const UKModerationScreen: React.FC<UKModerationScreenProps> = ({
     }
   };
 
-  if (!request) {
+  if (isSuccess) {
     return (
-      <div className={styles.container}>
-        <div className={styles.header}>
-          <button className={styles.backBtn} onClick={onBack}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="15 18 9 12 15 6" />
+      <div className={styles.screen} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className={styles.ambientGlow} aria-hidden="true" />
+        <div style={{ textAlign: 'center', zIndex: 10 }}>
+          <div style={{ width: 64, height: 64, borderRadius: 32, background: 'rgba(48, 209, 88, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', color: '#30D158' }}>
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12" />
             </svg>
-            Назад
-          </button>
+          </div>
+          <h2 style={{ fontSize: 24, fontWeight: 600, color: '#FFF' }}>{successMsg}</h2>
         </div>
-        <div style={{ color: '#fff', textAlign: 'center', marginTop: 100 }}>Загрузка...</div>
       </div>
     );
   }
 
-  const isWater = request.type === 'water';
-  const iconColor = isWater ? '#0A84FF' : '#FF9F0A';
+  if (!request) {
+    return <div className={styles.screen} style={{padding: 20, textAlign: 'center', color: '#fff'}}>Загрузка...</div>;
+  }
 
   return (
-    <div className={styles.container}>
-      {isSuccess && createPortal(
-        <div className={styles.successOverlay}>
-          <div className={styles.successContent}>
-            <div className={styles.successCircle}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-            </div>
-            <div className={styles.successText}>{successMsg}</div>
-          </div>
-        </div>,
-        document.body
-      )}
-
+    <div className={styles.screen}>
       <div className={styles.ambientGlow} aria-hidden="true" />
       
       <div className={styles.header}>
         <button className={styles.backBtn} onClick={onBack}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="15 18 9 12 15 6" />
           </svg>
-          Назад
         </button>
-        <div className={styles.headerTitle}>Проверка заявки</div>
+        <span className={styles.headerTitle}>Заявка #{request.id}</span>
       </div>
 
-      <div className={styles.scrollContent}>
-        <div className={styles.cardPreview}>
-          <div className={styles.cardHeader}>
-            <div className={styles.cardIconWrap} style={{ background: `${iconColor}15`, color: iconColor }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                <polyline points="22 4 12 14.01 9 11.01" />
-              </svg>
-            </div>
-            <div className={styles.cardType}>{isWater ? 'Водоснабжение' : 'Ремонт / Свет'}</div>
+      <div className={styles.content}>
+        <div className={styles.card}>
+          <div className={styles.badgeWrapper}>
+            <div className={styles.badge}>Новая</div>
           </div>
-          <h2 className={styles.cardTitle}>{request.title}</h2>
-          <p className={styles.cardDesc}>{request.description}</p>
+          <h1 className={styles.title}>{request.title}</h1>
           
-          <div className={styles.timeInfo}>
-            <div className={styles.timeLabel}>Начало работ:</div>
-            <div className={styles.timeVal}>{request.start_date || 'Не указано'}</div>
+          <div className={styles.infoList}>
+            <div className={styles.infoRow}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
+              <span>{request.start_date || 'Нет данных'} — {request.end_date || 'Нет данных'}</span>
+            </div>
+            <div className={styles.infoRow}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                <circle cx="12" cy="10" r="3" />
+              </svg>
+              <span>г. Ростов-на-Дону, тип: {request.type}</span>
+            </div>
           </div>
-          <div className={styles.timeInfo}>
-            <div className={styles.timeLabel}>Завершение работ:</div>
-            <div className={styles.timeVal}>{request.end_date || 'Не указано'}</div>
+
+          <div className={styles.detailsBlock}>
+            <h3 className={styles.detailsTitle}>Детали заявки</h3>
+            <p className={styles.detailsText}>{request.description}</p>
           </div>
         </div>
 
         {request.status === 'pending' && (
-          <div className={styles.actionButtons}>
+          <div className={styles.actions}>
             <button 
               className={styles.approveBtn}
               onClick={handleConfirm}
               disabled={isLoadingConfirm}
             >
-              {isLoadingConfirm ? <span className={styles.spinner} /> : 'Одобрить'}
+              {isLoadingConfirm ? <span className={styles.spinner} /> : 'Подтвердить'}
             </button>
             <button 
               className={styles.rejectBtn}
@@ -194,16 +187,16 @@ export const UKModerationScreen: React.FC<UKModerationScreenProps> = ({
         <>
           <div className={styles.backdrop} onClick={() => setIsRejectSheetOpen(false)} />
           <div 
-            className={styles.rejectSheet}
+            className={styles.bottomSheet}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
           >
-            <div className={styles.grabber} />
-            <h3 className={styles.sheetTitle}>Причина отклонения</h3>
+            <div className={styles.dragHandle} />
+            <h2 className={styles.sheetTitle}>Причина отклонения</h2>
             <textarea
-              className={styles.reasonInput}
-              placeholder="Укажите причину (необязательно, но желательно)..."
+              className={styles.textarea}
+              placeholder="Опишите причину отклонения заявки..."
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
               rows={4}
@@ -211,7 +204,7 @@ export const UKModerationScreen: React.FC<UKModerationScreenProps> = ({
             <button 
               className={styles.submitRejectBtn}
               onClick={handleRejectSubmit}
-              disabled={isLoadingReject}
+              disabled={isLoadingReject || !rejectReason.trim()}
             >
               {isLoadingReject ? <span className={styles.spinner} /> : 'Отклонить заявку'}
             </button>

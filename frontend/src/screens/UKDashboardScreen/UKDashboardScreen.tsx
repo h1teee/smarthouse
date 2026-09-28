@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import styles from './UKDashboardScreen.module.css';
 
 export interface UKDashboardScreenProps {
@@ -7,180 +7,178 @@ export interface UKDashboardScreenProps {
 }
 
 const filters = [
-  { id: 'all', label: 'В работе' },
+  { id: 'all', label: 'Все заявки' },
+  { id: 'new', label: 'Новые' },
   { id: 'pending', label: 'Ожидают' },
-  { id: 'approved', label: 'Одобрены' },
-  { id: 'rejected', label: 'Отклонены' },
-  { id: 'resolved', label: 'Архив' }
+  { id: 'verified', label: 'Проверены' },
+  { id: 'archive', label: 'Архив' }
 ];
 
-export const UKDashboardScreen: React.FC<UKDashboardScreenProps> = ({ 
-  onOpenRequest,
-  onNavigate
-}) => {
+const mockRequests = [
+  {
+    id: 1,
+    title: 'Отключение горячей воды',
+    address: 'ул. Космонавтов 34а, кв. 12',
+    status: 'pending',
+    isNew: true,
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 2C12 2 6 8.5 6 13.5a6 6 0 0 0 12 0C18 8.5 12 2 12 2z" />
+        <line x1="4" y1="4" x2="20" y2="20" strokeWidth="2.2" />
+      </svg>
+    )
+  },
+  {
+    id: 2,
+    title: 'Шум в подъезде',
+    address: 'ул. Космонавтов 34а, кв. 45',
+    status: 'approved',
+    isNew: false,
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+        <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+        <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+      </svg>
+    )
+  },
+  {
+    id: 3,
+    title: 'Протечка трубы',
+    address: 'ул. Космонавтов 34б, кв. 8',
+    status: 'rejected',
+    isNew: false,
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+      </svg>
+    )
+  }
+];
+
+const statusLabels: Record<string, { label: string; colorClass: string }> = {
+  pending: { label: 'Ожидает', colorClass: styles.statusPending },
+  approved: { label: 'Подтверждено', colorClass: styles.statusApproved },
+  rejected: { label: 'Отклонено', colorClass: styles.statusRejected }
+};
+
+export const UKDashboardScreen: React.FC<UKDashboardScreenProps> = ({ onOpenRequest, onNavigate }) => {
   const [activeFilter, setActiveFilter] = useState('all');
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [requests, setRequests] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  const fetchRequests = async () => {
-    try {
-      const res = await fetch(import.meta.env.VITE_API_URL + '/api/uk/requests?status=all');
-      if (res.ok) {
-        const data = await res.json();
-        setRequests(data || []);
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-      setIsRefreshing(false);
-    }
-  };
-
-  useEffect(() => {
+  React.useEffect(() => {
+    const fetchRequests = async () => {
+      try {
+        const res = await fetch(import.meta.env.VITE_API_URL + '/api/uk/requests');
+        if (res.ok) {
+          const data = await res.json();
+          setRequests(data || []);
+        }
+      } catch (err) {}
+    };
     fetchRequests();
   }, []);
 
-  const handleRefresh = () => {
-    setIsRefreshing(true);
-    fetchRequests();
-  };
+  const displayRequests = requests.length > 0 ? requests.map((r: any) => ({
+    id: r.id,
+    title: r.title,
+    address: 'Кв. ' + r.address_id,
+    status: r.status,
+    isNew: r.status === 'pending',
+    icon: mockRequests[0].icon
+  })) : mockRequests;
 
-  const getFilteredRequests = () => {
-    if (activeFilter === 'all') {
-      return requests.filter(r => r.status !== 'resolved');
-    }
-    return requests.filter(r => r.status === activeFilter);
-  };
-
-  const getStatusInfo = (status: string) => {
-    switch(status) {
-      case 'pending': return { text: 'Ожидает решения', style: styles.statusBadgePending };
-      case 'approved': return { text: 'Одобрено (В работе)', style: styles.statusBadgeOk };
-      case 'rejected': return { text: 'Отклонено', style: styles.statusBadgeReject };
-      case 'resolved': return { text: 'Завершено', style: styles.statusBadgeGray };
-      default: return { text: 'Неизвестно', style: styles.statusBadgeGray };
-    }
-  };
-
-  const getTypeIconColor = (type: string) => {
-    if (type === 'water') return '#0A84FF'; // blue
-    if (type === 'electricity') return '#FF9F0A'; // orange
-    return '#8E8E93';
-  };
+  const filteredRequests = displayRequests.filter(req => {
+    if (activeFilter === 'all') return true;
+    if (activeFilter === 'new') return req.isNew;
+    if (activeFilter === 'pending') return req.status === 'pending';
+    if (activeFilter === 'verified') return req.status === 'approved' || req.status === 'rejected';
+    if (activeFilter === 'archive') return req.status === 'rejected'; // Mock archive logic
+    return true;
+  });
 
   return (
-    <div className={styles.container}>
-      <header className={styles.header}>
-        <div className={styles.headerTop}>
-          <div className={styles.headerTitleWrap}>
-            <h1 className={styles.title}>Рабочий стол</h1>
-            <p className={styles.subtitle}>Ждут проверки: {requests.filter(r => r.status === 'pending').length}</p>
-          </div>
-          <button className={styles.iconBtn} onClick={handleRefresh}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={isRefreshing ? styles.spin : ''}>
-              <path d="M21.5 2v6h-6M2.13 15.57a9 9 0 1 0 3.84-10.36L2 8"/>
-            </svg>
-          </button>
-        </div>
-
-        <div className={styles.filterScroll}>
-          {filters.map(f => (
+    <>
+      <div className={styles.container}>
+        <div className={styles.contentWrapper}>
+          <header className={`${styles.header} ${styles.animateStagger1}`}>
+            <h1 className={styles.title}>Панель УК</h1>
             <button 
-              key={f.id}
-              className={`${styles.filterChip} ${activeFilter === f.id ? styles.filterChipActive : ''}`}
-              onClick={() => setActiveFilter(f.id)}
+              className={styles.bellButton} 
+              type="button" 
+              aria-label="Уведомления"
+              onClick={() => onNavigate?.('ukNotifications')}
             >
-              {f.label}
-              {f.id === 'pending' && <span className={styles.badgeCount}>{requests.filter(r => r.status === 'pending').length}</span>}
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+              </svg>
+              <div className={styles.notificationDot} />
             </button>
-          ))}
-        </div>
-      </header>
+          </header>
 
-      <div className={styles.contentList}>
-        <div className={styles.quickActions}>
-          <button className={styles.actionBtn} onClick={() => onNavigate && onNavigate('ukBroadcast')}>
-            <div className={styles.actionIconWrap} style={{ background: '#30D15815', color: '#30D158' }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-              </svg>
+          <section className={`${styles.metricsGrid} ${styles.animateStagger2}`}>
+            <div className={styles.metricCard}>
+              <span className={`${styles.metricValue} ${styles.purple}`}>{displayRequests.filter(r => r.status === 'pending').length}</span>
+              <span className={styles.metricLabel}>Новые заявки</span>
             </div>
-            <span>Сделать<br/>рассылку</span>
-          </button>
-          <button className={styles.actionBtn} onClick={() => onNavigate && onNavigate('ukObjects')}>
-            <div className={styles.actionIconWrap} style={{ background: '#0A84FF15', color: '#0A84FF' }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
-                <line x1="8" y1="2" x2="8" y2="18" />
-                <line x1="16" y1="6" x2="16" y2="22" />
-              </svg>
+            <div className={styles.metricCard}>
+              <span className={`${styles.metricValue} ${styles.indigo}`}>{displayRequests.length}</span>
+              <span className={styles.metricLabel}>В работе</span>
             </div>
-            <span>Карта<br/>домов</span>
-          </button>
-        </div>
+          </section>
 
-        {loading ? (
-          <div style={{color:'#fff', textAlign:'center', marginTop:30}}>Загрузка...</div>
-        ) : getFilteredRequests().length === 0 ? (
-          <div className={styles.emptyState}>
-            <div className={styles.emptyIcon}>✓</div>
-            <div className={styles.emptyTitle}>Нет заявок</div>
-            <div className={styles.emptyDesc}>В данной категории пусто</div>
-          </div>
-        ) : (
-          getFilteredRequests().map(req => {
-            const statusInfo = getStatusInfo(req.status);
-            const iconColor = getTypeIconColor(req.type);
+          <section className={`${styles.filtersScroll} ${styles.animateStagger2}`}>
+            {filters.map(filter => (
+              <button
+                key={filter.id}
+                type="button"
+                className={`${styles.filterChip} ${activeFilter === filter.id ? styles.filterChipActive : ''}`}
+                onClick={() => setActiveFilter(filter.id)}
+              >
+                {filter.label}
+              </button>
+            ))}
+          </section>
 
-            return (
+          <section className={`${styles.requestsList} ${styles.animateStagger3}`}>
+            {filteredRequests.map(req => (
               <div 
                 key={req.id} 
-                className={`${styles.requestCard} ${styles.animateFadeIn}`}
-                onClick={() => {
-                  localStorage.setItem('selectedRequestId', String(req.id));
-                  if (onOpenRequest) onOpenRequest(req.id);
+                className={styles.requestCard}
+                onClick={() => onOpenRequest?.(req.id)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    onOpenRequest?.(req.id);
+                  }
                 }}
               >
-                <div className={styles.cardHeader}>
-                  <div className={styles.cardTypeRow}>
-                    <div className={styles.typeIcon} style={{ background: `${iconColor}15`, color: iconColor }}>
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                        <polyline points="22 4 12 14.01 9 11.01" />
-                      </svg>
-                    </div>
-                    <span className={styles.typeLabel}>{req.type === 'water' ? 'Водоснабжение' : req.type === 'electricity' ? 'Электричество' : 'Прочее'}</span>
-                  </div>
-                  <div className={`${styles.statusBadge} ${statusInfo.style}`}>
-                    {statusInfo.text}
-                  </div>
+                <div className={styles.requestIconBox}>
+                  {req.icon}
                 </div>
                 
-                <h3 className={styles.cardTitle}>{req.title}</h3>
-                <p className={styles.cardAddress}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                    <circle cx="12" cy="10" r="3" />
-                  </svg>
-                  ID Адреса: {req.address_id}
-                </p>
-                
-                <div className={styles.cardFooter}>
-                  <span className={styles.cardTime}>15 мин. назад</span>
-                  <div className={styles.cardArrow}>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="9 18 15 12 9 6" />
-                    </svg>
+                <div className={styles.requestContent}>
+                  <div className={styles.requestTitleRow}>
+                    <span className={styles.requestTitle}>{req.title}</span>
+                    <span className={`${styles.requestStatus} ${statusLabels[req.status].colorClass}`}>
+                      {statusLabels[req.status].label}
+                    </span>
                   </div>
+                  <span className={styles.requestMeta}>{req.address}</span>
+                </div>
+                
+                <div className={styles.requestChevron}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="9 18 15 12 9 6" />
+                  </svg>
                 </div>
               </div>
-            );
-          })
-        )}
+            ))}
+          </section>
+        </div>
       </div>
-      <div style={{height: 100}} />
-    </div>
+    </>
   );
 };

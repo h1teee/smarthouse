@@ -18,122 +18,134 @@ export const MetersScreen: React.FC<MetersScreenProps> = ({ onBack }) => {
   useEffect(() => {
     const fetchMeters = async () => {
       try {
-        const res = await fetch(import.meta.env.VITE_API_URL + '/api/meters', {
-          headers: { 'X-User-ID': localStorage.getItem('user_id') || '' }
-        });
+        const res = await fetch(import.meta.env.VITE_API_URL + '/api/meters');
         if (res.ok) {
           const data = await res.json();
-          if (data && data.water) setPrevWater(data.water);
-          if (data && data.electricity) setPrevElectricity(data.electricity);
+          setPrevWater(data.water || 0);
+          setPrevElectricity(data.electricity || 0);
+          setWater(String(data.water || 0));
+          setElectricity(String(data.electricity || 0));
         }
-      } catch (e) {
-        console.error(e);
+      } catch (err) {
+        console.error(err);
       }
     };
     fetchMeters();
   }, []);
 
-  const handleSaveWater = () => {
+  const handleSaveWater = async () => {
     setIsWaterSaving(true);
-    setTimeout(() => {
+    try {
+      await fetch(import.meta.env.VITE_API_URL + '/api/meters', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ water: parseFloat(water) || 0, electricity: prevElectricity })
+      });
+      setPrevWater(parseFloat(water) || 0);
+    } catch (e) {
+      console.error(e);
+    } finally {
       setIsWaterSaving(false);
-      setPrevWater(Number(water) || prevWater);
-      setWater('');
-    }, 1500);
+    }
   };
 
-  const handleSaveElec = () => {
+  const handleSaveElectricity = async () => {
     setIsElecSaving(true);
-    setTimeout(() => {
+    try {
+      await fetch(import.meta.env.VITE_API_URL + '/api/meters', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ water: prevWater, electricity: parseFloat(electricity) || 0 })
+      });
+      setPrevElectricity(parseFloat(electricity) || 0);
+    } catch (e) {
+      console.error(e);
+    } finally {
       setIsElecSaving(false);
-      setPrevElectricity(Number(electricity) || prevElectricity);
-      setElectricity('');
-    }, 1500);
+    }
   };
 
   return (
     <div className={styles.container}>
+      {/* Background */}
       <div className={styles.ambientGlow} />
 
-      <header className={styles.navBar}>
-        <button className={styles.backButton} onClick={onBack}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <div className={styles.headerRow}>
+        <button className={styles.backBtn} onClick={onBack}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="15 18 9 12 15 6" />
           </svg>
-          Назад
         </button>
-        <h2 className={styles.navTitle}>Показания счетчиков</h2>
-        <div className={styles.navSpacer} />
-      </header>
+        <h1 className={styles.title}>Счетчики</h1>
+        <div style={{ width: 44 }} /> {/* Spacer for centering */}
+      </div>
 
       <div className={styles.content}>
         
-        <div className={styles.meterCard}>
+        {/* Hot Water */}
+        <div className={styles.meterGroup}>
           <div className={styles.meterHeader}>
-            <div className={styles.meterIcon} style={{ background: 'rgba(10, 132, 255, 0.1)', color: '#0A84FF' }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-              </svg>
+            <div className={styles.meterTitleRow}>
+              <div className={"\\${styles.iconWrap} \\${styles.blue}"}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
+                </svg>
+              </div>
+              <h2 className={styles.meterName}>Вода (м³)</h2>
             </div>
-            <div className={styles.meterInfo}>
-              <h3 className={styles.meterTitle}>Водоснабжение</h3>
-              <p className={styles.meterSub}>Предыдущее: {prevWater} м³</p>
-            </div>
+            <span className={styles.meterStatusAlert}>До 25 числа</span>
           </div>
           
-          <div className={styles.inputRow}>
-            <input 
-              type="number" 
-              className={styles.meterInput}
-              placeholder="0.00"
-              value={water}
-              onChange={(e) => setWater(e.target.value)}
-            />
-            <span className={styles.unit}>м³</span>
+          <div className={styles.inputCard}>
+            <div className={styles.inputMain}>
+              <input 
+                type="number"
+                className={styles.inputValue} 
+                style={{ width: '100%', background: 'transparent', border: 'none', color: '#fff', fontSize: '32px', fontWeight: 600, outline: 'none' }}
+                value={water}
+                onChange={(e) => setWater(e.target.value)}
+              />
+              <span className={styles.inputUnit}>м³</span>
+            </div>
+            <div className={styles.inputSub}>Прошлые: {prevWater} м³</div>
           </div>
-
-          <button 
-            className={styles.saveBtn} 
-            disabled={!water || isWaterSaving}
-            onClick={handleSaveWater}
-          >
-            {isWaterSaving ? 'Отправка...' : 'Передать'}
+          <button className={styles.submitBtn} onClick={handleSaveWater} disabled={isWaterSaving || parseFloat(water) === prevWater}>
+            {isWaterSaving ? 'Сохранение...' : 'Отправить показания'}
           </button>
         </div>
 
-        <div className={styles.meterCard}>
+        {/* Electricity */}
+        <div className={styles.meterGroup}>
           <div className={styles.meterHeader}>
-            <div className={styles.meterIcon} style={{ background: 'rgba(255, 159, 10, 0.1)', color: '#FF9F0A' }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-              </svg>
+            <div className={styles.meterTitleRow}>
+              <div className={"\\${styles.iconWrap} \\${styles.yellow}"}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                </svg>
+              </div>
+              <h2 className={styles.meterName}>Электричество</h2>
             </div>
-            <div className={styles.meterInfo}>
-              <h3 className={styles.meterTitle}>Электричество</h3>
-              <p className={styles.meterSub}>Предыдущее: {prevElectricity} кВт⋅ч</p>
-            </div>
+            <span className={styles.meterStatusOk}>Передано</span>
           </div>
           
-          <div className={styles.inputRow}>
-            <input 
-              type="number" 
-              className={styles.meterInput}
-              placeholder="0"
-              value={electricity}
-              onChange={(e) => setElectricity(e.target.value)}
-            />
-            <span className={styles.unit}>кВт⋅ч</span>
+          <div className={styles.inputCard}>
+            <div className={styles.inputMain}>
+              <input 
+                type="number"
+                className={styles.inputValue} 
+                style={{ width: '100%', background: 'transparent', border: 'none', color: '#fff', fontSize: '32px', fontWeight: 600, outline: 'none' }}
+                value={electricity}
+                onChange={(e) => setElectricity(e.target.value)}
+              />
+              <span className={styles.inputUnit}>кВт</span>
+            </div>
+            <div className={styles.inputSub}>Прошлые: {prevElectricity} кВт</div>
           </div>
-
-          <button 
-            className={styles.saveBtn} 
-            disabled={!electricity || isElecSaving}
-            onClick={handleSaveElec}
-          >
-            {isElecSaving ? 'Отправка...' : 'Передать'}
+          <button className={styles.submitBtn} onClick={handleSaveElectricity} disabled={isElecSaving || parseFloat(electricity) === prevElectricity}>
+            {isElecSaving ? 'Сохранение...' : 'Отправить показания'}
           </button>
         </div>
-
+        
       </div>
     </div>
   );

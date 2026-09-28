@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import styles from './UKAnalyticsScreen.module.css';
 
 interface UKAnalyticsScreenProps {
@@ -8,7 +8,7 @@ interface UKAnalyticsScreenProps {
 export const UKAnalyticsScreen: React.FC<UKAnalyticsScreenProps> = ({ onBack }) => {
   const weeklyData = [
     { day: 'Пн', value: 40 },
-    { day: 'Вт', value: 65 },
+    { day: 'Втор', value: 65 },
     { day: 'Ср', value: 85 },
     { day: 'Чт', value: 50 },
     { day: 'Пт', value: 90 },
@@ -17,29 +17,6 @@ export const UKAnalyticsScreen: React.FC<UKAnalyticsScreenProps> = ({ onBack }) 
   ];
 
   const [activeBar, setActiveBar] = useState<number | null>(null);
-  const [aiText, setAiText] = useState('Загрузка анализа от GigaChat...');
-  const [stats, setStats] = useState({
-    total_requests: 0,
-    pending: 0,
-    approved: 0,
-    rejected: 0
-  });
-
-  useEffect(() => {
-    fetch(import.meta.env.VITE_API_URL + '/api/uk/analytics/ai')
-      .then(r => r.json())
-      .then(data => {
-        if (data.analysis) setAiText(data.analysis);
-      })
-      .catch(err => setAiText('Не удалось загрузить аналитику'));
-
-    fetch(import.meta.env.VITE_API_URL + '/api/uk/analytics')
-      .then(r => r.json())
-      .then(data => {
-        if (data) setStats(data);
-      })
-      .catch(err => console.error(err));
-  }, []);
 
   return (
     <div className={styles.container}>
@@ -56,66 +33,91 @@ export const UKAnalyticsScreen: React.FC<UKAnalyticsScreenProps> = ({ onBack }) 
 
       <div className={styles.content}>
         <div className={styles.aiSummary}>
-          <div className={styles.aiTitle}>ИИ Анализ за неделю</div>
+          <div className={styles.aiTitle}>✨ ИИ-анализ за неделю</div>
           <div className={styles.aiText}>
-            {aiText}
+            В районе пр. Космонавтов участились жалобы на напор воды. 
+            Скорость закрытия заявок выросла на 15% по сравнению с прошлым месяцем.
           </div>
         </div>
 
         <div className={styles.chartCard}>
-          <div className={styles.chartHeader}>Статус заявок</div>
+          <div className={styles.chartHeader}>Типы обращений</div>
           <div className={styles.progressList}>
             <div className={styles.progressItem}>
               <div className={styles.progressLabelWrap}>
-                <span>Всего заявок</span>
-                <span className={styles.progressValue}>{stats.total_requests}</span>
+                <span>Водоснабжение</span>
+                <span className={styles.progressValue}>60%</span>
               </div>
               <div className={styles.progressBarBg}>
-                <div className={styles.progressBarFill} style={{ width: '100%', background: '#0A84FF' }} />
+                <div className={`${styles.progressBarFill} ${styles.fillWater}`} />
               </div>
             </div>
             <div className={styles.progressItem}>
               <div className={styles.progressLabelWrap}>
-                <span>Одобрено / В работе</span>
-                <span className={styles.progressValue}>{stats.approved}</span>
+                <span>Электричество</span>
+                <span className={styles.progressValue}>30%</span>
               </div>
               <div className={styles.progressBarBg}>
-                <div className={styles.progressBarFill} style={{ width: stats.total_requests ? `${(stats.approved / stats.total_requests) * 100}%` : '0%', background: '#30D158' }} />
+                <div className={`${styles.progressBarFill} ${styles.fillElectro}`} />
               </div>
             </div>
             <div className={styles.progressItem}>
               <div className={styles.progressLabelWrap}>
-                <span>Ожидают решения</span>
-                <span className={styles.progressValue}>{stats.pending}</span>
+                <span>Прочее</span>
+                <span className={styles.progressValue}>10%</span>
               </div>
               <div className={styles.progressBarBg}>
-                <div className={styles.progressBarFill} style={{ width: stats.total_requests ? `${(stats.pending / stats.total_requests) * 100}%` : '0%', background: '#FF9F0A' }} />
+                <div className={`${styles.progressBarFill} ${styles.fillOther}`} />
               </div>
             </div>
           </div>
         </div>
 
         <div className={styles.chartCard}>
-          <div className={styles.chartHeader}>Активность жителей</div>
-          <div className={styles.barChart}>
-            {weeklyData.map((d, i) => (
-              <div className={styles.barCol} key={i} onClick={() => setActiveBar(i)}>
-                <div className={styles.barWrap}>
-                  <div 
-                    className={`${styles.barFill} ${activeBar === i ? styles.barActive : ''}`} 
-                    style={{ height: `${d.value}%` }} 
-                  />
-                  {activeBar === i && (
-                    <div className={styles.tooltip}>{d.value}</div>
+          <div className={styles.chartHeader} style={{ position: 'relative' }}>
+            Нагрузка по дням
+          </div>
+          <div 
+            className={styles.verticalChart}
+            onMouseLeave={() => setActiveBar(null)}
+            onTouchStart={(e) => {
+              const touch = e.touches[0];
+              const chartRect = e.currentTarget.getBoundingClientRect();
+              const x = touch.clientX - chartRect.left;
+              const barWidth = chartRect.width / weeklyData.length;
+              const index = Math.floor(x / barWidth);
+              if (index >= 0 && index < weeklyData.length) setActiveBar(index);
+            }}
+            onTouchMove={(e) => {
+              const touch = e.touches[0];
+              const chartRect = e.currentTarget.getBoundingClientRect();
+              const x = touch.clientX - chartRect.left;
+              const barWidth = chartRect.width / weeklyData.length;
+              const index = Math.floor(x / barWidth);
+              if (index >= 0 && index < weeklyData.length) setActiveBar(index);
+            }}
+            onTouchEnd={() => setActiveBar(null)}
+          >
+            {weeklyData.map((item, idx) => (
+              <div 
+                key={idx} 
+                className={styles.barCol}
+                onMouseEnter={() => setActiveBar(idx)}
+              >
+                <div className={styles.barWrapper} style={{ position: 'relative' }}>
+                  {activeBar === idx && (
+                    <div className={styles.tooltipPill}>
+                      <span style={{ fontSize: 14, fontWeight: 700 }}>{item.value}</span>
+                      <span style={{ fontSize: 10, fontWeight: 500, color: 'rgba(255,255,255,0.8)', marginLeft: 3, letterSpacing: '-0.2px' }}>заявок</span>
+                    </div>
                   )}
+                  <div className={styles.vBar} style={{ height: `${item.value}%`, filter: activeBar === idx ? 'brightness(1.5)' : 'none' }} />
                 </div>
-                <div className={styles.barLabel}>{d.day}</div>
+                <div className={styles.barDay} style={{ color: activeBar === idx ? '#FFF' : 'rgba(235, 235, 245, 0.6)' }}>{item.day}</div>
               </div>
             ))}
           </div>
         </div>
-        
-        <div style={{height: '40px'}} />
       </div>
     </div>
   );
