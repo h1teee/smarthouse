@@ -583,18 +583,22 @@ export const ProfileScreen: React.FC<{onLogout?: () => void}> = ({ onLogout }) =
 
             {activeModal === 'cards' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <div style={{ background: 'rgba(255,255,255,0.06)', borderRadius: 14, padding: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <div style={{ fontSize: 15, fontWeight: 600, color: '#FFF' }}>МИР Сбербанк •• 9012</div>
-                    <div style={{ fontSize: 12, color: '#30D158' }}>Автоплатёж включен</div>
+                {cards.map(card => (
+                  <div key={card.id} style={{ background: 'rgba(255,255,255,0.06)', borderRadius: 14, padding: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <div style={{ fontSize: 15, fontWeight: 600, color: '#FFF' }}>{card.name}</div>
+                      <div style={{ fontSize: 12, color: card.autopay ? '#30D158' : 'rgba(235, 235, 245, 0.6)' }}>
+                        {card.autopay ? 'Автоплатёж включен' : 'Без автоплатежа'}
+                      </div>
+                    </div>
+                    <span style={{ fontSize: 20 }}>💳</span>
                   </div>
-                  <span style={{ fontSize: 20 }}>💳</span>
-                </div>
+                ))}
                 <button 
                   className={styles.primaryBtn}
                   onClick={() => {
-                    notify('Привязка новой карты...');
-                    setActiveModal(null);
+                    setCards([...cards, { id: Date.now(), name: 'Tinkoff Black •• ' + Math.floor(1000 + Math.random() * 9000), autopay: false }]);
+                    notify('Новая карта успешно привязана!');
                   }}
                 >
                   Привязать новую карту
