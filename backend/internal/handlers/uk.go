@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"io"
 	"strconv"
-	"strings"
 	"bytes"
 	"os"
 	"database/sql"
@@ -117,42 +116,29 @@ func BroadcastHandler(w http.ResponseWriter, r *http.Request) {
 		SelectedIds []int  `json:"selectedIds"`
 		Category    string `json:"category"`
 		Text        string `json:"text"`
+		TargetMaxID string `json:"target_max_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), 400)
 		return
 	}
 
-	var callerVkID string
-	storage.DB.QueryRow("SELECT vk_id FROM users WHERE id = $1", getUserID(r)).Scan(&callerVkID)
-	
 	pushResult := "not_sent"
-	if callerVkID != "" && !strings.HasPrefix(callerVkID, "user_") {
-		pushResult = sendMaxPushNotificationSync(callerVkID, req.Text)
+	if req.TargetMaxID != "" {
+		pushResult = sendMaxPushNotificationSync(req.TargetMaxID, req.Text)
 	}
 
 	for _, addrID := range req.SelectedIds {
 		storage.DB.Exec("INSERT INTO feed_items (address_id, title, body, category) VALUES ($1, $2, $3, $4)",
 			addrID, "Рассылка от УК", req.Text, req.Category)
 			
-		debugBody := "ID: " + callerVkID + " | Result: " + pushResult
+		debugBody := "Target: " + req.TargetMaxID + " | Result: " + pushResult
 		storage.DB.Exec("INSERT INTO feed_items (address_id, title, body, category) VALUES ($1, $2, $3, $4)",
 			addrID, "DEBUG PUSH INFO", debugBody, "info")
-			
-		rows, err := storage.DB.Query("SELECT u.vk_id FROM users u JOIN user_addresses ua ON u.id = ua.user_id WHERE ua.address_id = $1", addrID)
-		if err == nil {
-			for rows.Next() {
-				var vkID string
-				if err := rows.Scan(&vkID); err == nil {
-					go sendMaxPushNotification(vkID, req.Text)
-				}
-			}
-			rows.Close()
-		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"status": "ok", "push_result": pushResult, "vk_id": callerVkID})
+	json.NewEncoder(w).Encode(map[string]string{"status": "ok", "push_result": pushResult, "vk_id": req.TargetMaxID})
 }
 
 func sendMaxPushNotificationSync(userID string, text string) string {

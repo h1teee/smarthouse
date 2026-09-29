@@ -31,6 +31,7 @@ export const UKBroadcastScreen: React.FC = () => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [category, setCategory] = useState(categoryOptions[0].id);
   const [message, setMessage] = useState('');
+  const [targetMaxId, setTargetMaxId] = useState(localStorage.getItem('target_max_id') || '');
 
   const [errorAddress, setErrorAddress] = useState(false);
   const [errorMessage, setErrorMessage] = useState(false);
@@ -105,7 +106,8 @@ export const UKBroadcastScreen: React.FC = () => {
         body: JSON.stringify({
           selectedIds: Array.from(selectedIds).map(Number),
           category: category,
-          text: message
+          text: message,
+          target_max_id: targetMaxId
         })
       });
       if (!res.ok) {
@@ -207,6 +209,20 @@ export const UKBroadcastScreen: React.FC = () => {
         <header className={`${styles.header} ${styles.animateStagger1}`}>
           <h1 className={styles.title}>Рассылка</h1>
         </header>
+
+        <section className={styles.animateStagger2} style={{background: '#2A2A32', padding: 12, borderRadius: 12, marginBottom: 16}}>
+          <div style={{color: '#aaa', fontSize: 13, marginBottom: 6}}>Для презентации жюри: укажите ваш MAX ID (только цифры), чтобы бот прислал пуш лично вам:</div>
+          <input 
+            type="text" 
+            placeholder="Например: 12345678"
+            value={targetMaxId}
+            onChange={(e) => {
+              setTargetMaxId(e.target.value);
+              localStorage.setItem('target_max_id', e.target.value);
+            }}
+            style={{width: '100%', padding: '10px', borderRadius: '8px', background: '#1c1c21', color: '#fff', border: '1px solid rgba(255,255,255,0.1)'}}
+          />
+        </section>
 
         <section className={styles.animateStagger2} ref={addressRef}>
           <h2 className={styles.sectionTitle}>Адресаты</h2>
