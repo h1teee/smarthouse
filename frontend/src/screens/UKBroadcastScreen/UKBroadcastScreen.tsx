@@ -189,6 +189,11 @@ export const UKBroadcastScreen: React.FC = () => {
             </svg>
           </div>
           <h2 style={{ fontSize: 24, fontWeight: 600, color: '#FFF', textAlign: 'center' }}>Рассылка успешно отправлена</h2>
+          {debugInfo && (
+            <div style={{ marginTop: 12, fontSize: 14, color: 'rgba(235,235,245,0.8)', textAlign: 'center' }}>
+              {debugInfo}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -335,6 +340,34 @@ export const UKBroadcastScreen: React.FC = () => {
         </section>
 
         <div className={styles.animateStagger4}>
+          <div style={{ margin: '0 0 12px', padding: '12px 14px', borderRadius: 14, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+              <span style={{ fontSize: 13, color: 'rgba(235,235,245,0.6)', fontWeight: 500 }}>ID получателя в MAX (тест):</span>
+              <span style={{ fontSize: 11, color: targetMaxId ? '#30D158' : '#FF9F0A' }}>
+                {targetMaxId ? '● Определен' : '○ Ожидает ввода'}
+              </span>
+            </div>
+            <input 
+              type="text" 
+              placeholder="Числовой ID (или напишите боту в MAX)"
+              value={targetMaxId}
+              onChange={(e) => {
+                setTargetMaxId(e.target.value);
+                localStorage.setItem('max_user_id', e.target.value);
+              }}
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                borderRadius: 8,
+                background: 'rgba(0,0,0,0.3)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                color: '#FFF',
+                fontSize: 14,
+                boxSizing: 'border-box'
+              }}
+            />
+          </div>
+
           <button className={styles.submitButton} onClick={handleSubmit} disabled={isSending}>
             {isSending ? "Отправка..." : `Запустить рассылку ${someSelected ? '(' + selectedIds.size + ')' : ''}`}
           </button>

@@ -18,8 +18,13 @@ func SendPushNotification(vkIDs []string, message string, requestID string) erro
 		return nil
 	}
 
-	deepLink := fmt.Sprintf("https://smarthouse-frontend.onrender.com/?screen=ukModeration&requestId=%s", requestID)
-	text := fmt.Sprintf("%s\n\nСсылка: %s", message, deepLink)
+	var text string
+	if requestID == "broadcast" || requestID == "broadcast_test" || requestID == "welcome" {
+		text = fmt.Sprintf("%s\n\nОткрыть приложение: https://smarthouse-frontend.onrender.com/", message)
+	} else {
+		deepLink := fmt.Sprintf("https://smarthouse-frontend.onrender.com/?screen=ukModeration&requestId=%s", requestID)
+		text = fmt.Sprintf("%s\n\nСсылка: %s", message, deepLink)
+	}
 
 	payload := map[string]interface{}{
 		"text": text,
@@ -39,12 +44,14 @@ func SendPushNotification(vkIDs []string, message string, requestID string) erro
 		}
 		resp, err := client.Do(req)
 		if err != nil {
-			log.Printf("Failed to send push to %s: %v\n", vkID, err)
+			log.Printf("[PUSH] Failed to send push to %s: %v\n", vkID, err)
 			continue
 		}
 		if resp.StatusCode != 200 {
 			b, _ := io.ReadAll(resp.Body)
-			log.Printf("MAX API returned status %d for user %s. Body: %s\n", resp.StatusCode, vkID, string(b))
+			log.Printf("[PUSH] MAX API returned status %d for user %s. Body: %s\n", resp.StatusCode, vkID, string(b))
+		} else {
+			log.Printf("[PUSH] Successfully sent push to user %s!\n", vkID)
 		}
 		resp.Body.Close()
 	}

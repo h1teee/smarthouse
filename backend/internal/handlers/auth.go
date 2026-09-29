@@ -58,6 +58,8 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	log.Printf("[AUTH] LoginHandler called with user_id: %s\n", req.VkID)
+
 	var userID int
 	var role string
 	err := storage.DB.QueryRow("SELECT id, role FROM users WHERE vk_id = $1", req.VkID).Scan(&userID, &role)
@@ -65,9 +67,13 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	if err == sql.ErrNoRows {
 		err = storage.DB.QueryRow("INSERT INTO users (vk_id, role) VALUES ($1, 'resident') RETURNING id, role", req.VkID).Scan(&userID, &role)
 		if err != nil {
+			log.Println("[AUTH] DB error creating user:", err)
 			http.Error(w, "DB error: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
+		log.Printf("[AUTH] Created new resident user in DB: ID=%d, vk_id=%s\n", userID, req.VkID)
+		// Привязываем к первому адресу для демо
+		storage.DB.Exec("INSERT INTO user_addresses (user_id, address_id, apartment, account_number) VALUES ($1, 1, '15', '61-0001-0015') ON CONFLICT (user_id, address_id) DO NOTHING", userID)
 	}
 
 	w.Header().Set("Content-Type", "application/json")

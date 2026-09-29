@@ -195,55 +195,57 @@ func BroadcastHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pushResult := "not_sent"
-	if req.TargetMaxID != "" {
-		// Принудительно отправляем пуш тестеру
-		bot.SendPushNotification([]string{req.TargetMaxID}, "🔔 ТЕСТ ОТ УК:\n\n" + req.Text, "broadcast_test")
-		pushResult = "sent_to_tester"
-	}
+	log.Printf("[BROADCAST] Request received: target_max_id=%s, addresses=%v, text=%s\n", req.TargetMaxID, req.SelectedIds, req.Text)
 
 	for _, addrID := range req.SelectedIds {
 		storage.DB.Exec("INSERT INTO feed_items (address_id, title, body, category) VALUES ($1, $2, $3, $4)",
 			addrID, "Рассылка от УК", req.Text, req.Category)
 	}
 
-	// Собираем всех vk_id жителей выбранных домов
+	// Собираем всех vk_id жителей
 	var vkIDs []string
-	if len(req.SelectedIds) > 0 {
-		// ДЛЯ ДЕМО-ВЕРСИИ: Мы берем всех пользователей, у которых есть vk_id, 
-		// чтобы гарантированно доставить пуш тестерам (игнорируя фильтр по адресам)
-		rows, err := storage.DB.Query("SELECT vk_id FROM users WHERE vk_id IS NOT NULL AND vk_id != '' AND vk_id ~ '^[0-9]+$'")
-		if err == nil {
-			for rows.Next() {
-				var vkID string
-				if err := rows.Scan(&vkID); err == nil {
-					vkIDs = append(vkIDs, vkID)
-				}
+	if req.TargetMaxID != "" {
+		vkIDs = append(vkIDs, req.TargetMaxID)
+	}
+
+	// ДЛЯ ДЕМО-ВЕРСИИ: Берем всех пользователей из базы с числовым vk_id
+	rows, err := storage.DB.Query("SELECT vk_id FROM users WHERE vk_id IS NOT NULL AND vk_id != '' AND vk_id ~ '^[0-9]+$'")
+	if err == nil {
+		for rows.Next() {
+			var vkID string
+			if err := rows.Scan(&vkID); err == nil {
+				vkIDs = append(vkIDs, vkID)
 			}
-			rows.Close()
 		}
+		rows.Close()
+	} else {
+		log.Println("[BROADCAST] DB query error:", err)
 	}
 
 	// Убираем дубликаты vk_id
 	uniqueVKIDs := make([]string, 0)
 	seen := make(map[string]bool)
 	for _, id := range vkIDs {
-		if !seen[id] {
+		if !seen[id] && id != "" {
 			seen[id] = true
 			uniqueVKIDs = append(uniqueVKIDs, id)
 		}
 	}
 
-	// Отправляем реальные пуши всем найденным жителям
+	log.Printf("[BROADCAST] Target users count: %d, targets: %v\n", len(uniqueVKIDs), uniqueVKIDs)
+
+	pushResult := "not_sent"
 	if len(uniqueVKIDs) > 0 {
-		bot.SendPushNotification(uniqueVKIDs, "🔔 ВАЖНОЕ СООБЩЕНИЕ ОТ УК:\n\n" + req.Text, "broadcast")
+		bot.SendPushNotification(uniqueVKIDs, "🔔 ВАЖНОЕ СООБЩЕНИЕ ОТ УК:\n\n"+req.Text, "broadcast")
 		pushResult = "sent_to_users"
+	} else {
+		log.Println("[BROADCAST] WARNING: No recipients found! No numeric users in database and target_max_id is empty.")
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"status": "ok", 
-		"push_result": pushResult,
+		"status":         "ok",
+		"push_result":    pushResult,
 		"users_notified": len(uniqueVKIDs),
 	})
 }

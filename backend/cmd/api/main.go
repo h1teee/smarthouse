@@ -83,6 +83,7 @@ func main() {
 
 	// MAX bot webhook
 	mux.HandleFunc("POST /api/max/webhook", handlers.MaxWebhookHandler)
+	mux.HandleFunc("POST /api/webhook/max", handlers.MaxWebhookHandler)
 
 	port := os.Getenv("PORT")
 	if port == "" {

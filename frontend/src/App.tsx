@@ -91,16 +91,47 @@ const App: React.FC = () => {
     // 1. Инициализация MAX Bridge
     bridge.send('VKWebAppInit');
 
-    // 2. Роутинг (Deep Linking из чат-бота)
-    const urlParams = new URLSearchParams(window.location.search);
-    const initialScreen = urlParams.get('screen') as ScreenType;
+    // Пытаемся получить пользователя через Bridge
+    try {
+      bridge.send('VKWebAppGetUserInfo').then((user: any) => {
+        if (user && user.id) {
+          const uid = String(user.id);
+          localStorage.setItem('max_user_id', uid);
+          fetch(API_URL + '/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: uid })
+          }).then(r => r.json()).then(d => {
+            if (d && d.user_id) {
+              localStorage.setItem('user_id', String(d.user_id));
+              localStorage.setItem('role', d.role || 'resident');
+            }
+          }).catch(() => {});
+        }
+      }).catch(() => {});
+    } catch (e) {}
+
+    // 2. Роутинг (Deep Linking из чат-бота) и парсинг URL
+    const searchParams = new URLSearchParams(window.location.search);
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#\/?/, ''));
+    
+    const initialScreen = (searchParams.get('screen') || hashParams.get('screen')) as ScreenType;
     if (initialScreen && screenOrder.includes(initialScreen)) {
       setCurrentScreen(initialScreen);
     }
     
-    // Авто-авторизация из чат-бота (TamTam передает user_id или vk_id)
-    const botUserId = urlParams.get('user_id') || urlParams.get('vk_id') || urlParams.get('chat_id');
+    // Авто-авторизация из чат-бота (TamTam/MAX передает user_id, vk_user_id, vk_id или chat_id)
+    const botUserId = searchParams.get('user_id') || 
+                      searchParams.get('vk_user_id') || 
+                      searchParams.get('vk_id') || 
+                      searchParams.get('chat_id') ||
+                      hashParams.get('user_id') ||
+                      hashParams.get('vk_user_id') ||
+                      hashParams.get('vk_id') ||
+                      hashParams.get('chat_id');
+
     if (botUserId) {
+      localStorage.setItem('max_user_id', botUserId);
       fetch(API_URL + '/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
