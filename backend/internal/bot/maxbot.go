@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -26,8 +27,9 @@ func SendPushNotification(vkIDs []string, message string, requestID string) erro
 	body, _ := json.Marshal(payload)
 
 	for _, vkID := range vkIDs {
-		url := fmt.Sprintf("https://platform-api2.max.ru/messages?user_id=%s&access_token=%s", vkID, token)
+		url := fmt.Sprintf("https://platform-api2.max.ru/messages?user_id=%s", vkID)
 		req, _ := http.NewRequest("POST", url, bytes.NewBuffer(body))
+		req.Header.Set("Authorization", token)
 		req.Header.Set("Content-Type", "application/json")
 
 		client := &http.Client{
@@ -40,11 +42,11 @@ func SendPushNotification(vkIDs []string, message string, requestID string) erro
 			log.Printf("Failed to send push to %s: %v\n", vkID, err)
 			continue
 		}
-		resp.Body.Close()
-
 		if resp.StatusCode != 200 {
-			log.Printf("MAX API returned status %d for user %s\n", resp.StatusCode, vkID)
+			b, _ := io.ReadAll(resp.Body)
+			log.Printf("MAX API returned status %d for user %s. Body: %s\n", resp.StatusCode, vkID, string(b))
 		}
+		resp.Body.Close()
 	}
 	return nil
 }

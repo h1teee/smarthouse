@@ -131,7 +131,7 @@ func ApproveRequestHandler(w http.ResponseWriter, r *http.Request) {
 			req.AddressID, req.Title, req.Description, req.Type)
 
 		// Отправляем пуш жителю (для демо - берем всех с vk_id)
-		rows, dbErr := storage.DB.Query("SELECT vk_id FROM users WHERE vk_id IS NOT NULL AND vk_id != ''")
+		rows, dbErr := storage.DB.Query("SELECT vk_id FROM users WHERE vk_id IS NOT NULL AND vk_id != '' AND vk_id ~ '^[0-9]+$'")
 		if dbErr == nil {
 			var vkIDs []string
 			for rows.Next() { var id string; rows.Scan(&id); vkIDs = append(vkIDs, id) }
@@ -152,7 +152,7 @@ func RejectRequestHandler(w http.ResponseWriter, r *http.Request) {
 	storage.DB.Exec("UPDATE requests SET status = 'rejected' WHERE id = $1", reqID)
 	
 	// Отправляем пуш жителю (для демо - берем всех с vk_id)
-	rows, err := storage.DB.Query("SELECT vk_id FROM users WHERE vk_id IS NOT NULL AND vk_id != ''")
+	rows, err := storage.DB.Query("SELECT vk_id FROM users WHERE vk_id IS NOT NULL AND vk_id != '' AND vk_id ~ '^[0-9]+$'")
 	if err == nil {
 		var vkIDs []string
 		for rows.Next() { var id string; rows.Scan(&id); vkIDs = append(vkIDs, id) }
@@ -212,7 +212,7 @@ func BroadcastHandler(w http.ResponseWriter, r *http.Request) {
 	if len(req.SelectedIds) > 0 {
 		// ДЛЯ ДЕМО-ВЕРСИИ: Мы берем всех пользователей, у которых есть vk_id, 
 		// чтобы гарантированно доставить пуш тестерам (игнорируя фильтр по адресам)
-		rows, err := storage.DB.Query("SELECT vk_id FROM users WHERE vk_id IS NOT NULL AND vk_id != ''")
+		rows, err := storage.DB.Query("SELECT vk_id FROM users WHERE vk_id IS NOT NULL AND vk_id != '' AND vk_id ~ '^[0-9]+$'")
 		if err == nil {
 			for rows.Next() {
 				var vkID string

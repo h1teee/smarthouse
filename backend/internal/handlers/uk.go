@@ -257,7 +257,7 @@ func sendMaxPushNotificationSync(userID string, text string) string {
 		return "no_user_id"
 	}
 	
-	url := "https://platform-api2.max.ru/messages?user_id=" + userID + "&access_token=" + token
+	url := "https://platform-api2.max.ru/messages?user_id=" + userID
 	
 	payload := map[string]interface{}{
 		"text": "🔔 ВАЖНОЕ СООБЩЕНИЕ ОТ УК:\n\n" + text,
@@ -265,6 +265,7 @@ func sendMaxPushNotificationSync(userID string, text string) string {
 	body, _ := json.Marshal(payload)
 	
 	req, _ := http.NewRequest("POST", url, bytes.NewBuffer(body))
+	req.Header.Set("Authorization", token)
 	req.Header.Set("Content-Type", "application/json")
 	
 	client := &http.Client{
