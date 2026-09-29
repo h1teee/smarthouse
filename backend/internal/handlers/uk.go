@@ -1,14 +1,15 @@
 package handlers
 
 import (
-	"crypto/tls"
-	"encoding/json"
-	"net/http"
-	"io"
-	"strconv"
 	"bytes"
-	"os"
+	"crypto/tls"
 	"database/sql"
+	"encoding/json"
+	"io"
+	"log"
+	"net/http"
+	"os"
+	"strconv"
 
 	"backend/internal/ai"
 	"backend/internal/bot"

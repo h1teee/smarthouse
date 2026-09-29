@@ -1,11 +1,13 @@
 package handlers
 
 import (
-	"encoding/json"
-	"net/http"
-	"backend/internal/storage"
 	"database/sql"
+	"encoding/json"
+	"log"
+	"net/http"
 	"strconv"
+
+	"backend/internal/storage"
 )
 
 // Helper to get user ID from headers (or default to 1 if not provided)
