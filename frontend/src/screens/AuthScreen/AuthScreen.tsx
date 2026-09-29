@@ -157,6 +157,11 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onNext }) => {
                         lineHeight: '1.4',
                         cursor: 'pointer'
                       }}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        setApartment(a.full_address);
+                        setShowDropdown(false);
+                      }}
                       onClick={() => {
                         setApartment(a.full_address);
                         setShowDropdown(false);
@@ -177,8 +182,15 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onNext }) => {
           </button>
         </form>
         
-        <div className={styles.demoNote}>
-          <p>Для демо-входа используйте:</p>
+        <div 
+          className={styles.demoNote}
+          style={{ cursor: 'pointer' }}
+          onClick={() => {
+            setAccount('61-0001-0015');
+            setApartment('Ростовская обл., г. Ростов-на-Дону, ГСК-3. Мухина, д. 47');
+          }}
+        >
+          <p>Для демо-входа используйте (нажмите для автозаполнения):</p>
           <p>Счет: <b>61-0001-0015</b> | Адрес: <b>Ростовская обл., г. Ростов-на-Дону, ГСК-3. Мухина, д. 47</b></p>
         </div>
       </main>
