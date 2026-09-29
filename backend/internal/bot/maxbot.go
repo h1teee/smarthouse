@@ -19,6 +19,10 @@ func cleanToken(t string) string {
 	t = strings.Trim(t, "\"'`\r\n\t")
 	t = strings.TrimPrefix(t, "Bearer ")
 	t = strings.TrimSpace(t)
+	// Если токен был случайно скопирован/вставлен дважды
+	if len(t) == 168 && t[:84] == t[84:] {
+		t = t[:84]
+	}
 	return t
 }
 
