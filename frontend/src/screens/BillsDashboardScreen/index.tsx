@@ -27,6 +27,7 @@ const MOCK_RECEIPTS: Receipt[] = [
 
 export const BillsDashboardScreen: React.FC<BillsDashboardScreenProps> = ({ onDetailedAnalysis, onNavigate }) => {
   const [bills, setBills] = useState<any[]>([]);
+  const [meters, setMeters] = useState({ water: 142, electricity: 8450 });
   const [selectedReceiptId, setSelectedReceiptId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -42,7 +43,16 @@ export const BillsDashboardScreen: React.FC<BillsDashboardScreenProps> = ({ onDe
     fetchBills();
   }, []);
 
-  const unpaidBill = bills.find(b => !b.is_paid && !b.isPaid);
+  let unpaidBill = bills.find(b => !b.is_paid && !b.isPaid);
+  if (!unpaidBill) {
+    unpaidBill = {
+      id: 'mock-1',
+      month: 'Сентябрь 2026',
+      amount: 4850.00,
+      provider: 'УК Смарт Сити',
+      is_paid: false
+    };
+  }
   const paidBills = bills.filter(b => b.is_paid || b.isPaid).map(b => ({
     id: String(b.id),
     month: b.month,
@@ -66,7 +76,12 @@ export const BillsDashboardScreen: React.FC<BillsDashboardScreenProps> = ({ onDe
     if (!unpaidBill || paying) return;
     setPaying(true);
     try {
-      await fetch(import.meta.env.VITE_API_URL + '/api/bills/' + unpaidBill.id + '/pay', { method: 'POST', headers: { 'X-User-ID': localStorage.getItem('user_id') || '1' } });
+      if (unpaidBill.id === 'mock-1') {
+        await new Promise(r => setTimeout(r, 1000));
+        // just mock
+      } else {
+        await fetch(import.meta.env.VITE_API_URL + '/api/bills/' + unpaidBill.id + '/pay', { method: 'POST', headers: { 'X-User-ID': localStorage.getItem('user_id') || '1' } });
+      }
       // Refetch bills
       const res = await fetch(import.meta.env.VITE_API_URL + '/api/bills', { headers: { 'X-User-ID': localStorage.getItem('user_id') || '1' } });
       if (res.ok) {
@@ -181,7 +196,7 @@ export const BillsDashboardScreen: React.FC<BillsDashboardScreenProps> = ({ onDe
               <span className={styles.meterStatus}>Передано</span>
             </div>
             <div className={styles.meterData}>
-              <span className={styles.meterValue}>142</span>
+              <span className={styles.meterValue}>{meters.water}</span>
               <span className={styles.meterUnit}>м³</span>
             </div>
             <div className={styles.meterName}>Водоснабжение</div>
@@ -197,7 +212,7 @@ export const BillsDashboardScreen: React.FC<BillsDashboardScreenProps> = ({ onDe
               <span className={styles.meterStatusAlert}>До 25 числа</span>
             </div>
             <div className={styles.meterData}>
-              <span className={styles.meterValue}>8 450</span>
+              <span className={styles.meterValue}>{meters.electricity}</span>
               <span className={styles.meterUnit}>кВт</span>
             </div>
             <div className={styles.meterName}>Электроэнергия</div>

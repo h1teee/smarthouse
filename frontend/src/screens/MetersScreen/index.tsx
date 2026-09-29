@@ -18,7 +18,9 @@ export const MetersScreen: React.FC<MetersScreenProps> = ({ onBack }) => {
   useEffect(() => {
     const fetchMeters = async () => {
       try {
-        const res = await fetch(import.meta.env.VITE_API_URL + '/api/meters');
+        const res = await fetch(import.meta.env.VITE_API_URL + '/api/meters', {
+          headers: { 'X-User-ID': localStorage.getItem('user_id') || '1' }
+        });
         if (res.ok) {
           const data = await res.json();
           setPrevWater(data.water || 0);
