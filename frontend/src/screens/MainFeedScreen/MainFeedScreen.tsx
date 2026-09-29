@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import styles from './MainFeedScreen.module.css';
-import logoSrc from '@/assets/logo.svg';
 
 interface MainFeedScreenProps {
   onBack?: () => void;
@@ -20,10 +19,17 @@ interface FeedItem {
 
 export const MainFeedScreen: React.FC<MainFeedScreenProps> = ({ onOpenCamera, onOpenNotifications }) => {
   const [activeTab, setActiveTab] = useState<'actual' | 'archive'>('actual');
-  const activeAddress = localStorage.getItem('user_address') || 'Адрес не указан';
+  const [activeAddress, setActiveAddress] = useState<string>(() => {
+    return localStorage.getItem('user_address') || 'Ростовская обл., г. Ростов-на-Дону, ГСК-3. Мухина, д. 47';
+  });
   
   const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('user_address');
+    if (saved) setActiveAddress(saved);
+  }, []);
 
   useEffect(() => {
     const fetchFeed = async () => {
@@ -115,13 +121,6 @@ export const MainFeedScreen: React.FC<MainFeedScreenProps> = ({ onOpenCamera, on
             </svg>
             <div className={styles.notificationDot} />
           </button>
-        </div>
-
-        {/* Centered Logo Area */}
-        <div className={styles.logoHeroArea}>
-          <div className={styles.logoContainer}>
-            <img src={logoSrc} alt="Logo" className={styles.heroLogo} />
-          </div>
         </div>
 
         <div className={styles.scrollArea}>

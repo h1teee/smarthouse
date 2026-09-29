@@ -66,9 +66,10 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onNext }) => {
         throw new Error(data.message || 'Счет или квартира не найдены');
       }
 
-      // Сохраняем токен
+      // Сохраняем токен и адрес
       localStorage.setItem('user_id', String(data.user_id));
       localStorage.setItem('role', data.role);
+      localStorage.setItem('user_address', apartment);
 
       if (onNext) onNext();
     } catch (err: any) {
