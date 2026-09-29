@@ -100,7 +100,7 @@ export const UKBroadcastScreen: React.FC = () => {
     try {
       const res = await fetch(import.meta.env.VITE_API_URL + '/api/uk/broadcast', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-User-ID': localStorage.getItem('user_id') || '1' },
         body: JSON.stringify({
           selectedIds: Array.from(selectedIds).map(Number),
           category: category,
