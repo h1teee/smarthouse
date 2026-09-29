@@ -14,7 +14,7 @@ interface Offer {
   promoCode: string;
 }
 
-const OFFERS: Offer[] = [
+const INITIAL_OFFERS: Offer[] = [
   {
     id: 'vkusvill',
     partner: 'ВкусВилл',
@@ -65,6 +65,7 @@ export const ProfileScreen: React.FC<{onLogout?: () => void}> = ({ onLogout }) =
   const [cashback, setCashback] = useState<number>(4850);
   const [notifications, setNotifications] = useState<boolean>(true);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [offers, setOffers] = useState<Offer[]>(INITIAL_OFFERS);
   
   // Рефы и модальные окна
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -91,6 +92,16 @@ export const ProfileScreen: React.FC<{onLogout?: () => void}> = ({ onLogout }) =
           const unpaid = data.filter((b: any) => !b.is_paid && !b.isPaid);
           const totalDebt = unpaid.reduce((acc: number, bill: any) => acc + Number(bill.amount), 0);
           setDebt(totalDebt);
+        }
+      })
+      .catch(() => {});
+
+    fetch(import.meta.env.VITE_API_URL + '/api/v1/profile/privileges', { headers: { 'X-User-ID': localStorage.getItem('user_id') || '1' } })
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.length > 0) {
+          // If the backend actually returned valid offers, we would map them here.
+          // For now, if we get data, we could append it or replace.
         }
       })
       .catch(() => {});
@@ -165,7 +176,6 @@ export const ProfileScreen: React.FC<{onLogout?: () => void}> = ({ onLogout }) =
       {/* Верхний бар */}
       <header className={styles.navBar}>
         <h1 className={styles.screenTitle}>Профиль</h1>
-        
       </header>
 
       {/* Карточка Apple ID (с возможностью смены аватара) */}
@@ -210,7 +220,7 @@ export const ProfileScreen: React.FC<{onLogout?: () => void}> = ({ onLogout }) =
 
         {debt > 0 ? (
           <div className={styles.debtIndicator}>
-            Задолженность {debt.toLocaleString("ru-RU")} ₽
+            Задолженность {debt.toLocaleString('ru-RU')} ₽
           </div>
         ) : cashback > 0 ? (
           <button 
@@ -273,11 +283,11 @@ export const ProfileScreen: React.FC<{onLogout?: () => void}> = ({ onLogout }) =
       <section className={styles.section}>
         <div className={styles.sectionHeader}>
           <h3 className={styles.sectionTitle}>Привилегии</h3>
-          <span className={styles.sectionCount}>{OFFERS.length} предложения</span>
+          <span className={styles.sectionCount}>{offers.length} предложения</span>
         </div>
 
         <div className={styles.carousel}>
-          {OFFERS.map(offer => (
+          {offers.map(offer => (
             <div 
               key={offer.id}
               className={styles.card}
@@ -335,7 +345,7 @@ export const ProfileScreen: React.FC<{onLogout?: () => void}> = ({ onLogout }) =
                       notify('Задолженность оплачена! Доступ открыт');
                     }}
                   >
-                    Оплатить {debt.toLocaleString("ru-RU")} ₽
+                    Оплатить {debt.toLocaleString('ru-RU')} ₽
                   </button>
                 </div>
               )}

@@ -9,16 +9,37 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onNext }) => {
   const [account, setAccount] = useState('');
   const [apartment, setApartment] = useState('');
   const [loading, setLoading] = useState(false);
-  const [addresses, setAddresses] = useState<any[]>([]);
+  const FALLBACK_ADDRESSES = [
+    { id: 1, full_address: 'Ростовская обл., г. Ростов-на-Дону, ГСК-3. Мухина, д. 47' },
+    { id: 2, full_address: 'Ростовская обл., г. Ростов-на-Дону, пр. Космонавтов, 34а' },
+    { id: 3, full_address: 'Ростовская обл., г. Ростов-на-Дону, ул. Большая Садовая, 125' },
+    { id: 4, full_address: 'Ростовская обл., г. Ростов-на-Дону, ул. Пушкинская, 42' },
+    { id: 5, full_address: 'Ростовская обл., г. Ростов-на-Дону, ст-ца. Елизаветинская, д. 77' },
+    { id: 6, full_address: 'Ростовская обл., г. Ростов-на-Дону, Жлобы. Аэродромный, д. 6' },
+  ];
+
+  const [addresses, setAddresses] = useState<any[]>(FALLBACK_ADDRESSES);
   const [showDropdown, setShowDropdown] = useState(false);
   
-  const filteredAddresses = addresses.filter(a => a.full_address.toLowerCase().includes(apartment.toLowerCase()));
+  const filteredAddresses = addresses
+    .filter(a => a?.full_address && (!apartment || a.full_address.toLowerCase().includes(apartment.toLowerCase())))
+    .slice(0, 10);
 
   useEffect(() => {
-    fetch(import.meta.env.VITE_API_URL + '/api/addresses')
-      .then(res => res.json())
-      .then(data => setAddresses(data || []))
-      .catch(() => {});
+    const apiUrl = import.meta.env.VITE_API_URL || 'https://smarthouse-backend.onrender.com';
+    fetch(apiUrl + '/api/addresses')
+      .then(res => {
+        if (!res.ok) throw new Error('API error');
+        return res.json();
+      })
+      .then(data => {
+        if (Array.isArray(data) && data.length > 0) {
+          setAddresses(data);
+        }
+      })
+      .catch(() => {
+        // Keep fallback addresses if API is down or slow to respond
+      });
   }, []);
   const [error, setError] = useState('');
 

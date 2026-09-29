@@ -118,8 +118,6 @@ export const UKDashboardScreen: React.FC<UKDashboardScreenProps> = ({ onOpenRequ
             </button>
           </header>
 
-          
-
           <section className={`${styles.metricsGrid} ${styles.animateStagger2}`}>
             <div className={styles.metricCard}>
               <span className={`${styles.metricValue} ${styles.purple}`}>{displayRequests.filter(r => r.status === 'pending').length}</span>
@@ -148,39 +146,40 @@ export const UKDashboardScreen: React.FC<UKDashboardScreenProps> = ({ onOpenRequ
             {filteredRequests.map(req => {
               const statusObj = statusLabels[req.status] || { label: req.status, colorClass: styles.statusPending };
               return (
-              <div 
-                key={req.id} 
-                className={styles.requestCard}
-                onClick={() => onOpenRequest?.(req.id)}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    onOpenRequest?.(req.id);
-                  }
-                }}
-              >
-                <div className={styles.requestIconBox}>
-                  {req.icon}
-                </div>
-                
-                <div className={styles.requestContent}>
-                  <div className={styles.requestTitleRow}>
-                    <span className={styles.requestTitle}>{req.title}</span>
-                    <span className={`${styles.requestStatus} ${statusObj.colorClass}`}>
-                      {statusObj.label}
-                    </span>
+                <div 
+                  key={req.id} 
+                  className={styles.requestCard}
+                  onClick={() => onOpenRequest?.(req.id)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      onOpenRequest?.(req.id);
+                    }
+                  }}
+                >
+                  <div className={styles.requestIconBox}>
+                    {req.icon}
                   </div>
-                  <span className={styles.requestMeta}>{req.address}</span>
+                  
+                  <div className={styles.requestContent}>
+                    <div className={styles.requestTitleRow}>
+                      <span className={styles.requestTitle}>{req.title}</span>
+                      <span className={`${styles.requestStatus} ${statusObj.colorClass}`}>
+                        {statusObj.label}
+                      </span>
+                    </div>
+                    <span className={styles.requestMeta}>{req.address}</span>
+                  </div>
+                  
+                  <div className={styles.requestChevron}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                  </div>
                 </div>
-                
-                <div className={styles.requestChevron}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="9 18 15 12 9 6" />
-                  </svg>
-                </div>
-              </div>
-            )})}
+              );
+            })}
           </section>
         </div>
       </div>

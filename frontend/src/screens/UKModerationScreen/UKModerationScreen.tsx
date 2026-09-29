@@ -13,6 +13,12 @@ export const UKModerationScreen: React.FC<UKModerationScreenProps> = ({
   onReject 
 }) => {
   const [request, setRequest] = useState<any>(null);
+
+  const [title, setTitle] = useState('');
+  const [start, setStart] = useState('');
+  const [end, setEnd] = useState('');
+  const [details, setDetails] = useState('');
+
   const [isLoadingConfirm, setIsLoadingConfirm] = useState(false);
   
   // Sheet state
@@ -34,6 +40,10 @@ export const UKModerationScreen: React.FC<UKModerationScreenProps> = ({
           const req = list.find((r: any) => String(r.id) === idStr);
           if (req) {
             setRequest(req);
+            setTitle(req.title || '');
+            setStart(req.start_date || '');
+            setEnd(req.end_date || '');
+            setDetails(req.description || '');
           }
         }
       } catch (err) {
@@ -69,7 +79,7 @@ export const UKModerationScreen: React.FC<UKModerationScreenProps> = ({
     setIsLoadingConfirm(true);
     try {
       await fetch(import.meta.env.VITE_API_URL + '/api/uk/requests/' + request.id + '/approve', { method: 'POST' });
-      setSuccessMsg('Заявка одобрена');
+      setSuccessMsg('Успешно одобрено');
       setIsSuccess(true);
       setTimeout(() => {
         onConfirm();
@@ -124,93 +134,150 @@ export const UKModerationScreen: React.FC<UKModerationScreenProps> = ({
   return (
     <div className={styles.screen}>
       <div className={styles.ambientGlow} aria-hidden="true" />
-      
-      <div className={styles.header}>
-        <button className={styles.backBtn} onClick={onBack}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+
+      <header className={styles.topBar}>
+        <button className={styles.backButton} onClick={onBack} aria-label="Назад">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="15 18 9 12 15 6" />
           </svg>
+          Назад
         </button>
         <span className={styles.headerTitle}>Заявка #{request.id}</span>
-      </div>
+        <div className={styles.placeholderRight} />
+      </header>
 
-      <div className={styles.content}>
-        <div className={styles.card}>
-          <div className={styles.badgeWrapper}>
-            <div className={styles.badge}>Новая</div>
-          </div>
-          <h1 className={styles.title}>{request.title}</h1>
-          
-          <div className={styles.infoList}>
-            <div className={styles.infoRow}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10" />
-                <polyline points="12 6 12 12 16 14" />
-              </svg>
-              <span>{request.start_date || 'Нет данных'} — {request.end_date || 'Нет данных'}</span>
+      <main className={styles.content}>
+        <div className={styles.photoCard}>
+          <div className={styles.photoOverlayTop}>
+            <div className={styles.photoBadge}>
+              <span className={styles.photoBadgeDot} />
+              <span>AI Распознано 98%</span>
             </div>
-            <div className={styles.infoRow}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                <circle cx="12" cy="10" r="3" />
-              </svg>
-              <span>г. Ростов-на-Дону, тип: {request.type}</span>
-            </div>
+            <span className={styles.photoFilename}>IMG_20260920.HEIC</span>
           </div>
 
-          <div className={styles.detailsBlock}>
-            <h3 className={styles.detailsTitle}>Детали заявки</h3>
-            <p className={styles.detailsText}>{request.description}</p>
+          <div className={styles.photoCenterMockup}>
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+              <circle cx="8.5" cy="8.5" r="1.5" />
+              <polyline points="21 15 16 10 5 21" />
+            </svg>
+            <div className={styles.photoLines}>
+              <div className={styles.mockLine} />
+              <div className={`${styles.mockLine} ${styles.mockLineShort}`} />
+            </div>
+          </div>
+
+          <div className={styles.photoOverlayBottom}>
+            <span>Оригинал объявления с подъезда</span>
+            <span>10 мин назад</span>
           </div>
         </div>
 
-        {request.status === 'pending' && (
-          <div className={styles.actions}>
-            <button 
-              className={styles.approveBtn}
-              onClick={handleConfirm}
-              disabled={isLoadingConfirm}
-            >
-              {isLoadingConfirm ? <span className={styles.spinner} /> : 'Подтвердить'}
-            </button>
-            <button 
-              className={styles.rejectBtn}
-              onClick={() => setIsRejectSheetOpen(true)}
-            >
-              Отклонить
+        <div className={styles.authorBadgeWrap}>
+          <svg className={styles.authorIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+          </svg>
+          <span className={styles.authorInfo}>Автор: Иванов И.И., кв. 12</span>
+        </div>
+
+        <div className={styles.formSection}>
+          <div className={styles.formSectionTitle}>Параметры публикации</div>
+          <div className={styles.formGroup}>
+            <div className={styles.formRow}>
+              <span className={styles.formLabel}>Заголовок</span>
+              <input 
+                type="text" 
+                className={styles.formInput} 
+                value={title} 
+                onChange={(e) => setTitle(e.target.value)} 
+                placeholder="Тема уведомления"
+              />
+            </div>
+
+            <div className={styles.formRow}>
+              <span className={styles.formLabel}>Начало</span>
+              <input 
+                type="text" 
+                className={styles.formInput} 
+                value={start} 
+                onChange={(e) => setStart(e.target.value)} 
+              />
+            </div>
+
+            <div className={styles.formRow}>
+              <span className={styles.formLabel}>Конец</span>
+              <input 
+                type="text" 
+                className={styles.formInput} 
+                value={end} 
+                onChange={(e) => setEnd(e.target.value)} 
+              />
+            </div>
+
+            <div className={styles.formRowVertical}>
+              <span className={styles.formLabel}>Суть</span>
+              <textarea 
+                className={styles.formTextarea} 
+                value={details} 
+                onChange={(e) => setDetails(e.target.value)} 
+                placeholder="Подробный текст для жителей..."
+              />
+            </div>
+          </div>
+        </div>
+      </main>
+
+      {request.status === 'pending' && (
+        <footer className={styles.footer}>
+          <button className={styles.primaryButton} onClick={handleConfirm} disabled={isLoadingConfirm}>
+            {isLoadingConfirm ? 'Загрузка...' : 'Подтвердить и разослать PUSH'}
+          </button>
+          <button className={styles.secondaryButton} onClick={() => setIsRejectSheetOpen(true)}>
+            Отклонить
+          </button>
+          <div className={styles.homeIndicator} aria-hidden="true" />
+        </footer>
+      )}
+
+      {/* Reject Bottom Sheet */}
+      <div 
+        className={`${styles.bottomSheet} ${isRejectSheetOpen ? styles.show : ''}`}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        <div className={styles.grabberWrap} onClick={() => setIsRejectSheetOpen(false)}>
+          <div className={styles.grabber} />
+        </div>
+        
+        {isRejectSheetOpen && (
+          <div style={{ padding: '0 20px 20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div className={styles.sheetHeader}>
+              <h2 className={styles.sheetTitle}>Причина отклонения</h2>
+              <button className={styles.closeBtn} onClick={() => setIsRejectSheetOpen(false)}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+            
+            <textarea
+              className={styles.formTextarea}
+              style={{ minHeight: '100px', backgroundColor: 'rgba(255,255,255,0.05)', padding: '12px', borderRadius: '12px' }}
+              placeholder="Укажите причину для жителя..."
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+            />
+            
+            <button className={styles.primaryButton} style={{ background: '#FF3B30' }} onClick={handleRejectSubmit} disabled={isLoadingReject}>
+              {isLoadingReject ? 'Отклонение...' : 'Отклонить заявку'}
             </button>
           </div>
         )}
       </div>
-
-      {isRejectSheetOpen && (
-        <>
-          <div className={styles.backdrop} onClick={() => setIsRejectSheetOpen(false)} />
-          <div 
-            className={styles.bottomSheet}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
-          >
-            <div className={styles.dragHandle} />
-            <h2 className={styles.sheetTitle}>Причина отклонения</h2>
-            <textarea
-              className={styles.textarea}
-              placeholder="Опишите причину отклонения заявки..."
-              value={rejectReason}
-              onChange={(e) => setRejectReason(e.target.value)}
-              rows={4}
-            />
-            <button 
-              className={styles.submitRejectBtn}
-              onClick={handleRejectSubmit}
-              disabled={isLoadingReject || !rejectReason.trim()}
-            >
-              {isLoadingReject ? <span className={styles.spinner} /> : 'Отклонить заявку'}
-            </button>
-          </div>
-        </>
-      )}
     </div>
   );
 };

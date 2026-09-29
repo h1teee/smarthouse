@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, TouchEvent } from 'react';
 import { YMaps, Map, Placemark, Clusterer } from '@pbe/react-yandex-maps';
 import styles from './UKObjectsScreen.module.css';
 
@@ -29,8 +29,10 @@ export const UKObjectsScreen: React.FC = () => {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [filterStatus, setFilterStatus] = useState<HouseStatus | 'all'>('all');
   
-  
   const [selectedHouseId, setSelectedHouseId] = useState<number | null>(null);
+
+  // Swipe handling
+  const [touchStartY, setTouchStartY] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -83,6 +85,24 @@ export const UKObjectsScreen: React.FC = () => {
     setIsFilterOpen(false);
   };
 
+  const handleTouchStart = (e: TouchEvent<HTMLDivElement>) => {
+    setTouchStartY(e.touches[0].clientY);
+  };
+
+  const handleTouchMove = (e: TouchEvent<HTMLDivElement>) => {
+    if (touchStartY === null) return;
+    const currentY = e.touches[0].clientY;
+    const diff = currentY - touchStartY;
+    if (diff > 50) {
+      setSelectedHouseId(null);
+      setTouchStartY(null);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setTouchStartY(null);
+  };
+
   return (
     <div className={styles.container}>
       {/* Background Map */}
@@ -115,6 +135,7 @@ export const UKObjectsScreen: React.FC = () => {
                       e.get('domEvent')?.stopPropagation();
                     }
                     setSelectedHouseId(house.address_id);
+                    setIsFilterOpen(false);
                   }}
                 />
               ))}
@@ -133,7 +154,7 @@ export const UKObjectsScreen: React.FC = () => {
           <input 
             type="text" 
             className={styles.searchInput} 
-            placeholder="Поиск адреса..." 
+            placeholder="Найти адрес: ул. Космонавтов..." 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -154,19 +175,34 @@ export const UKObjectsScreen: React.FC = () => {
           </button>
           
           <div className={`${styles.filterDropdown} ${isFilterOpen ? styles.open : ''}`}>
+            
             <div className={styles.filterGroup}>
               <div className={styles.filterGroupTitle}>Статус</div>
-              <button className={`${styles.filterOption} ${filterStatus === 'all' ? styles.active : ''}`} onClick={() => setFilterStatus('all')}>Все</button>
-              <button className={`${styles.filterOption} ${filterStatus === 'critical' ? styles.active : ''}`} onClick={() => setFilterStatus('critical')}>Критично</button>
-              <button className={`${styles.filterOption} ${filterStatus === 'repair' ? styles.active : ''}`} onClick={() => setFilterStatus('repair')}>В ремонте</button>
-              <button className={`${styles.filterOption} ${filterStatus === 'ok' ? styles.active : ''}`} onClick={() => setFilterStatus('ok')}>ОК</button>
+              <button className={`${styles.filterOption} ${filterStatus === 'all' ? styles.active : ''}`} onClick={() => setFilterStatus('all')}>
+                Любой статус {filterStatus === 'all' && <span>✓</span>}
+              </button>
+              <button className={`${styles.filterOption} ${filterStatus === 'critical' ? styles.active : ''}`} onClick={() => setFilterStatus('critical')}>
+                Аварии {filterStatus === 'critical' && <span>✓</span>}
+              </button>
+              <button className={`${styles.filterOption} ${filterStatus === 'repair' ? styles.active : ''}`} onClick={() => setFilterStatus('repair')}>
+                В ремонте {filterStatus === 'repair' && <span>✓</span>}
+              </button>
+              <button className={`${styles.filterOption} ${filterStatus === 'ok' ? styles.active : ''}`} onClick={() => setFilterStatus('ok')}>
+                Штатно {filterStatus === 'ok' && <span>✓</span>}
+              </button>
             </div>
+
           </div>
         </div>
       </div>
 
       {/* Bottom Sheet */}
-      <div className={`${styles.bottomSheet} ${selectedHouse ? styles.show : ''}`}>
+      <div 
+        className={`${styles.bottomSheet} ${selectedHouse ? styles.show : ''}`}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
         <div className={styles.grabberWrap} onClick={() => setSelectedHouseId(null)}>
           <div className={styles.grabber} />
         </div>
@@ -199,7 +235,12 @@ export const UKObjectsScreen: React.FC = () => {
               </div>
             ) : (
               <div className={styles.emptyState}>
-                Проблем нет. Дом в хорошем состоянии.
+                <svg className={styles.emptyIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                  <polyline points="22 4 12 14.01 9 11.01" />
+                </svg>
+                <div className={styles.emptyTitle}>Всё в порядке</div>
+                <div className={styles.emptyDesc}>На объекте штатная ситуация. Проблем и активных рассылок нет.</div>
               </div>
             )}
           </>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styles from './MainFeedScreen.module.css';
+import logoSrc from '@/assets/logo.svg';
 
 interface MainFeedScreenProps {
   onBack?: () => void;
@@ -94,6 +95,8 @@ export const MainFeedScreen: React.FC<MainFeedScreenProps> = ({ onOpenCamera, on
       <div className={styles.appBackground} aria-hidden="true" />
 
       <div className={styles.contentLayer}>
+        
+        {/* Top Header Row: Address & Notifications */}
         <div className={styles.headerRow}>
           <div className={styles.addressContainer}>
             <div 
@@ -121,40 +124,56 @@ export const MainFeedScreen: React.FC<MainFeedScreenProps> = ({ onOpenCamera, on
             )}
           </div>
           
-          <button className={styles.notificationBtn} onClick={onOpenNotifications}>
-            <div className={styles.notificationDot} />
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-              <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+          <button 
+            className={styles.bellButton}
+            type="button"
+            aria-label="Уведомления"
+            onClick={onOpenNotifications}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
             </svg>
+            <div className={styles.notificationDot} />
           </button>
         </div>
 
-        <div className={styles.segmentedControlWrapper}>
-          <div className={styles.segmentedControl}>
-            <button 
-              className={`${styles.segment} ${activeTab === 'actual' ? styles.active : styles.inactive}`}
-              onClick={() => setActiveTab('actual')}
-            >
-              Актуальное
-            </button>
-            <button 
-              className={`${styles.segment} ${activeTab === 'archive' ? styles.active : styles.inactive}`}
-              onClick={() => setActiveTab('archive')}
-            >
-              Архив
-            </button>
+        {/* Centered Logo Area */}
+        <div className={styles.logoHeroArea}>
+          <div className={styles.logoContainer}>
+            <img src={logoSrc} alt="Logo" className={styles.heroLogo} />
           </div>
         </div>
 
-        <div className={styles.feedList}>
-          {isLoading ? (
-            <div style={{ padding: 20, textAlign: 'center', color: '#888' }}>Загрузка...</div>
-          ) : activeTab === 'actual' ? (
-            actualItems.length > 0 ? actualItems.map(item => renderCard(item, false)) : <div style={{textAlign: 'center', opacity: 0.5, marginTop: 20}}>Нет актуальных новостей</div>
-          ) : (
-            archiveItems.length > 0 ? archiveItems.map(item => renderCard(item, true)) : <div style={{textAlign: 'center', opacity: 0.5, marginTop: 20}}>Нет архива</div>
-          )}
+        <div className={styles.scrollArea}>
+          {/* Segmented Control / Filters */}
+          <div className={styles.segmentedControlWrapper}>
+            <div className={styles.segmentedControl}>
+              <button 
+                className={`${styles.segment} ${activeTab === 'actual' ? styles.active : styles.inactive}`}
+                onClick={() => setActiveTab('actual')}
+              >
+                Актуальное
+              </button>
+              <button 
+                className={`${styles.segment} ${activeTab === 'archive' ? styles.active : styles.inactive}`}
+                onClick={() => setActiveTab('archive')}
+              >
+                Архив
+              </button>
+            </div>
+          </div>
+
+          {/* Feed Cards */}
+          <div className={styles.feedList}>
+            {isLoading ? (
+              <div style={{ padding: 20, textAlign: 'center', color: '#888' }}>Загрузка...</div>
+            ) : activeTab === 'actual' ? (
+              actualItems.length > 0 ? actualItems.map(item => renderCard(item, false)) : <div style={{textAlign: 'center', opacity: 0.5, marginTop: 20}}>Нет актуальных новостей</div>
+            ) : (
+              archiveItems.length > 0 ? archiveItems.map(item => renderCard(item, true)) : <div style={{textAlign: 'center', opacity: 0.5, marginTop: 20}}>Нет архива</div>
+            )}
+          </div>
         </div>
       </div>
 

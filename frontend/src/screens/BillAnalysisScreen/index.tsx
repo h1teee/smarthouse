@@ -28,7 +28,7 @@ export const BillAnalysisScreen: React.FC<BillAnalysisScreenProps> = ({ onBack }
       text: 'Анализирую квитанцию... Загружаю данные из GigaChat 🤖' 
     }
   ]);
-  const [, setIsTyping] = useState(true);
+  const [isTyping, setIsTyping] = useState(true);
   const [expenseHistory, setExpenseHistory] = useState<ExpenseItem[]>([]);
   const [allBills, setAllBills] = useState<any[]>([]);
   const [currentBillId, setCurrentBillId] = useState<string | null>(localStorage.getItem('selectedBillId'));
@@ -41,7 +41,7 @@ export const BillAnalysisScreen: React.FC<BillAnalysisScreenProps> = ({ onBack }
   useEffect(() => {
     const loadData = async () => {
       let billId = currentBillId;
-      
+      setIsTyping(true);
       
       // If no bill selected, try to pick the latest unpaid or latest bill
       if (!billId) {
@@ -116,7 +116,7 @@ export const BillAnalysisScreen: React.FC<BillAnalysisScreenProps> = ({ onBack }
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, isTyping, isSending]);
 
   const sendMessage = async (text: string) => {
     if (!text.trim()) return;
@@ -160,7 +160,7 @@ export const BillAnalysisScreen: React.FC<BillAnalysisScreenProps> = ({ onBack }
 
   const handleFormSubmit = (e: FormEvent) => {
     e.preventDefault();
-    if (!isSending) {
+    if (!isSending && !isTyping) {
       sendMessage(inputText);
     }
   };
@@ -178,13 +178,13 @@ export const BillAnalysisScreen: React.FC<BillAnalysisScreenProps> = ({ onBack }
           Назад
         </button>
         <h2 className={styles.navTitle}>Разбор квитанции</h2>
-        {allBills.length > 0 && (
+        {allBills.length > 0 ? (
           <select 
             value={currentBillId || ''} 
             onChange={(e) => {
               setCurrentBillId(e.target.value);
               localStorage.setItem('selectedBillId', e.target.value);
-              setMessages([]);
+              setMessages([{ id: 1, sender: 'ai', text: 'Загрузка...' }]);
             }}
             style={{ 
               background: 'rgba(255,255,255,0.1)', 
@@ -200,8 +200,9 @@ export const BillAnalysisScreen: React.FC<BillAnalysisScreenProps> = ({ onBack }
               <option key={b.id} value={b.id} style={{color: '#000'}}>{b.month}</option>
             ))}
           </select>
+        ) : (
+          <div className={styles.navSpacer} />
         )}
-        {allBills.length === 0 && <div className={styles.navSpacer} />}
       </header>
 
       <div className={styles.content}>
@@ -253,7 +254,7 @@ export const BillAnalysisScreen: React.FC<BillAnalysisScreenProps> = ({ onBack }
               )}
             </div>
           ))}
-          {isSending && (
+          {(isTyping || isSending) && (
             <div className={`${styles.messageWrapper} ${styles.messageAi}`}>
               <div className={styles.chatBubble}>
                 <p>Печатает...</p>
@@ -267,8 +268,8 @@ export const BillAnalysisScreen: React.FC<BillAnalysisScreenProps> = ({ onBack }
       <div className={styles.bottomFixed} style={{ bottom: window.innerHeight < 600 ? 0 : undefined }}>
         {showQuickReplies && (
           <div className={styles.quickReplies}>
-            <button className={styles.quickReplyBtn} onClick={() => handleQuickReply('details')}>Подробнее</button>
-            <button className={styles.quickReplyBtn} onClick={() => handleQuickReply('dispute')}>Оспорить</button>
+            <button className={styles.quickReplyBtn} onClick={() => handleQuickReply('details')} disabled={isTyping || isSending}>Подробнее</button>
+            <button className={styles.quickReplyBtn} onClick={() => handleQuickReply('dispute')} disabled={isTyping || isSending}>Оспорить</button>
           </div>
         )}
         
@@ -280,9 +281,9 @@ export const BillAnalysisScreen: React.FC<BillAnalysisScreenProps> = ({ onBack }
               className={styles.inputField} 
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
-              disabled={isSending}
+              disabled={isSending || isTyping}
             />
-            <button type="submit" className={styles.sendButton} disabled={isSending || !inputText.trim()}>
+            <button type="submit" className={styles.sendButton} disabled={isSending || isTyping || !inputText.trim()}>
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M12 19V5M12 5L5 12M12 5L19 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
