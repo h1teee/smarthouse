@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { Button } from '@/components/Button';
 import styles from './CameraScreen.module.css';
 
 export const DEFAULT_ANNOUNCEMENT_IMAGE = `data:image/svg+xml;utf8,${encodeURIComponent(`
