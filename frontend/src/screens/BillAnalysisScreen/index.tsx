@@ -51,23 +51,13 @@ const DEFAULT_BILLS = [
   { id: 3, month: '2024-11', amount: 5100 },
 ];
 
-const generateSmartAiReply = (userText: string): string => {
-  const lower = userText.toLowerCase();
-  if (lower.includes('подробнее') || lower.includes('начисл') || lower.includes('детал')) {
-    return 'Детализация начислений:\n1. Отопление: 2 805 ₽ (норматив 0.024 Гкал/м² при площади квартиры 54 м²).\n2. Горячая вода: 1 275 ₽ (расход 4.8 м³ по тарифу 265.62 ₽/м³).\n3. Электроэнергия: 1 020 ₽ (расход 160 кВт·ч по дневному и ночному тарифам).\n\nВсе начисления соответствуют утвержденным тарифам РЭК Ростовской области.';
-  }
-  if (lower.includes('оспор') || lower.includes('претенз') || lower.includes('перерасчет') || lower.includes('не соглас')) {
-    return 'Понял вас. Сформировал проект обращения в УК «Смарт Сити» на проверку правильности начислений и поверку ИПУ. Заявка №48291 зарегистрирована в диспетчерской службе. Ответ поступит в течение 3 рабочих дней в раздел Уведомлений.';
-  }
-  if (lower.includes('эконом') || lower.includes('меньш') || lower.includes('совет')) {
-    return 'Советы по экономии на ЖКУ:\n1. Передавайте показания счетчиков строго с 18 по 25 число.\n2. Установите двухтарифный счетчик на электричество (экономия до 20%).\n3. Проверьте уплотнители на окнах для сохранения тепла.';
-  }
-  return `Вы спросили: «${userText}». \n\nКак ИИ-помощник, я проверил квитанцию за Ноябрь 2024 (5 100 ₽). Начисления произведены строго по показаниям ваших счетчиков. Если вы считаете, что произошла ошибка, нажмите «Оспорить начисления» для связи с диспетчером УК.`;
+const generateSmartAiReply = (userText: string, errorMsg?: string): string => {
+  return `⚠️ Ошибка ИИ: ${errorMsg || 'Сервер не смог получить ответ от нейросети'}`;
 };
 
   useEffect(() => {
     const loadData = async () => {
-      const apiUrl = import.meta.env.VITE_API_URL !== undefined ? import.meta.env.VITE_API_URL : 'https://smarthouse-backend.onrender.com';
+      const apiUrl = import.meta.env.VITE_API_URL || '';
       let billId = currentBillId;
       if (!billId || isNaN(Number(billId)) || Number(billId) <= 0) {
         billId = '3';
@@ -156,7 +146,7 @@ const generateSmartAiReply = (userText: string): string => {
 
   const sendMessage = async (text: string) => {
     if (!text.trim()) return;
-    const apiUrl = import.meta.env.VITE_API_URL !== undefined ? import.meta.env.VITE_API_URL : 'https://smarthouse-backend.onrender.com';
+    const apiUrl = import.meta.env.VITE_API_URL || '';
     let billId = localStorage.getItem('selectedBillId');
     if (!billId || isNaN(Number(billId))) billId = '3';
 

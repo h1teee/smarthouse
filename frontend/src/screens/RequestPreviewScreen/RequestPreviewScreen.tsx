@@ -56,28 +56,27 @@ export const RequestPreviewScreen: React.FC<RequestPreviewScreenProps> = ({
 
     const parseImage = async () => {
       try {
-        const res = await fetch(import.meta.env.VITE_API_URL + '/api/requests/ai-recognize', {
+        const apiUrl = import.meta.env.VITE_API_URL || '';
+        const res = await fetch(apiUrl + '/api/requests/ai-recognize', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ image_base64: capturedImage })
         });
         if (res.ok) {
           const data = await res.json();
-          setEventType(data.type || 'water');
-          setDates(data.start_date && data.end_date ? data.start_date + ' — ' + data.end_date : '15.10.2026 — 19.10.2026');
-          setDescription(data.description || 'Плановые гидравлические испытания тепловых сетей. Временное прекращение горячего водоснабжения.');
-          setProvider(data.title || 'МУП «Теплосеть» / УК «Смарт Сити»');
+          if (data.type) {
+            setEventType(data.type);
+            setDates(data.start_date && data.end_date ? data.start_date + ' — ' + data.end_date : '');
+            setDescription(data.description || '');
+            setProvider(data.title || '');
+          } else {
+             alert("ИИ не смог распознать данные: пустой ответ");
+          }
         } else {
-          setEventType('water');
-          setDates('15.10.2026 — 19.10.2026');
-          setDescription('Плановые гидравлические испытания тепловых сетей. Временное прекращение горячего водоснабжения.');
-          setProvider('МУП «Теплосеть» / УК «Смарт Сити»');
+          alert(`Ошибка распознавания: ${res.statusText}`);
         }
       } catch (err) {
-        setEventType('water');
-        setDates('15.10.2026 — 19.10.2026');
-        setDescription('Плановые гидравлические испытания тепловых сетей. Временное прекращение горячего водоснабжения.');
-        setProvider('МУП «Теплосеть» / УК «Смарт Сити»');
+        alert(`Сетевая ошибка: ${err}`);
       } finally {
         setTimeout(() => setIsProcessing(false), 2800);
       }
@@ -97,7 +96,8 @@ export const RequestPreviewScreen: React.FC<RequestPreviewScreenProps> = ({
   const handleSendToModeration = async () => {
     setIsLoadingSend(true);
     try {
-      await fetch(import.meta.env.VITE_API_URL + '/api/requests', {
+      const apiUrl = import.meta.env.VITE_API_URL || '';
+      await fetch(apiUrl + '/api/requests', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 

@@ -85,11 +85,22 @@ export const CameraScreen: React.FC<CameraScreenProps> = ({
     };
   }, [previewImage]);
 
-  const cycleFlash = () => {
+  const cycleFlash = async () => {
     setFlashMode((prev) => {
-      if (prev === 'auto') return 'on';
-      if (prev === 'on') return 'off';
-      return 'auto';
+      const nextMode = prev === 'auto' ? 'on' : prev === 'on' ? 'off' : 'auto';
+      
+      if (streamRef.current) {
+        const track = streamRef.current.getVideoTracks()[0];
+        if (track && typeof track.getCapabilities === 'function') {
+          const capabilities = track.getCapabilities() as any;
+          if (capabilities.torch) {
+            track.applyConstraints({
+              advanced: [{ torch: nextMode === 'on' } as any]
+            }).catch(e => console.error('Flash error:', e));
+          }
+        }
+      }
+      return nextMode;
     });
   };
 

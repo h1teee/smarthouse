@@ -193,14 +193,7 @@ func ChatAboutBill(billID int, message string) (string, error) {
 	
 	result, err := callGigaChat("Ты умный помощник ЖКХ. Отвечай вежливо и по факту.", prompt)
 	if err != nil {
-		lower := strings.ToLower(message)
-		if strings.Contains(lower, "подробнее") || strings.Contains(lower, "начисл") {
-			return "Детализация: Отопление — 2 805 руб, Водоснабжение — 1 275 руб, Электроэнергия — 1 020 руб. Начисления произведены согласно показаниям ИПУ и тарифам РЭК Ростовской области.", nil
-		}
-		if strings.Contains(lower, "оспорить") || strings.Contains(lower, "претенз") {
-			return "Заявка на перерасчет начислений и поверку счетчиков успешно зарегистрирована в диспетчерской службе УК. Ожидайте уведомление с номером обращения.", nil
-		}
-		return fmt.Sprintf("Вы спросили: «%s». \n\nКак ИИ-помощник, я проверил квитанцию за %s (Сумма: %.2f руб). Начисления соответствуют утвержденным тарифам. Вы можете направить обращение в УК при обнаружении неточностей.", message, month, amount), nil
+		return "", fmt.Errorf("Ошибка GigaChat: %w", err)
 	}
 
 	return result, nil
