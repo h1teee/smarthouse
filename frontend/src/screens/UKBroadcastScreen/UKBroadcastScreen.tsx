@@ -116,8 +116,9 @@ export const UKBroadcastScreen: React.FC = () => {
         setMessage("");
         setSelectedIds(new Set());
       }, 2500);
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      alert('Ошибка при отправке запроса: ' + e.message);
       setIsError(true);
       setTimeout(() => {
         setIsError(false);

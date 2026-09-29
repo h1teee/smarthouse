@@ -164,16 +164,15 @@ func sendMaxPushNotificationSync(userID string, text string) string {
 		return "no_user_id"
 	}
 	
-	url := "https://botapi.tamtam.chat/messages?access_token=" + token + "&user_id=" + userID
+	url := "https://platform-api2.max.ru/messages?user_id=" + userID
 	
 	payload := map[string]interface{}{
-		"message": map[string]interface{}{
-			"text": "🔔 ВАЖНОЕ СООБЩЕНИЕ ОТ УК:\n\n" + text,
-		},
+		"text": "🔔 ВАЖНОЕ СООБЩЕНИЕ ОТ УК:\n\n" + text,
 	}
 	body, _ := json.Marshal(payload)
 	
 	req, _ := http.NewRequest("POST", url, bytes.NewBuffer(body))
+	req.Header.Set("Authorization", "Bearer " + token)
 	req.Header.Set("Content-Type", "application/json")
 	
 	client := &http.Client{}
