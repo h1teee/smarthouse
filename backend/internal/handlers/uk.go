@@ -129,6 +129,15 @@ func ApproveRequestHandler(w http.ResponseWriter, r *http.Request) {
 		// Publish approved announcement to feed_items so all residents see it!
 		storage.DB.Exec("INSERT INTO feed_items (address_id, title, body, category) VALUES ($1, $2, $3, $4)",
 			req.AddressID, req.Title, req.Description, req.Type)
+
+		// Отправляем пуш жителю (для демо - берем всех с vk_id)
+		rows, dbErr := storage.DB.Query("SELECT vk_id FROM users WHERE vk_id IS NOT NULL AND vk_id != ''")
+		if dbErr == nil {
+			var vkIDs []string
+			for rows.Next() { var id string; rows.Scan(&id); vkIDs = append(vkIDs, id) }
+			bot.SendPushNotification(vkIDs, "✅ Ваша заявка одобрена:\n" + req.Title, reqID)
+			rows.Close()
+		}
 	} else {
 		storage.DB.Exec("UPDATE requests SET status = 'approved' WHERE id = $1", reqID)
 	}
@@ -142,6 +151,17 @@ func RejectRequestHandler(w http.ResponseWriter, r *http.Request) {
 	reqID := r.PathValue("id")
 	storage.DB.Exec("UPDATE requests SET status = 'rejected' WHERE id = $1", reqID)
 	
+	// Отправляем пуш жителю (для демо - берем всех с vk_id)
+	rows, err := storage.DB.Query("SELECT vk_id FROM users WHERE vk_id IS NOT NULL AND vk_id != ''")
+	if err == nil {
+		var vkIDs []string
+		for rows.Next() { var id string; rows.Scan(&id); vkIDs = append(vkIDs, id) }
+		var title string
+		storage.DB.QueryRow("SELECT title FROM requests WHERE id = $1", reqID).Scan(&title)
+		bot.SendPushNotification(vkIDs, "❌ Заявка отклонена УК:\n" + title, reqID)
+		rows.Close()
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"status": "rejected"})
@@ -190,28 +210,17 @@ func BroadcastHandler(w http.ResponseWriter, r *http.Request) {
 	// Собираем всех vk_id жителей выбранных домов
 	var vkIDs []string
 	if len(req.SelectedIds) > 0 {
-		// В PostgreSQL ANY() принимает массив. 
-		// Для простоты, так как драйвер pq/pgx может требовать специальный тип, 
-		// можно использовать github.com/lib/pq, или просто сформировать запрос.
-		// Но проще в цикле получить, если адресов немного:
-		
-		for _, addrID := range req.SelectedIds {
-			rows, err := storage.DB.Query(`
-				SELECT u.vk_id 
-				FROM users u 
-				JOIN user_addresses ua ON u.id = ua.user_id 
-				WHERE ua.address_id = $1 AND u.vk_id IS NOT NULL AND u.vk_id != ''
-			`, addrID)
-			
-			if err == nil {
-				for rows.Next() {
-					var vkID string
-					if err := rows.Scan(&vkID); err == nil {
-						vkIDs = append(vkIDs, vkID)
-					}
+		// ДЛЯ ДЕМО-ВЕРСИИ: Мы берем всех пользователей, у которых есть vk_id, 
+		// чтобы гарантированно доставить пуш тестерам (игнорируя фильтр по адресам)
+		rows, err := storage.DB.Query("SELECT vk_id FROM users WHERE vk_id IS NOT NULL AND vk_id != ''")
+		if err == nil {
+			for rows.Next() {
+				var vkID string
+				if err := rows.Scan(&vkID); err == nil {
+					vkIDs = append(vkIDs, vkID)
 				}
-				rows.Close()
 			}
+			rows.Close()
 		}
 	}
 

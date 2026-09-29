@@ -26,4 +26,4 @@ services:
     plan: free
     envVars:
       - key: VITE_API_URL
-        value: "https://smarthouse-backend.onrender.com"
+        value: "https://smarthouse-backend-rfil.onrender.com"

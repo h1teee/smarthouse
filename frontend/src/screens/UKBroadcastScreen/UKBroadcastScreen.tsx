@@ -1,16 +1,8 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import { API_URL, getAuthHeaders } from '@/config/api';
 import styles from './UKBroadcastScreen.module.css';
 
-const MOCK_ADDRESSES = [
-  { id: '1', name: 'ул. Космонавтов 34а', district: 'Центральный' },
-  { id: '2', name: 'ул. Космонавтов 34б', district: 'Центральный' },
-  { id: '3', name: 'ул. Садовая 15', district: 'Северный' },
-  { id: '4', name: 'ул. Садовая 17', district: 'Северный' },
-  { id: '5', name: 'ЖК "Изумрудный"', district: 'Южный' },
-  { id: '6', name: 'ЖК "Акварель"', district: 'Южный' },
-  { id: '7', name: 'ул. Ленина 10', district: 'Центральный' },
-];
+
 
 const FILTER_TABS = [
   { id: 'all', label: 'Все' },
@@ -27,7 +19,23 @@ const categoryOptions = [
 ];
 
 export const UKBroadcastScreen: React.FC = () => {
+  const [addresses, setAddresses] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    fetch(API_URL + '/api/addresses')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setAddresses(data.map((d: any) => ({
+            id: String(d.id),
+            name: d.full_address,
+            district: 'Центральный' // Default or extracted
+          })));
+        }
+      })
+      .catch(console.error);
+  }, []);
   const [activeFilter, setActiveFilter] = useState('all');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [category, setCategory] = useState(categoryOptions[0].id);
@@ -41,7 +49,7 @@ export const UKBroadcastScreen: React.FC = () => {
   const messageRef = useRef<HTMLDivElement>(null);
 
   const filteredAddresses = useMemo(() => {
-    return MOCK_ADDRESSES.filter(addr => {
+    return addresses.filter(addr => {
       const matchesSearch = addr.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                             addr.district.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesFilter = activeFilter === 'all' || addr.district === activeFilter;

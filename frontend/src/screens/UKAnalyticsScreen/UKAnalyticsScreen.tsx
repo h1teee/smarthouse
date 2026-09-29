@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { API_URL, getAuthHeaders } from '@/config/api';
 import styles from './UKAnalyticsScreen.module.css';
 
 interface UKAnalyticsScreenProps {
@@ -17,6 +18,20 @@ export const UKAnalyticsScreen: React.FC<UKAnalyticsScreenProps> = ({ onBack }) 
   ];
 
   const [activeBar, setActiveBar] = useState<number | null>(null);
+  const [stats, setStats] = useState({ total: 0, pending: 0, approved: 0, rejected: 0 });
+  const [aiText, setAiText] = useState('В районе пр. Космонавтов участились жалобы на напор воды. Скорость закрытия заявок выросла на 15% по сравнению с прошлым месяцем.');
+
+  useEffect(() => {
+    fetch(API_URL + '/api/uk/analytics', { headers: getAuthHeaders() })
+      .then(r => r.json())
+      .then(data => { if(data && data.total_requests !== undefined) setStats({ total: data.total_requests, pending: data.pending, approved: data.approved, rejected: data.rejected })})
+      .catch(() => {});
+      
+    fetch(API_URL + '/api/uk/analytics/ai', { headers: getAuthHeaders() })
+      .then(r => r.json())
+      .then(data => { if(data && data.analysis) setAiText(data.analysis) })
+      .catch(() => {});
+  }, []);
 
   return (
     <div className={styles.container}>
@@ -35,8 +50,7 @@ export const UKAnalyticsScreen: React.FC<UKAnalyticsScreenProps> = ({ onBack }) 
         <div className={styles.aiSummary}>
           <div className={styles.aiTitle}>✨ ИИ-анализ за неделю</div>
           <div className={styles.aiText}>
-            В районе пр. Космонавтов участились жалобы на напор воды. 
-            Скорость закрытия заявок выросла на 15% по сравнению с прошлым месяцем.
+            {aiText}
           </div>
         </div>
 
