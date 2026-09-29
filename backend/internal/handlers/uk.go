@@ -167,29 +167,74 @@ func BroadcastHandler(w http.ResponseWriter, r *http.Request) {
 		SelectedIds []int  `json:"selectedIds"`
 		Category    string `json:"category"`
 		Text        string `json:"text"`
-		TargetMaxID string `json:"target_max_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), 400)
 		return
 	}
 
-	pushResult := "not_sent"
-	if req.TargetMaxID != "" {
-		pushResult = sendMaxPushNotificationSync(req.TargetMaxID, req.Text)
-	}
-
 	for _, addrID := range req.SelectedIds {
 		storage.DB.Exec("INSERT INTO feed_items (address_id, title, body, category) VALUES ($1, $2, $3, $4)",
 			addrID, "Рассылка от УК", req.Text, req.Category)
+	}
+
+	// Собираем всех vk_id жителей выбранных домов
+	var vkIDs []string
+	if len(req.SelectedIds) > 0 {
+		query := `
+			SELECT DISTINCT u.vk_id 
+			FROM users u 
+			JOIN user_addresses ua ON u.id = ua.user_id 
+			WHERE ua.address_id = ANY($1) AND u.vk_id IS NOT NULL AND u.vk_id != ''
+		`
+		// В PostgreSQL ANY() принимает массив. 
+		// Для простоты, так как драйвер pq/pgx может требовать специальный тип, 
+		// можно использовать github.com/lib/pq, или просто сформировать запрос.
+		// Но проще в цикле получить, если адресов немного:
+		
+		for _, addrID := range req.SelectedIds {
+			rows, err := storage.DB.Query(`
+				SELECT u.vk_id 
+				FROM users u 
+				JOIN user_addresses ua ON u.id = ua.user_id 
+				WHERE ua.address_id = $1 AND u.vk_id IS NOT NULL AND u.vk_id != ''
+			`, addrID)
 			
-		debugBody := "Target: " + req.TargetMaxID + " | Result: " + pushResult
-		storage.DB.Exec("INSERT INTO feed_items (address_id, title, body, category) VALUES ($1, $2, $3, $4)",
-			addrID, "DEBUG PUSH INFO", debugBody, "info")
+			if err == nil {
+				for rows.Next() {
+					var vkID string
+					if err := rows.Scan(&vkID); err == nil {
+						vkIDs = append(vkIDs, vkID)
+					}
+				}
+				rows.Close()
+			}
+		}
+	}
+
+	// Убираем дубликаты vk_id
+	uniqueVKIDs := make([]string, 0)
+	seen := make(map[string]bool)
+	for _, id := range vkIDs {
+		if !seen[id] {
+			seen[id] = true
+			uniqueVKIDs = append(uniqueVKIDs, id)
+		}
+	}
+
+	// Отправляем реальные пуши всем найденным жителям
+	pushResult := "not_sent"
+	if len(uniqueVKIDs) > 0 {
+		bot.SendPushNotification(uniqueVKIDs, "🔔 ВАЖНОЕ СООБЩЕНИЕ ОТ УК:\n\n" + req.Text, "broadcast")
+		pushResult = "sent_to_users"
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"status": "ok", "push_result": pushResult, "vk_id": req.TargetMaxID})
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"status": "ok", 
+		"push_result": pushResult,
+		"users_notified": len(uniqueVKIDs),
+	})
 }
 
 func sendMaxPushNotificationSync(userID string, text string) string {
