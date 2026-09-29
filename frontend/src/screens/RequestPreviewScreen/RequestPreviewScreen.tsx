@@ -103,7 +103,10 @@ export const RequestPreviewScreen: React.FC<RequestPreviewScreenProps> = ({
         body: JSON.stringify({ 
           type: eventType, 
           title: provider, 
-          description: description + '\nДаты: ' + dates 
+          description: description,
+          start_date: dates.includes(' — ') ? dates.split(' — ')[0] : dates,
+          end_date: dates.includes(' — ') ? dates.split(' — ')[1] : dates,
+          photo_url: capturedImage
         })
       });
       setIsSuccess(true);

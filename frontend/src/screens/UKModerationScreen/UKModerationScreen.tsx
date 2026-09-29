@@ -147,30 +147,34 @@ export const UKModerationScreen: React.FC<UKModerationScreenProps> = ({
       </header>
 
       <main className={styles.content}>
-        <div className={styles.photoCard}>
-          <div className={styles.photoOverlayTop}>
+        <div className={styles.photoCard} onClick={() => { if (request?.photo_url) { const w = window.open(); if (w) { w.document.write(`<img src="${request.photo_url}" style="width:100%;height:100%;object-fit:contain;background:#000;" />`); w.document.body.style.margin = '0'; w.document.body.style.background = '#000'; } }}}>
+          {request?.photo_url ? (
+            <img src={request.photo_url} alt="Оригинал" style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', top: 0, left: 0 }} />
+          ) : (
+            <div className={styles.photoCenterMockup}>
+              <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                <circle cx="8.5" cy="8.5" r="1.5" />
+                <polyline points="21 15 16 10 5 21" />
+              </svg>
+              <div className={styles.photoLines}>
+                <div className={styles.mockLine} />
+                <div className={`${styles.mockLine} ${styles.mockLineShort}`} />
+              </div>
+            </div>
+          )}
+
+          <div className={styles.photoOverlayTop} style={{ zIndex: 1 }}>
             <div className={styles.photoBadge}>
               <span className={styles.photoBadgeDot} />
               <span>AI Распознано 98%</span>
             </div>
-            <span className={styles.photoFilename}>IMG_20260920.HEIC</span>
+            <span className={styles.photoFilename}>Оригинал</span>
           </div>
 
-          <div className={styles.photoCenterMockup}>
-            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-              <circle cx="8.5" cy="8.5" r="1.5" />
-              <polyline points="21 15 16 10 5 21" />
-            </svg>
-            <div className={styles.photoLines}>
-              <div className={styles.mockLine} />
-              <div className={`${styles.mockLine} ${styles.mockLineShort}`} />
-            </div>
-          </div>
-
-          <div className={styles.photoOverlayBottom}>
+          <div className={styles.photoOverlayBottom} style={{ zIndex: 1 }}>
             <span>Оригинал объявления с подъезда</span>
-            <span>10 мин назад</span>
+            <span>{request?.created_at ? new Date(request.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '10 мин назад'}</span>
           </div>
         </div>
 
@@ -179,7 +183,9 @@ export const UKModerationScreen: React.FC<UKModerationScreenProps> = ({
             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
             <circle cx="12" cy="7" r="4" />
           </svg>
-          <span className={styles.authorInfo}>Автор: Иванов И.И., кв. 12</span>
+          <span className={styles.authorInfo}>
+            Автор: {request?.author || 'Пользователь'}{request?.apartment ? `, кв. ${request.apartment}` : ''}
+          </span>
         </div>
 
         <div className={styles.formSection}>

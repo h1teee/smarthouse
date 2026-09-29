@@ -20,9 +20,19 @@ func GetUKRequestsHandler(w http.ResponseWriter, r *http.Request) {
 	var err error
 
 	if status != "" && status != "all" {
-		rows, err = storage.DB.Query("SELECT id, user_id, type, title, description, status, created_at, address_id FROM requests WHERE status = $1 ORDER BY created_at DESC", status)
+		rows, err = storage.DB.Query(`
+			SELECT r.id, r.user_id, r.type, r.title, r.description, r.start_date, r.end_date, r.status, r.photo_url, r.created_at, r.address_id, u.vk_id, ua.apartment
+			FROM requests r
+			LEFT JOIN users u ON r.user_id = u.id
+			LEFT JOIN user_addresses ua ON r.address_id = ua.address_id AND ua.user_id = r.user_id
+			WHERE r.status = $1 ORDER BY r.created_at DESC`, status)
 	} else {
-		rows, err = storage.DB.Query("SELECT id, user_id, type, title, description, status, created_at, address_id FROM requests ORDER BY created_at DESC")
+		rows, err = storage.DB.Query(`
+			SELECT r.id, r.user_id, r.type, r.title, r.description, r.start_date, r.end_date, r.status, r.photo_url, r.created_at, r.address_id, u.vk_id, ua.apartment
+			FROM requests r
+			LEFT JOIN users u ON r.user_id = u.id
+			LEFT JOIN user_addresses ua ON r.address_id = ua.address_id AND ua.user_id = r.user_id
+			ORDER BY r.created_at DESC`)
 	}
 
 	if err != nil {
@@ -31,15 +41,37 @@ func GetUKRequestsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rows.Close()
 
-	var requests []models.Request
+	type UKReq struct {
+		models.Request
+		Author    string `json:"author"`
+		Apartment string `json:"apartment"`
+	}
+	var requests []UKReq
 	for rows.Next() {
-		var req models.Request
-		if err := rows.Scan(&req.ID, &req.UserID, &req.Type, &req.Title, &req.Description, &req.Status, &req.CreatedAt, &req.AddressID); err == nil {
+		var req UKReq
+		var photoURL sql.NullString
+		var vkID sql.NullString
+		var apt sql.NullString
+		
+		if err := rows.Scan(&req.ID, &req.UserID, &req.Type, &req.Title, &req.Description, &req.StartDate, &req.EndDate, &req.Status, &photoURL, &req.CreatedAt, &req.AddressID, &vkID, &apt); err == nil {
+			if photoURL.Valid {
+				req.PhotoURL = photoURL.String
+			}
+			if vkID.Valid && vkID.String != "" {
+				req.Author = "ID: " + vkID.String
+			} else {
+				req.Author = "Пользователь" // Or get real name from TamTam
+			}
+			if apt.Valid && apt.String != "" {
+				req.Apartment = apt.String
+			}
 			requests = append(requests, req)
+		} else {
+			// error logging
 		}
 	}
 	if requests == nil {
-		requests = []models.Request{}
+		requests = []UKReq{}
 	}
 
 	w.Header().Set("Content-Type", "application/json")

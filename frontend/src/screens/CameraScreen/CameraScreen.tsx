@@ -63,17 +63,19 @@ export const CameraScreen: React.FC<CameraScreenProps> = ({
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   useEffect(() => {
-    // Only start camera if not in preview mode
-    if (previewImage) return;
-    
+    let mounted = true;
     const startCamera = async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: 'environment' }
         });
-        streamRef.current = stream;
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
+        if (mounted) {
+          streamRef.current = stream;
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+          }
+        } else {
+          stream.getTracks().forEach(track => track.stop());
         }
       } catch (err) {
         console.error('Camera access denied:', err);
@@ -81,27 +83,13 @@ export const CameraScreen: React.FC<CameraScreenProps> = ({
     };
     startCamera();
     return () => {
+      mounted = false;
       streamRef.current?.getTracks().forEach(track => track.stop());
     };
-  }, [previewImage]);
+  }, []); // Run only once on mount
 
-  const cycleFlash = async () => {
-    setFlashMode((prev) => {
-      const nextMode = prev === 'auto' ? 'on' : prev === 'on' ? 'off' : 'auto';
-      
-      if (streamRef.current) {
-        const track = streamRef.current.getVideoTracks()[0];
-        if (track && typeof track.getCapabilities === 'function') {
-          const capabilities = track.getCapabilities() as any;
-          if (capabilities.torch) {
-            track.applyConstraints({
-              advanced: [{ torch: nextMode === 'on' } as any]
-            }).catch(e => console.error('Flash error:', e));
-          }
-        }
-      }
-      return nextMode;
-    });
+  const cycleFlash = () => {
+    setFlashMode((prev) => prev === "auto" ? "on" : prev === "on" ? "off" : "auto");
   };
 
   const handleGalleryClick = () => {
@@ -142,21 +130,39 @@ export const CameraScreen: React.FC<CameraScreenProps> = ({
     }
   };
 
-  const handleShutterClick = () => {
-    if (videoRef.current && canvasRef.current) {
+  const handleShutterClick = async () => {
+    if (videoRef.current && canvasRef.current && streamRef.current) {
       const video = videoRef.current;
+      const track = streamRef.current.getVideoTracks()[0];
+      
+      let torchUsed = false;
+      if (flashMode === "on" && track && typeof track.getCapabilities === "function") {
+        const caps = track.getCapabilities() as any;
+        if (caps.torch) {
+          try {
+            await track.applyConstraints({ advanced: [{ torch: true } as any] });
+            torchUsed = true;
+            await new Promise(r => setTimeout(r, 400));
+          } catch (e) {
+            console.error("Torch error", e);
+          }
+        }
+      }
+
       const canvas = canvasRef.current;
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
-      const ctx = canvas.getContext('2d');
+      const ctx = canvas.getContext("2d");
       if (ctx) {
-        ctx.drawImage(video, 0, 0);
-        const base64 = canvas.toDataURL('image/jpeg', 0.8);
-        streamRef.current?.getTracks().forEach(track => track.stop());
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const base64 = canvas.toDataURL("image/jpeg", 0.8);
         setPreviewImage(base64);
       }
+
+      if (torchUsed) {
+        track.applyConstraints({ advanced: [{ torch: false } as any] }).catch(e => console.error("Torch error", e));
+      }
     } else {
-      // Fallback if camera not available
       setPreviewImage(DEFAULT_ANNOUNCEMENT_IMAGE);
     }
   };
@@ -167,19 +173,13 @@ export const CameraScreen: React.FC<CameraScreenProps> = ({
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
           <img src={previewImage} alt="Preview" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
         </div>
-        <footer className={styles.bottomBar} style={{ padding: '20px 24px', display: 'flex', justifyContent: 'space-between', background: 'rgba(0,0,0,0.8)' }}>
-          <button 
-            onClick={() => setPreviewImage(null)} 
-            style={{ background: 'rgba(255,255,255,0.2)', color: '#fff', border: 'none', padding: '12px 24px', borderRadius: '12px', fontSize: '16px', fontWeight: 600 }}
-          >
+        <footer className={styles.bottomBar} style={{ padding: '20px 24px', display: 'flex', justifyContent: 'space-between', gap: '12px', background: 'rgba(0,0,0,0.8)' }}>
+          <Button variant="ghost" onClick={() => setPreviewImage(null)} style={{ flex: 1, backgroundColor: "rgba(255,255,255,0.15)", color: "#fff" }}>
             Переснять
-          </button>
-          <button 
-            onClick={() => onCapture?.(previewImage)} 
-            style={{ background: '#0A84FF', color: '#fff', border: 'none', padding: '12px 32px', borderRadius: '12px', fontSize: '16px', fontWeight: 600 }}
-          >
+          </Button>
+          <Button variant="primary" onClick={() => onCapture?.(previewImage)} style={{ flex: 1 }}>
             Продолжить
-          </button>
+          </Button>
         </footer>
       </div>
     );

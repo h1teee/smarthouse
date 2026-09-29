@@ -37,6 +37,28 @@ func GetFeedHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	
+	// Fetch pending requests for this user
+	reqRows, reqErr := storage.DB.Query(`
+		SELECT r.id, r.address_id, r.title, r.description, r.created_at 
+		FROM requests r
+		WHERE r.user_id = $1 AND r.status = 'pending'
+		ORDER BY r.created_at DESC
+	`, userID)
+	
+	if reqErr == nil {
+		defer reqRows.Close()
+		for reqRows.Next() {
+			var item models.FeedItem
+			var createdAt time.Time
+			if err := reqRows.Scan(&item.ID, &item.AddressID, &item.Title, &item.Body, &createdAt); err == nil {
+				item.Category = "pending_request"
+				item.CreatedAt = createdAt.Format(time.RFC3339)
+				// Prepend pending requests to the top of the feed
+				feed = append([]models.FeedItem{item}, feed...)
+			}
+		}
+	}
+
 	if feed == nil {
 		feed = []models.FeedItem{}
 	}
@@ -117,9 +139,9 @@ func CreateRequestHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_, err = storage.DB.Exec(`
-		INSERT INTO requests (user_id, address_id, type, title, description, start_date, end_date, status) 
-		VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending')`,
-		userID, addressID, req.Type, req.Title, req.Description, req.StartDate, req.EndDate)
+		INSERT INTO requests (user_id, address_id, type, title, description, start_date, end_date, photo_url, status) 
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'pending')`,
+		userID, addressID, req.Type, req.Title, req.Description, req.StartDate, req.EndDate, req.PhotoURL)
 		
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

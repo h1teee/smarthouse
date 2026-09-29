@@ -58,9 +58,15 @@ export const MainFeedScreen: React.FC<MainFeedScreenProps> = ({ onOpenCamera, on
   const archiveItems = feedItems.filter((_, i) => i >= 5);
 
   const renderCard = (item: FeedItem, isArchive: boolean) => {
-    const isWait = item.category === 'water';
+    const isWait = item.category === "water";
+    const isPending = item.category === "pending_request";
     let cardClass = styles.statusActive;
-    let badgeText = 'В работе';
+    let badgeText = "В работе";
+    
+    if (isPending) {
+      cardClass = styles.statusWait;
+      badgeText = "На проверке";
+    } else
     
     if (isArchive) {
       cardClass = styles.statusArchive;
