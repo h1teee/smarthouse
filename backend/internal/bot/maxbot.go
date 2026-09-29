@@ -2,6 +2,7 @@ package bot
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -27,10 +28,15 @@ func SendPushNotification(vkIDs []string, message string, requestID string) erro
 	for _, vkID := range vkIDs {
 		url := fmt.Sprintf("https://platform-api2.max.ru/messages?user_id=%s", vkID)
 		req, _ := http.NewRequest("POST", url, bytes.NewBuffer(body))
-		req.Header.Set("Authorization", "Bearer "+token)
+		req.Header.Set("Authorization", token)
 		req.Header.Set("Content-Type", "application/json")
 
-		resp, err := http.DefaultClient.Do(req)
+		client := &http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+			},
+		}
+		resp, err := client.Do(req)
 		if err != nil {
 			log.Printf("Failed to send push to %s: %v\n", vkID, err)
 			continue

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"net/http"
 	"io"
@@ -208,10 +209,14 @@ func sendMaxPushNotificationSync(userID string, text string) string {
 	body, _ := json.Marshal(payload)
 	
 	req, _ := http.NewRequest("POST", url, bytes.NewBuffer(body))
-	req.Header.Set("Authorization", "Bearer " + token)
+	req.Header.Set("Authorization", token)
 	req.Header.Set("Content-Type", "application/json")
 	
-	client := &http.Client{}
+	client := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		},
+	}
 	resp, err := client.Do(req)
 	if err != nil {
 		return "error: " + err.Error()
