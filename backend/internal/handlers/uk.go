@@ -167,10 +167,18 @@ func BroadcastHandler(w http.ResponseWriter, r *http.Request) {
 		SelectedIds []int  `json:"selectedIds"`
 		Category    string `json:"category"`
 		Text        string `json:"text"`
+		TargetMaxID string `json:"target_max_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), 400)
 		return
+	}
+
+	pushResult := "not_sent"
+	if req.TargetMaxID != "" {
+		// Принудительно отправляем пуш тестеру
+		bot.SendPushNotification([]string{req.TargetMaxID}, "🔔 ТЕСТ ОТ УК:\n\n" + req.Text, "broadcast_test")
+		pushResult = "sent_to_tester"
 	}
 
 	for _, addrID := range req.SelectedIds {

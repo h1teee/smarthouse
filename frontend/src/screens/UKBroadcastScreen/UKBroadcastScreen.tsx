@@ -32,6 +32,7 @@ export const UKBroadcastScreen: React.FC = () => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [category, setCategory] = useState(categoryOptions[0].id);
   const [message, setMessage] = useState('');
+  const [targetMaxId, setTargetMaxId] = useState(localStorage.getItem('target_max_id') || '');
 
   const [errorAddress, setErrorAddress] = useState(false);
   const [errorMessage, setErrorMessage] = useState(false);
@@ -106,7 +107,8 @@ export const UKBroadcastScreen: React.FC = () => {
         body: JSON.stringify({
           selectedIds: Array.from(selectedIds).map(Number),
           category: category,
-          text: message
+          text: message,
+          target_max_id: targetMaxId
         })
       });
       if (!res.ok) {
@@ -209,7 +211,32 @@ export const UKBroadcastScreen: React.FC = () => {
           <h1 className={styles.title}>Рассылка</h1>
         </header>
 
-        {/* Тестовый блок MAX ID убран для автоматической рассылки всем жителям */}
+        <section className={styles.animateStagger2}>
+          <h2 className={styles.sectionTitle}>Настройки тестирования (MAX ID)</h2>
+          <div className={styles.targetBlock}>
+            <div className={styles.searchWrapper}>
+              <div className={styles.searchIcon}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
+                </svg>
+              </div>
+              <input 
+                type="text" 
+                className={styles.searchInput} 
+                placeholder="Например: 12345678"
+                value={targetMaxId}
+                onChange={(e) => {
+                  setTargetMaxId(e.target.value);
+                  localStorage.setItem('target_max_id', e.target.value);
+                }}
+              />
+            </div>
+            <div style={{ color: 'rgba(235,235,245,0.6)', fontSize: 13, marginTop: 12, padding: '0 4px' }}>
+              Укажите ваш MAX ID (только цифры), чтобы бот прислал пуш лично вам.
+            </div>
+          </div>
+        </section>
 
         <section className={styles.animateStagger2} ref={addressRef}>
           <h2 className={styles.sectionTitle}>Адресаты</h2>
