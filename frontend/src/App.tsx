@@ -105,13 +105,38 @@ const App: React.FC = () => {
       }).catch(() => {});
     }
 
-    // 3. Отслеживание клавиатуры
+    // 3. Отслеживание клавиатуры и фокуса ввода
     const handleResize = () => {
-      // Если высота окна меньше 600px, скорее всего открыта клавиатура
-      setIsKeyboardOpen(window.innerHeight < 600);
+      if (window.visualViewport) {
+        setIsKeyboardOpen(window.innerHeight - window.visualViewport.height > 150 || window.innerHeight < 600);
+      } else {
+        setIsKeyboardOpen(window.innerHeight < 600);
+      }
     };
+
+    const handleFocusIn = (e: FocusEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA') {
+        setIsKeyboardOpen(true);
+      }
+    };
+
+    const handleFocusOut = () => {
+      setIsKeyboardOpen(false);
+      window.scrollTo(0, 0);
+    };
+
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.visualViewport?.addEventListener('resize', handleResize);
+    window.addEventListener('focusin', handleFocusIn);
+    window.addEventListener('focusout', handleFocusOut);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.visualViewport?.removeEventListener('resize', handleResize);
+      window.removeEventListener('focusin', handleFocusIn);
+      window.removeEventListener('focusout', handleFocusOut);
+    };
   }, []);
 
   const currentRole: Role = residentScreens.includes(currentScreen) ? 'resident' : 'uk';
@@ -291,7 +316,7 @@ const App: React.FC = () => {
       </div>
 
       {/* Глобальный TabBar для жителя */}
-      {['mainFeed', 'billsDashboard', 'billAnalysis', 'meters', 'profile'].includes(currentScreen) && !isKeyboardOpen && (
+      {['mainFeed', 'billsDashboard', 'meters', 'profile'].includes(currentScreen) && !isKeyboardOpen && (
         <TabBar 
           currentTab={currentScreen === 'profile' ? 'account' : currentScreen === 'mainFeed' ? 'mainFeed' : 'billsDashboard'} 
           onChangeTab={(tab) => {

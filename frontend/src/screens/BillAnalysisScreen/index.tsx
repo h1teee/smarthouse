@@ -310,14 +310,7 @@ const generateSmartAiReply = (userText: string): string => {
         </div>
       </div>
 
-      <div 
-        className={styles.bottomFixed} 
-        style={{ 
-          paddingBottom: window.innerHeight < 600 
-            ? 'calc(10px + env(safe-area-inset-bottom, 8px))' 
-            : 'calc(62px + env(safe-area-inset-bottom, 16px))' 
-        }}
-      >
+      <div className={styles.bottomFixed}>
         {showQuickReplies && (
           <div className={styles.quickReplies}>
             <button className={styles.quickReplyBtn} onClick={() => handleQuickReply('details')} disabled={isTyping || isSending}>Подробнее</button>
@@ -333,9 +326,20 @@ const generateSmartAiReply = (userText: string): string => {
               className={styles.inputField} 
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
+              onFocus={() => {
+                setTimeout(scrollToBottom, 200);
+              }}
+              onBlur={() => {
+                window.scrollTo({ top: 0, left: 0 });
+              }}
               disabled={isSending || isTyping}
             />
-            <button type="submit" className={styles.sendButton} disabled={isSending || isTyping || !inputText.trim()}>
+            <button 
+              type="submit" 
+              className={styles.sendButton} 
+              onMouseDown={(e) => e.preventDefault()}
+              disabled={isSending || isTyping || !inputText.trim()}
+            >
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M12 19V5M12 5L5 12M12 5L19 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>

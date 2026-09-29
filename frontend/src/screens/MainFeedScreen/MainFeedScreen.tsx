@@ -17,10 +17,16 @@ interface FeedItem {
   created_at: string;
 }
 
+const formatDisplayAddress = (addr: string): string => {
+  if (!addr) return 'г. Ростов-на-Дону, ГСК-3. Мухина, д. 47';
+  const cleaned = addr.replace(/^[^,]+(?:обл\.|область|край|респ\.|республика)[,\s]*/i, '').trim();
+  return cleaned || addr;
+};
+
 export const MainFeedScreen: React.FC<MainFeedScreenProps> = ({ onOpenCamera, onOpenNotifications }) => {
   const [activeTab, setActiveTab] = useState<'actual' | 'archive'>('actual');
   const [activeAddress, setActiveAddress] = useState<string>(() => {
-    return localStorage.getItem('user_address') || 'Ростовская обл., г. Ростов-на-Дону, ГСК-3. Мухина, д. 47';
+    return localStorage.getItem('user_address') || 'г. Ростов-на-Дону, ГСК-3. Мухина, д. 47';
   });
   
   const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
@@ -105,7 +111,7 @@ export const MainFeedScreen: React.FC<MainFeedScreenProps> = ({ onOpenCamera, on
         <div className={styles.headerRow}>
           <div className={styles.addressContainer}>
             <div className={styles.addressWrap}>
-              <span className={styles.addressText}>{activeAddress}</span>
+              <span className={styles.addressText}>{formatDisplayAddress(activeAddress)}</span>
             </div>
           </div>
           
