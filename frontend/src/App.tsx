@@ -74,8 +74,15 @@ const screenOrder: ScreenType[] = [
 ];
 
 const App: React.FC = () => {
-  const [currentScreen, setCurrentScreen] = useState<ScreenType>('auth');
-  const [lastResidentScreen, setLastResidentScreen] = useState<ScreenType>('auth');
+  const [currentScreen, setCurrentScreen] = useState<ScreenType>(() => {
+    const storedUserId = localStorage.getItem('user_id');
+    if (storedUserId) {
+      const role = localStorage.getItem('role');
+      return role === 'uk' ? 'ukDashboard' : 'mainFeed';
+    }
+    return 'auth';
+  });
+  const [lastResidentScreen, setLastResidentScreen] = useState<ScreenType>('mainFeed');
   const [capturedPhoto, setCapturedPhoto] = useState<string | undefined>(undefined);
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
 
@@ -166,23 +173,25 @@ const App: React.FC = () => {
 
   return (
     <div className="appRoot">
-      {/* Демо-ползунок переключения ролей — вынесен в верхний бар, никогда не перекрывает заголовки */}
-      <header className="demoHeader">
-        <div className="roleSegmentedControl">
-          <button
-            className={`roleSegment ${currentRole === 'resident' ? 'active' : ''}`}
-            onClick={() => handleRoleChange('resident')}
-          >
-            👤 Житель
-          </button>
-          <button
-            className={`roleSegment ${currentRole === 'uk' ? 'active' : ''}`}
-            onClick={() => handleRoleChange('uk')}
-          >
-            🏢 УК Модератор
-          </button>
-        </div>
-      </header>
+      {/* Демо-ползунок переключения ролей — только для тестового аккаунта вне экрана авторизации */}
+      {localStorage.getItem('account_number') === '61-0001-0015' && currentScreen !== 'auth' && (
+        <header className="demoHeader">
+          <div className="roleSegmentedControl">
+            <button
+              className={`roleSegment ${currentRole === 'resident' ? 'active' : ''}`}
+              onClick={() => handleRoleChange('resident')}
+            >
+              👤 Житель
+            </button>
+            <button
+              className={`roleSegment ${currentRole === 'uk' ? 'active' : ''}`}
+              onClick={() => handleRoleChange('uk')}
+            >
+              🏢 УК Модератор
+            </button>
+          </div>
+        </header>
+      )}
 
       <div className="appContainer">
         {/* Экран 1.1: Авторизация */}

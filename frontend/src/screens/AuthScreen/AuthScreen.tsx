@@ -70,6 +70,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onNext }) => {
       localStorage.setItem('user_id', String(data.user_id));
       localStorage.setItem('role', data.role);
       localStorage.setItem('user_address', apartment);
+      localStorage.setItem('account_number', account);
 
       if (onNext) onNext();
     } catch (err: any) {
