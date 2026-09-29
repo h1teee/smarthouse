@@ -20,8 +20,7 @@ interface FeedItem {
 
 export const MainFeedScreen: React.FC<MainFeedScreenProps> = ({ onOpenCamera, onOpenNotifications }) => {
   const [activeTab, setActiveTab] = useState<'actual' | 'archive'>('actual');
-  const [isAddressDropdownOpen, setIsAddressDropdownOpen] = useState(false);
-  const [activeAddress, setActiveAddress] = useState('г. Ростов-на-Дону, ул. Садовая, 34');
+  const activeAddress = localStorage.getItem('user_address') || 'Адрес не указан';
   
   const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -99,29 +98,9 @@ export const MainFeedScreen: React.FC<MainFeedScreenProps> = ({ onOpenCamera, on
         {/* Top Header Row: Address & Notifications */}
         <div className={styles.headerRow}>
           <div className={styles.addressContainer}>
-            <div 
-              className={styles.addressWrap} 
-              onClick={() => setIsAddressDropdownOpen(!isAddressDropdownOpen)}
-            >
+            <div className={styles.addressWrap}>
               <span className={styles.addressText}>{activeAddress}</span>
-              <svg 
-                className={styles.chevronIcon} 
-                style={{ transform: isAddressDropdownOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}
-                viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-              >
-                <polyline points="6 9 12 15 18 9"></polyline>
-              </svg>
             </div>
-            
-            {isAddressDropdownOpen && (
-              <div className={styles.addressDropdown}>
-                <div className={styles.addressDropdownItem} onClick={() => { setActiveAddress('г. Ростов-на-Дону, ул. Садовая, 34'); setIsAddressDropdownOpen(false); }}>
-                  <div className={styles.addressDropdownText}>
-                    <span style={{ color: activeAddress === 'г. Ростов-на-Дону, ул. Садовая, 34' ? 'var(--accent)' : 'inherit' }}>г. Ростов-на-Дону, ул. Садовая, 34</span>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
           
           <button 
