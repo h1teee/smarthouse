@@ -59,6 +59,9 @@ const OFFERS: Offer[] = [
 
 export const ProfileScreen: React.FC<{onLogout?: () => void}> = ({ onLogout }) => {
   const [debt, setDebt] = useState<number>(0);
+  const [cards, setCards] = useState([
+    { id: 1, name: 'МИР Сбербанк •• 9012', autopay: true }
+  ]);
   const [cashback, setCashback] = useState<number>(4850);
   const [notifications, setNotifications] = useState<boolean>(true);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -79,6 +82,19 @@ export const ProfileScreen: React.FC<{onLogout?: () => void}> = ({ onLogout }) =
   const swipeCashback = useSwipeClose(() => setShowApplyCashback(false));
   const swipeModal = useSwipeClose(() => setActiveModal(null));
   const swipeLogout = useSwipeClose(() => setShowLogout(false));
+
+  useEffect(() => {
+    fetch(import.meta.env.VITE_API_URL + '/api/bills', { headers: { 'X-User-ID': localStorage.getItem('user_id') || '1' } })
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.length > 0) {
+          const unpaid = data.filter((b: any) => !b.is_paid && !b.isPaid);
+          const totalDebt = unpaid.reduce((acc: number, bill: any) => acc + Number(bill.amount), 0);
+          setDebt(totalDebt);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const notify = (msg: string) => {
     setToast(msg);
@@ -149,17 +165,7 @@ export const ProfileScreen: React.FC<{onLogout?: () => void}> = ({ onLogout }) =
       {/* Верхний бар */}
       <header className={styles.navBar}>
         <h1 className={styles.screenTitle}>Профиль</h1>
-        <button
-          className={styles.demoToggleBtn}
-          data-active={debt > 0}
-          onClick={() => {
-            const nextDebt = debt === 0 ? 5430 : 0;
-            setDebt(nextDebt);
-            notify(nextDebt > 0 ? 'Имитация долга включена' : 'Задолженность погашена');
-          }}
-        >
-          {debt > 0 ? 'Долг 5 430 ₽' : 'Долга нет'}
-        </button>
+        
       </header>
 
       {/* Карточка Apple ID (с возможностью смены аватара) */}
@@ -204,7 +210,7 @@ export const ProfileScreen: React.FC<{onLogout?: () => void}> = ({ onLogout }) =
 
         {debt > 0 ? (
           <div className={styles.debtIndicator}>
-            Задолженность 5 430 ₽
+            Задолженность {debt.toLocaleString("ru-RU")} ₽
           </div>
         ) : cashback > 0 ? (
           <button 
@@ -313,12 +319,23 @@ export const ProfileScreen: React.FC<{onLogout?: () => void}> = ({ onLogout }) =
                   <span className={styles.lockText}>Оплатите задолженность</span>
                   <button 
                     className={styles.unlockBtn}
-                    onClick={() => {
+                    onClick={async () => {
+                      notify('Оплата...');
+                      try {
+                        const res = await fetch(import.meta.env.VITE_API_URL + '/api/bills', { headers: { 'X-User-ID': localStorage.getItem('user_id') || '1' } });
+                        if (res.ok) {
+                          const data = await res.json();
+                          const unpaid = (data || []).filter((b: any) => !b.is_paid && !b.isPaid);
+                          for (const b of unpaid) {
+                            await fetch(import.meta.env.VITE_API_URL + '/api/bills/' + b.id + '/pay', { method: 'POST', headers: { 'X-User-ID': localStorage.getItem('user_id') || '1' } });
+                          }
+                        }
+                      } catch(e) {}
                       setDebt(0);
                       notify('Задолженность оплачена! Доступ открыт');
                     }}
                   >
-                    Оплатить 5 430 ₽
+                    Оплатить {debt.toLocaleString("ru-RU")} ₽
                   </button>
                 </div>
               )}

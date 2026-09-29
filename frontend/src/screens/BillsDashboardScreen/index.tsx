@@ -32,7 +32,7 @@ export const BillsDashboardScreen: React.FC<BillsDashboardScreenProps> = ({ onDe
   useEffect(() => {
     const fetchBills = async () => {
       try {
-        const res = await fetch(import.meta.env.VITE_API_URL + '/api/bills');
+        const res = await fetch(import.meta.env.VITE_API_URL + '/api/bills', { headers: { 'X-User-ID': localStorage.getItem('user_id') || '1' } });
         if (res.ok) {
           const data = await res.json();
           setBills(data || []);
@@ -42,8 +42,8 @@ export const BillsDashboardScreen: React.FC<BillsDashboardScreenProps> = ({ onDe
     fetchBills();
   }, []);
 
-  const unpaidBill = bills.find(b => !b.isPaid);
-  const paidBills = bills.filter(b => b.isPaid).map(b => ({
+  const unpaidBill = bills.find(b => !b.is_paid && !b.isPaid);
+  const paidBills = bills.filter(b => b.is_paid || b.isPaid).map(b => ({
     id: String(b.id),
     month: b.month,
     provider: 'УК Смарт Сити',
@@ -66,9 +66,9 @@ export const BillsDashboardScreen: React.FC<BillsDashboardScreenProps> = ({ onDe
     if (!unpaidBill || paying) return;
     setPaying(true);
     try {
-      await fetch(import.meta.env.VITE_API_URL + '/api/bills/' + unpaidBill.id + '/pay', { method: 'POST' });
+      await fetch(import.meta.env.VITE_API_URL + '/api/bills/' + unpaidBill.id + '/pay', { method: 'POST', headers: { 'X-User-ID': localStorage.getItem('user_id') || '1' } });
       // Refetch bills
-      const res = await fetch(import.meta.env.VITE_API_URL + '/api/bills');
+      const res = await fetch(import.meta.env.VITE_API_URL + '/api/bills', { headers: { 'X-User-ID': localStorage.getItem('user_id') || '1' } });
       if (res.ok) {
         const data = await res.json();
         setBills(data || []);

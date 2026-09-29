@@ -43,7 +43,7 @@ export const BillAnalysisScreen: React.FC<BillAnalysisScreenProps> = ({ onBack }
       // If no bill selected, try to pick the latest unpaid or latest bill
       if (!billId) {
         try {
-          const resFallback = await fetch(import.meta.env.VITE_API_URL + '/api/bills');
+          const resFallback = await fetch(import.meta.env.VITE_API_URL + '/api/bills', { headers: { 'X-User-ID': localStorage.getItem('user_id') || '1' } });
           if (resFallback.ok) {
             const fallbackBills = await resFallback.json();
             if (fallbackBills && fallbackBills.length > 0) {
@@ -71,7 +71,7 @@ export const BillAnalysisScreen: React.FC<BillAnalysisScreenProps> = ({ onBack }
         }
 
         // Fetch bills for chart
-        const resBills = await fetch(import.meta.env.VITE_API_URL + '/api/bills');
+        const resBills = await fetch(import.meta.env.VITE_API_URL + '/api/bills', { headers: { 'X-User-ID': localStorage.getItem('user_id') || '1' } });
         let history: ExpenseItem[] = [];
         if (resBills.ok) {
           const dataBills = await resBills.json();
