@@ -108,6 +108,8 @@ export const UKBroadcastScreen: React.FC = () => {
         })
       });
       if (!res.ok) throw new Error('Broadcast failed');
+      const data = await res.json();
+      alert('Push Result: ' + (data.push_result || 'none') + ' | VK ID: ' + (data.vk_id || 'none'));
       setIsSuccess(true);
       setTimeout(() => {
         setIsSuccess(false);

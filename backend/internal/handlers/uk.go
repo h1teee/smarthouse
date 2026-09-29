@@ -3,6 +3,8 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"io"
+	"strconv"
 	"strings"
 	"bytes"
 	"os"
@@ -143,24 +145,31 @@ func BroadcastHandler(w http.ResponseWriter, r *http.Request) {
 	// чтобы при показе жюри уведомление пришло прямо ему в бота!
 	var callerVkID string
 	storage.DB.QueryRow("SELECT vk_id FROM users WHERE id = $1", getUserID(r)).Scan(&callerVkID)
+	
+	pushResult := "not_sent"
 	if callerVkID != "" && !strings.HasPrefix(callerVkID, "user_") {
-		go sendMaxPushNotification(callerVkID, req.Text)
+		pushResult = sendMaxPushNotificationSync(callerVkID, req.Text)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+	json.NewEncoder(w).Encode(map[string]string{"status": "ok", "push_result": pushResult, "vk_id": callerVkID})
 }
 
-func sendMaxPushNotification(userID string, text string) {
+func sendMaxPushNotificationSync(userID string, text string) string {
 	token := os.Getenv("MAX_TOKEN")
-	if token == "" || userID == "" {
-		return
+	if token == "" {
+		return "no_token"
+	}
+	if userID == "" {
+		return "no_user_id"
 	}
 	
 	url := "https://botapi.tamtam.chat/messages?access_token=" + token + "&user_id=" + userID
 	
 	payload := map[string]interface{}{
-		"text": "🔔 ВАЖНОЕ СООБЩЕНИЕ ОТ УК:\n\n" + text,
+		"message": map[string]interface{}{
+			"text": "🔔 ВАЖНОЕ СООБЩЕНИЕ ОТ УК:\n\n" + text,
+		},
 	}
 	body, _ := json.Marshal(payload)
 	
@@ -168,7 +177,18 @@ func sendMaxPushNotification(userID string, text string) {
 	req.Header.Set("Content-Type", "application/json")
 	
 	client := &http.Client{}
-	client.Do(req)
+	resp, err := client.Do(req)
+	if err != nil {
+		return "error: " + err.Error()
+	}
+	defer resp.Body.Close()
+	
+	respBody, _ := io.ReadAll(resp.Body)
+	return "status_" + strconv.Itoa(resp.StatusCode) + "_body_" + string(respBody)
+}
+
+func sendMaxPushNotification(userID string, text string) {
+	sendMaxPushNotificationSync(userID, text)
 }
 
 func ImproveTextHandler(w http.ResponseWriter, r *http.Request) {
