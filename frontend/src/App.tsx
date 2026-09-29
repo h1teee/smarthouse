@@ -263,11 +263,13 @@ const App: React.FC = () => {
 
         {/* Экран 3.2: Проверка и публикация УК */}
         <div className={`screenWrapper ${getScreenClass('ukModeration')}`}>
-          <UKModerationScreen 
-            onBack={() => navigateTo('ukDashboard')} 
-            onConfirm={() => navigateTo('ukDashboard')} 
-            onReject={() => navigateTo('ukDashboard')} 
-          />
+          {currentScreen === 'ukModeration' && (
+            <UKModerationScreen 
+              onBack={() => navigateTo('ukDashboard')} 
+              onConfirm={() => navigateTo('ukDashboard')} 
+              onReject={() => navigateTo('ukDashboard')} 
+            />
+          )}
         </div>
       </div>
 

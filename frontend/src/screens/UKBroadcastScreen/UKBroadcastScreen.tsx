@@ -72,6 +72,7 @@ export const UKBroadcastScreen: React.FC = () => {
   const [isSending, setIsSending] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [isError, setIsError] = useState(false);
+  const [isImproving, setIsImproving] = useState(false);
 
   const handleSubmit = async () => {
     let hasError = false;
@@ -97,15 +98,16 @@ export const UKBroadcastScreen: React.FC = () => {
 
     setIsSending(true);
     try {
-      await new Promise((resolve, reject) => {
-        setTimeout(() => {
-          if (message.toLowerCase().includes('error') || message.toLowerCase().includes('ошибка')) {
-            reject(new Error('Simulated error'));
-          } else {
-            resolve(true);
-          }
-        }, 2000);
+      const res = await fetch(import.meta.env.VITE_API_URL + '/api/uk/broadcast', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          selectedIds: Array.from(selectedIds).map(Number),
+          category: category,
+          text: message
+        })
       });
+      if (!res.ok) throw new Error('Broadcast failed');
       setIsSuccess(true);
       setTimeout(() => {
         setIsSuccess(false);
@@ -123,10 +125,25 @@ export const UKBroadcastScreen: React.FC = () => {
     }
   };
 
-  const handleImproveText = () => {
-    if (!message) {
-      setMessage('Уважаемые жители! Уведомляем вас о временном отключении водоснабжения в связи с проведением плановых технических работ. Приносим извинения за неудобства.');
-      setErrorMessage(false);
+  const handleImproveText = async () => {
+    if (!message.trim()) return;
+    setIsImproving(true);
+    try {
+      const res = await fetch(import.meta.env.VITE_API_URL + '/api/ai/improve-text', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: message })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.improved_text) {
+          setMessage(data.improved_text);
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsImproving(false);
     }
   };
 
@@ -287,11 +304,11 @@ export const UKBroadcastScreen: React.FC = () => {
               }}
             />
 
-            <button className={styles.aiButton} onClick={handleImproveText}>
+            <button className={styles.aiButton} onClick={handleImproveText} disabled={isImproving || !message.trim()}>
               <svg className={styles.aiIcon} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
               </svg>
-              <span className={styles.aiText}>Улучшить текст с ИИ</span>
+              <span className={styles.aiText}>{isImproving ? 'Улучшаем...' : 'Улучшить текст с ИИ'}</span>
             </button>
           </div>
           {errorMessage && <div style={{ color: '#FF453A', fontSize: 13, marginTop: 4, paddingLeft: 16 }}>Не указан комментарий</div>}

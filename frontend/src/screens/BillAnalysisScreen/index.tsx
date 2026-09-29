@@ -38,9 +38,25 @@ export const BillAnalysisScreen: React.FC<BillAnalysisScreenProps> = ({ onBack }
 
   useEffect(() => {
     const loadData = async () => {
-      const billId = localStorage.getItem('selectedBillId');
+      let billId = localStorage.getItem('selectedBillId');
+      
+      // If no bill selected, try to pick the latest unpaid or latest bill
       if (!billId) {
-        setMessages([{ id: 1, sender: 'ai', text: 'Ошибка: квитанция не выбрана' }]);
+        try {
+          const resFallback = await fetch(import.meta.env.VITE_API_URL + '/api/bills');
+          if (resFallback.ok) {
+            const fallbackBills = await resFallback.json();
+            if (fallbackBills && fallbackBills.length > 0) {
+              const unpaid = fallbackBills.find((b: any) => !b.is_paid && !b.isPaid);
+              billId = String((unpaid || fallbackBills[0]).id);
+              localStorage.setItem('selectedBillId', billId);
+            }
+          }
+        } catch (e) {}
+      }
+      
+      if (!billId) {
+        setMessages([{ id: 1, sender: 'ai', text: 'Нет доступных квитанций для анализа.' }]);
         setIsTyping(false);
         return;
       }

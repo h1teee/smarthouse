@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { YMaps, Map, Placemark } from '@pbe/react-yandex-maps';
+import { YMaps, Map, Placemark, Clusterer } from '@pbe/react-yandex-maps';
 import styles from './UKObjectsScreen.module.css';
 
 type HouseStatus = 'ok' | 'repair' | 'critical';
@@ -95,17 +95,30 @@ export const UKObjectsScreen: React.FC = () => {
             onClick={handleMapClick}
             options={{ suppressMapOpenBlock: true }}
           >
-            {filteredHouses.map(house => (
-              <Placemark
-                key={house.address_id}
-                geometry={[house.lat, house.lng]}
-                options={{
-                  preset: 'islands#circleIcon',
-                  iconColor: getPinColor(house.status)
-                }}
-                onClick={() => setSelectedHouseId(house.address_id)}
-              />
-            ))}
+            <Clusterer
+              options={{
+                preset: 'islands#invertedVioletClusterIcons',
+                groupByCoordinates: false,
+              }}
+            >
+              {filteredHouses.map(house => (
+                <Placemark
+                  key={house.address_id}
+                  geometry={[house.lat, house.lng]}
+                  options={{
+                    preset: 'islands#circleIcon',
+                    iconColor: getPinColor(house.status)
+                  }}
+                  onClick={(e: any) => {
+                    // Stop propagation to prevent map click
+                    if (e && e.get) {
+                      e.get('domEvent')?.stopPropagation();
+                    }
+                    setSelectedHouseId(house.address_id);
+                  }}
+                />
+              ))}
+            </Clusterer>
           </Map>
         </YMaps>
       </div>

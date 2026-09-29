@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import styles from './CameraScreen.module.css';
 
 export const DEFAULT_ANNOUNCEMENT_IMAGE = `data:image/svg+xml;utf8,${encodeURIComponent(`
@@ -56,6 +56,29 @@ export const CameraScreen: React.FC<CameraScreenProps> = ({
 }) => {
   const [flashMode, setFlashMode] = useState<'auto' | 'on' | 'off'>('auto');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+
+  useEffect(() => {
+    const startCamera = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment' }
+        });
+        streamRef.current = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      } catch (err) {
+        console.error('Camera access denied:', err);
+      }
+    };
+    startCamera();
+    return () => {
+      streamRef.current?.getTracks().forEach(track => track.stop());
+    };
+  }, []);
 
   const cycleFlash = () => {
     setFlashMode((prev) => {
@@ -82,7 +105,22 @@ export const CameraScreen: React.FC<CameraScreenProps> = ({
   };
 
   const handleShutterClick = () => {
-    onCapture?.(DEFAULT_ANNOUNCEMENT_IMAGE);
+    if (videoRef.current && canvasRef.current) {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(video, 0, 0);
+        const base64 = canvas.toDataURL('image/jpeg', 0.8);
+        streamRef.current?.getTracks().forEach(track => track.stop());
+        onCapture?.(base64);
+      }
+    } else {
+      // Fallback if camera not available
+      onCapture?.(DEFAULT_ANNOUNCEMENT_IMAGE);
+    }
   };
 
   return (
@@ -98,10 +136,14 @@ export const CameraScreen: React.FC<CameraScreenProps> = ({
 
       {/* ── Viewfinder background ── */}
       <div className={styles.viewfinder}>
-        <div className={styles.cameraScene}>
-          <div className={styles.viewfinderLiveGrid} />
-          <div className={styles.scannerCenterReticle} />
-        </div>
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+        />
+        <canvas ref={canvasRef} style={{ display: 'none' }} />
       </div>
 
       {/* ── Top bar ───────────────────────────────────── */}
