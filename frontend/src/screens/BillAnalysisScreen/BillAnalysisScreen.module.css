@@ -35,17 +35,15 @@
 }
 
 .navBar {
-  position: absolute;
-  top: 0;
-  left: 0;
+  flex-shrink: 0;
   width: 100%;
-  height: 60px;
+  height: 56px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 var(--sp-16);
-  padding-top: var(--sa-top);
-  background: rgba(18, 18, 22, 0.7);
+  padding-top: var(--sa-top, 0px);
+  background: rgba(18, 18, 22, 0.85);
   backdrop-filter: saturate(180%) blur(20px);
   -webkit-backdrop-filter: saturate(180%) blur(20px);
   border-bottom: 0.5px solid rgba(255, 255, 255, 0.1);
@@ -85,13 +83,15 @@
   position: relative;
   z-index: 10;
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
-  padding: 0 var(--sp-20);
-  padding-top: calc(var(--sa-top) + 60px);
-  padding-bottom: 240px; /* space for bottom fixed + tabbar */
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding: 16px var(--sp-20);
   display: flex;
   flex-direction: column;
-  gap: var(--sp-24);
+  gap: var(--sp-20);
+  scrollbar-width: thin;
 }
 
 .chatArea {
@@ -286,17 +286,18 @@
 }
 
 .bottomFixed {
-  position: absolute;
-  bottom: calc(52px + max(34px, env(safe-area-inset-bottom))); /* Точная высота TabBar (контент + home indicator) */
-  left: 0;
+  flex-shrink: 0;
+  position: relative;
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: var(--sp-12);
-  padding: var(--sp-16);
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.85) 75%, transparent);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  gap: var(--sp-10);
+  padding: 10px var(--sp-16);
+  padding-bottom: calc(54px + max(16px, env(safe-area-inset-bottom)));
+  background: rgba(18, 18, 22, 0.95);
+  backdrop-filter: saturate(180%) blur(25px);
+  -webkit-backdrop-filter: saturate(180%) blur(25px);
+  border-top: 0.5px solid rgba(255, 255, 255, 0.1);
   z-index: 50;
 }
 

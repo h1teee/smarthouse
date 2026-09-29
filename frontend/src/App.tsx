@@ -205,7 +205,7 @@ const App: React.FC = () => {
         </div>
 
         {/* Экран 4.2: ИИ Анализ квитанции */}
-        <div className={`screenWrapper ${getScreenClass('billAnalysis')}`}>
+        <div className={`screenWrapper ${getScreenClass('billAnalysis')}`} style={{ overflow: 'hidden' }}>
           <BillAnalysisScreen onBack={() => navigateTo('billsDashboard')} />
         </div>
         

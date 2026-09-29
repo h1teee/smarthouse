@@ -36,7 +36,6 @@ export const BillAnalysisScreen: React.FC<BillAnalysisScreenProps> = ({ onBack }
   const [showQuickReplies, setShowQuickReplies] = useState(true);
   const [inputText, setInputText] = useState('');
   const [isSending, setIsSending] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
 
 const DEFAULT_ANALYSIS_SUMMARY = 'Счет за ноябрь 2024 — 5 100 ₽. Из них:\n• Отопление: 2 805 ₽ (55%)\n• Водоснабжение: 1 275 ₽ (25%)\n• Электроэнергия: 1 020 ₽ (20%)\n\nНачисления на 300 ₽ выше прошлого месяца из-за начала отопительного сезона. Рекомендуем проверить исправность терморегуляторов и передавать показания ИПУ до 25 числа.';
 
@@ -68,7 +67,7 @@ const generateSmartAiReply = (userText: string): string => {
 
   useEffect(() => {
     const loadData = async () => {
-      const apiUrl = import.meta.env.VITE_API_URL || 'https://smarthouse-backend.onrender.com';
+      const apiUrl = import.meta.env.VITE_API_URL !== undefined ? import.meta.env.VITE_API_URL : 'https://smarthouse-backend.onrender.com';
       let billId = currentBillId;
       if (!billId || isNaN(Number(billId)) || Number(billId) <= 0) {
         billId = '3';
@@ -139,8 +138,16 @@ const generateSmartAiReply = (userText: string): string => {
     loadData();
   }, [currentBillId]);
 
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (contentRef.current) {
+      contentRef.current.scrollTo({
+        top: contentRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
+    }
   };
 
   useEffect(() => {
@@ -149,7 +156,7 @@ const generateSmartAiReply = (userText: string): string => {
 
   const sendMessage = async (text: string) => {
     if (!text.trim()) return;
-    const apiUrl = import.meta.env.VITE_API_URL || 'https://smarthouse-backend.onrender.com';
+    const apiUrl = import.meta.env.VITE_API_URL !== undefined ? import.meta.env.VITE_API_URL : 'https://smarthouse-backend.onrender.com';
     let billId = localStorage.getItem('selectedBillId');
     if (!billId || isNaN(Number(billId))) billId = '3';
 
@@ -244,7 +251,7 @@ const generateSmartAiReply = (userText: string): string => {
         )}
       </header>
 
-      <div className={styles.content}>
+      <div className={styles.content} ref={contentRef}>
         <div className={styles.chatArea}>
           {messages.map((msg) => (
             <div key={msg.id} className={`${styles.messageWrapper} ${msg.sender === 'user' ? styles.messageUser : styles.messageAi}`}>
@@ -300,11 +307,17 @@ const generateSmartAiReply = (userText: string): string => {
               </div>
             </div>
           )}
-          <div ref={messagesEndRef} />
         </div>
       </div>
 
-      <div className={styles.bottomFixed} style={{ bottom: window.innerHeight < 600 ? 0 : undefined }}>
+      <div 
+        className={styles.bottomFixed} 
+        style={{ 
+          paddingBottom: window.innerHeight < 600 
+            ? 'calc(10px + env(safe-area-inset-bottom, 8px))' 
+            : 'calc(62px + env(safe-area-inset-bottom, 16px))' 
+        }}
+      >
         {showQuickReplies && (
           <div className={styles.quickReplies}>
             <button className={styles.quickReplyBtn} onClick={() => handleQuickReply('details')} disabled={isTyping || isSending}>Подробнее</button>
