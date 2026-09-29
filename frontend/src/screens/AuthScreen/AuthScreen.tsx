@@ -10,6 +10,9 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onNext }) => {
   const [apartment, setApartment] = useState('');
   const [loading, setLoading] = useState(false);
   const [addresses, setAddresses] = useState<any[]>([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+  
+  const filteredAddresses = addresses.filter(a => a.full_address.toLowerCase().includes(apartment.toLowerCase()));
 
   useEffect(() => {
     fetch(import.meta.env.VITE_API_URL + '/api/addresses')
@@ -92,18 +95,56 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onNext }) => {
 
           <div className={styles.inputGroup}>
             <label className={styles.label}>Адрес</label>
-            <input 
-              className={styles.input}
-              placeholder="Выберите адрес"
-              value={apartment}
-              onChange={(e) => setApartment(e.target.value)}
-              list="address-list"
-            />
-            <datalist id="address-list">
-              {addresses.map((a: any) => (
-                <option key={a.id} value={a.full_address} />
-              ))}
-            </datalist>
+            <div style={{ position: 'relative' }}>
+              <input 
+                className={styles.input}
+                placeholder="Начните вводить адрес"
+                value={apartment}
+                onFocus={() => setShowDropdown(true)}
+                onChange={(e) => {
+                  setApartment(e.target.value);
+                  setShowDropdown(true);
+                }}
+                onBlur={() => setTimeout(() => setShowDropdown(false), 250)}
+              />
+              {showDropdown && filteredAddresses.length > 0 && (
+                <div style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  right: 0,
+                  maxHeight: '220px',
+                  overflowY: 'auto',
+                  background: 'rgba(30, 30, 30, 0.98)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '12px',
+                  marginTop: '8px',
+                  zIndex: 100,
+                  backdropFilter: 'blur(10px)',
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.4)'
+                }}>
+                  {filteredAddresses.map((a: any) => (
+                    <div 
+                      key={a.id} 
+                      style={{
+                        padding: '14px 16px',
+                        borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+                        color: '#FFF',
+                        fontSize: '14px',
+                        lineHeight: '1.4',
+                        cursor: 'pointer'
+                      }}
+                      onClick={() => {
+                        setApartment(a.full_address);
+                        setShowDropdown(false);
+                      }}
+                    >
+                      {a.full_address}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {error && <div className={styles.error}>{error}</div>}
