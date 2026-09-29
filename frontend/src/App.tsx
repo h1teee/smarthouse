@@ -109,6 +109,7 @@ const App: React.FC = () => {
         if (data && data.user_id) {
           localStorage.setItem('user_id', String(data.user_id));
           localStorage.setItem('role', data.role || 'resident');
+          localStorage.setItem('max_user_id', botUserId);
         }
       }).catch(() => {});
     }
