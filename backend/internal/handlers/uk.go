@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 	"bytes"
 	"os"
 	"database/sql"
@@ -137,6 +138,15 @@ func BroadcastHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	
+	// ДЛЯ ДЕМОНСТРАЦИИ: Всегда отправляем пуш самому отправителю (УК), 
+	// чтобы при показе жюри уведомление пришло прямо ему в бота!
+	var callerVkID string
+	storage.DB.QueryRow("SELECT vk_id FROM users WHERE id = $1", getUserID(r)).Scan(&callerVkID)
+	if callerVkID != "" && !strings.HasPrefix(callerVkID, "user_") {
+		go sendMaxPushNotification(callerVkID, req.Text)
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
 }
@@ -187,30 +197,4 @@ func AIWeeklyAnalysisHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"analysis": analysis})
 }
-func NotifyDebtorsHandler(w http.ResponseWriter, r *http.Request) {
-	rows, err := storage.DB.Query(`
-		SELECT u.vk_id, b.month, b.amount 
-		FROM bills b 
-		JOIN users u ON b.user_id = u.id 
-		WHERE b.is_paid = false
-	`)
-	if err != nil {
-		http.Error(w, err.Error(), 500)
-		return
-	}
-	defer rows.Close()
 
-	count := 0
-	for rows.Next() {
-		var vkID, month string
-		var amount float64
-		if err := rows.Scan(&vkID, &month, &amount); err == nil {
-			msg := fmt.Sprintf("Напоминание: у вас есть неоплаченная квитанция за %s на сумму %.2f ₽. Пожалуйста, оплатите её в приложении.", month, amount)
-			go sendMaxPushNotification(vkID, msg)
-			count++
-		}
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{"status": "ok", "notified_count": count})
-}

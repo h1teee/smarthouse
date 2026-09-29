@@ -71,7 +71,6 @@ func main() {
 	mux.HandleFunc("POST /api/uk/requests/{id}/approve", handlers.ApproveRequestHandler)
 	mux.HandleFunc("POST /api/uk/requests/{id}/reject", handlers.RejectRequestHandler)
 	mux.HandleFunc("POST /api/uk/broadcast", handlers.BroadcastHandler)
-	mux.HandleFunc("POST /api/uk/notify-debtors", handlers.NotifyDebtorsHandler)
 	mux.HandleFunc("GET /api/uk/objects", handlers.GetUKObjectsHandler)
 	mux.HandleFunc("GET /api/uk/analytics", handlers.GetUKAnalyticsHandler)
 

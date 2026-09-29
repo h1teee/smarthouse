@@ -118,46 +118,7 @@ export const UKDashboardScreen: React.FC<UKDashboardScreenProps> = ({ onOpenRequ
             </button>
           </header>
 
-          <section className={`${styles.animateStagger2}`} style={{ marginTop: 24, marginBottom: 8, padding: '0 20px', display: 'flex', gap: 12 }}>
-            <button 
-              style={{
-                flex: 1,
-                padding: '12px',
-                background: 'rgba(255,59,48,0.15)',
-                color: '#FF3B30',
-                border: '1px solid rgba(255,59,48,0.3)',
-                borderRadius: '12px',
-                fontWeight: 600,
-                fontSize: 14
-              }}
-              onClick={async () => {
-                try {
-                  const res = await fetch(import.meta.env.VITE_API_URL + '/api/uk/notify-debtors', { method: 'POST' });
-                  if (res.ok) {
-                    const data = await res.json();
-                    alert(`Отправлено уведомлений: ${data.notified_count}`);
-                  }
-                } catch(e) {}
-              }}
-            >
-              Напомнить должникам
-            </button>
-            <button 
-              style={{
-                flex: 1,
-                padding: '12px',
-                background: 'rgba(10,132,255,0.15)',
-                color: '#0A84FF',
-                border: '1px solid rgba(10,132,255,0.3)',
-                borderRadius: '12px',
-                fontWeight: 600,
-                fontSize: 14
-              }}
-              onClick={() => onNavigate?.('ukBroadcast')}
-            >
-              Новая рассылка
-            </button>
-          </section>
+          
 
           <section className={`${styles.metricsGrid} ${styles.animateStagger2}`}>
             <div className={styles.metricCard}>

@@ -30,6 +30,8 @@ export const BillAnalysisScreen: React.FC<BillAnalysisScreenProps> = ({ onBack }
   ]);
   const [, setIsTyping] = useState(true);
   const [expenseHistory, setExpenseHistory] = useState<ExpenseItem[]>([]);
+  const [allBills, setAllBills] = useState<any[]>([]);
+  const [currentBillId, setCurrentBillId] = useState<string | null>(localStorage.getItem('selectedBillId'));
   const [showExtendedChart, setShowExtendedChart] = useState(false);
   const [showQuickReplies, setShowQuickReplies] = useState(true);
   const [inputText, setInputText] = useState('');
@@ -38,7 +40,8 @@ export const BillAnalysisScreen: React.FC<BillAnalysisScreenProps> = ({ onBack }
 
   useEffect(() => {
     const loadData = async () => {
-      let billId = localStorage.getItem('selectedBillId');
+      let billId = currentBillId;
+      
       
       // If no bill selected, try to pick the latest unpaid or latest bill
       if (!billId) {
@@ -75,16 +78,13 @@ export const BillAnalysisScreen: React.FC<BillAnalysisScreenProps> = ({ onBack }
         let history: ExpenseItem[] = [];
         if (resBills.ok) {
           const dataBills = await resBills.json();
-          // dataBills is sorted DESC by ID, let's reverse to ASC for chart
+          setAllBills(dataBills || []);
           const sorted = [...(dataBills || [])].reverse();
-          
           if (sorted.length > 0) {
-            // Find max amount to calculate percentage
             let maxAmount = 0;
             sorted.forEach((b: any) => {
               if (b.amount > maxAmount) maxAmount = b.amount;
             });
-            
             history = sorted.map((b: any) => ({
               id: String(b.id),
               month: b.month,
@@ -108,7 +108,7 @@ export const BillAnalysisScreen: React.FC<BillAnalysisScreenProps> = ({ onBack }
       }
     };
     loadData();
-  }, []);
+  }, [currentBillId]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -178,7 +178,30 @@ export const BillAnalysisScreen: React.FC<BillAnalysisScreenProps> = ({ onBack }
           Назад
         </button>
         <h2 className={styles.navTitle}>Разбор квитанции</h2>
-        <div className={styles.navSpacer} />
+        {allBills.length > 0 && (
+          <select 
+            value={currentBillId || ''} 
+            onChange={(e) => {
+              setCurrentBillId(e.target.value);
+              localStorage.setItem('selectedBillId', e.target.value);
+              setMessages([]);
+            }}
+            style={{ 
+              background: 'rgba(255,255,255,0.1)', 
+              color: '#fff', 
+              border: 'none', 
+              borderRadius: '8px', 
+              padding: '4px 8px',
+              fontSize: '14px',
+              outline: 'none'
+            }}
+          >
+            {allBills.map((b: any) => (
+              <option key={b.id} value={b.id} style={{color: '#000'}}>{b.month}</option>
+            ))}
+          </select>
+        )}
+        {allBills.length === 0 && <div className={styles.navSpacer} />}
       </header>
 
       <div className={styles.content}>
