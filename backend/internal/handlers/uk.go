@@ -3,6 +3,8 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"bytes"
+	"os"
 	"database/sql"
 
 	"backend/internal/ai"
@@ -121,10 +123,42 @@ func BroadcastHandler(w http.ResponseWriter, r *http.Request) {
 	for _, addrID := range req.SelectedIds {
 		storage.DB.Exec("INSERT INTO feed_items (address_id, title, body, category) VALUES ($1, $2, $3, $4)",
 			addrID, "Рассылка от УК", req.Text, req.Category)
+			
+		// Fetch users linked to this address to send MAX push notifications
+		rows, err := storage.DB.Query("SELECT u.vk_id FROM users u JOIN user_addresses ua ON u.id = ua.user_id WHERE ua.address_id = $1", addrID)
+		if err == nil {
+			for rows.Next() {
+				var vkID string
+				if err := rows.Scan(&vkID); err == nil {
+					go sendMaxPushNotification(vkID, req.Text)
+				}
+			}
+			rows.Close()
+		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+}
+
+func sendMaxPushNotification(userID string, text string) {
+	token := os.Getenv("MAX_TOKEN")
+	if token == "" || userID == "" {
+		return
+	}
+	
+	url := "https://botapi.tamtam.chat/messages?access_token=" + token + "&user_id=" + userID
+	
+	payload := map[string]interface{}{
+		"text": "🔔 ВАЖНОЕ СООБЩЕНИЕ ОТ УК:\n\n" + text,
+	}
+	body, _ := json.Marshal(payload)
+	
+	req, _ := http.NewRequest("POST", url, bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	
+	client := &http.Client{}
+	client.Do(req)
 }
 
 func ImproveTextHandler(w http.ResponseWriter, r *http.Request) {
