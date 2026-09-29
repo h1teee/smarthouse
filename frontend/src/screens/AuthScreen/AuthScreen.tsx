@@ -26,7 +26,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onNext }) => {
     .slice(0, 10);
 
   useEffect(() => {
-    const apiUrl = import.meta.env.VITE_API_URL || '';
+    const apiUrl = import.meta.env.VITE_API_URL || 'https://smarthouse-backend.onrender.com';
     fetch(apiUrl + '/api/addresses')
       .then(res => {
         if (!res.ok) throw new Error('API error');

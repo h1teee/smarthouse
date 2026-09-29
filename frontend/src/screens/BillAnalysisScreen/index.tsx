@@ -57,7 +57,7 @@ const generateSmartAiReply = (userText: string, errorMsg?: string): string => {
 
   useEffect(() => {
     const loadData = async () => {
-      const apiUrl = import.meta.env.VITE_API_URL || '';
+      const apiUrl = import.meta.env.VITE_API_URL || 'https://smarthouse-backend.onrender.com';
       let billId = currentBillId;
       if (!billId || isNaN(Number(billId)) || Number(billId) <= 0) {
         billId = '3';
@@ -146,7 +146,7 @@ const generateSmartAiReply = (userText: string, errorMsg?: string): string => {
 
   const sendMessage = async (text: string) => {
     if (!text.trim()) return;
-    const apiUrl = import.meta.env.VITE_API_URL || '';
+    const apiUrl = import.meta.env.VITE_API_URL || 'https://smarthouse-backend.onrender.com';
     let billId = localStorage.getItem('selectedBillId');
     if (!billId || isNaN(Number(billId))) billId = '3';
 

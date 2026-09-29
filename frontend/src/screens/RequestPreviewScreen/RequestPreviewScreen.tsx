@@ -56,7 +56,7 @@ export const RequestPreviewScreen: React.FC<RequestPreviewScreenProps> = ({
 
     const parseImage = async () => {
       try {
-        const apiUrl = import.meta.env.VITE_API_URL || '';
+        const apiUrl = import.meta.env.VITE_API_URL || 'https://smarthouse-backend.onrender.com';
         const res = await fetch(apiUrl + '/api/requests/ai-recognize', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -96,7 +96,7 @@ export const RequestPreviewScreen: React.FC<RequestPreviewScreenProps> = ({
   const handleSendToModeration = async () => {
     setIsLoadingSend(true);
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || '';
+      const apiUrl = import.meta.env.VITE_API_URL || 'https://smarthouse-backend.onrender.com';
       await fetch(apiUrl + '/api/requests', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

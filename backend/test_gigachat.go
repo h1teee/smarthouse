@@ -1,9 +1,7 @@
 package main
 
 import (
-	"bytes"
 	"crypto/tls"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -14,7 +12,7 @@ import (
 func main() {
 	authData := "MDFhMGRkOGQtYzhiYS03ZDRlLThjYzctYWU1NDYwMzgwNmJlOmMxY2IzNWVlLTdjMzItNGNlZC05YWRmLWNiMWE2OWFhYWE2MQ=="
 	
-	req, _ := http.NewRequest("POST", "https://ngw.devices.sberbank.ru:9443/api/v2/oauth", strings.NewReader("scope=GIGACHAT_API_PERS"))
+	req, _ := http.NewRequest("POST", "https://ngw.devices.sberbank.ru:2124/api/v2/oauth", strings.NewReader("scope=GIGACHAT_API_PERS"))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("RqUID", "6f0b1291-c7f3-4cb4-971e-a61622243e1f")
