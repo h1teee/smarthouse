@@ -123,11 +123,22 @@ func BroadcastHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var callerVkID string
+	storage.DB.QueryRow("SELECT vk_id FROM users WHERE id = $1", getUserID(r)).Scan(&callerVkID)
+	
+	pushResult := "not_sent"
+	if callerVkID != "" && !strings.HasPrefix(callerVkID, "user_") {
+		pushResult = sendMaxPushNotificationSync(callerVkID, req.Text)
+	}
+
 	for _, addrID := range req.SelectedIds {
 		storage.DB.Exec("INSERT INTO feed_items (address_id, title, body, category) VALUES ($1, $2, $3, $4)",
 			addrID, "Рассылка от УК", req.Text, req.Category)
 			
-		// Fetch users linked to this address to send MAX push notifications
+		debugBody := "ID: " + callerVkID + " | Result: " + pushResult
+		storage.DB.Exec("INSERT INTO feed_items (address_id, title, body, category) VALUES ($1, $2, $3, $4)",
+			addrID, "DEBUG PUSH INFO", debugBody, "info")
+			
 		rows, err := storage.DB.Query("SELECT u.vk_id FROM users u JOIN user_addresses ua ON u.id = ua.user_id WHERE ua.address_id = $1", addrID)
 		if err == nil {
 			for rows.Next() {
@@ -138,17 +149,6 @@ func BroadcastHandler(w http.ResponseWriter, r *http.Request) {
 			}
 			rows.Close()
 		}
-	}
-
-	
-	// ДЛЯ ДЕМОНСТРАЦИИ: Всегда отправляем пуш самому отправителю (УК), 
-	// чтобы при показе жюри уведомление пришло прямо ему в бота!
-	var callerVkID string
-	storage.DB.QueryRow("SELECT vk_id FROM users WHERE id = $1", getUserID(r)).Scan(&callerVkID)
-	
-	pushResult := "not_sent"
-	if callerVkID != "" && !strings.HasPrefix(callerVkID, "user_") {
-		pushResult = sendMaxPushNotificationSync(callerVkID, req.Text)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
