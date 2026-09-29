@@ -72,6 +72,7 @@ export const UKBroadcastScreen: React.FC = () => {
   const [isSending, setIsSending] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [isError, setIsError] = useState(false);
+  const [debugInfo, setDebugInfo] = useState('');
   const [isImproving, setIsImproving] = useState(false);
 
   const handleSubmit = async () => {
@@ -107,9 +108,12 @@ export const UKBroadcastScreen: React.FC = () => {
           text: message
         })
       });
-      if (!res.ok) throw new Error('Broadcast failed');
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error('Broadcast failed: ' + text);
+      }
       const data = await res.json();
-      alert('Push Result: ' + (data.push_result || 'none') + ' | VK ID: ' + (data.vk_id || 'none'));
+      setDebugInfo('Push Result: ' + (data.push_result || 'none') + ' | VK ID: ' + (data.vk_id || 'none'));
       setIsSuccess(true);
       setTimeout(() => {
         setIsSuccess(false);
@@ -118,7 +122,7 @@ export const UKBroadcastScreen: React.FC = () => {
       }, 2500);
     } catch (e: any) {
       console.error(e);
-      alert('Ошибка при отправке запроса: ' + e.message);
+      setDebugInfo('Error: ' + e.message);
       setIsError(true);
       setTimeout(() => {
         setIsError(false);
