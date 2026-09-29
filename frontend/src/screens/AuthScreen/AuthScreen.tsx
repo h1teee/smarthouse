@@ -128,43 +128,44 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onNext }) => {
                   setApartment(e.target.value);
                   setShowDropdown(true);
                 }}
-                onBlur={() => setTimeout(() => setShowDropdown(false), 250)}
               />
               {showDropdown && filteredAddresses.length > 0 && (
-                <div style={{
-                  position: 'absolute',
-                  top: '100%',
-                  left: 0,
-                  right: 0,
-                  maxHeight: '220px',
-                  overflowY: 'auto',
-                  background: 'rgba(30, 30, 30, 0.98)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  borderRadius: '12px',
-                  marginTop: '8px',
-                  zIndex: 100,
-                  backdropFilter: 'blur(10px)',
-                  boxShadow: '0 8px 32px rgba(0,0,0,0.4)'
-                }}>
+                <div 
+                  style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    right: 0,
+                    maxHeight: '200px',
+                    overflowY: 'auto',
+                    background: 'rgba(25, 25, 30, 0.98)',
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    borderRadius: '12px',
+                    marginTop: '6px',
+                    zIndex: 9999,
+                    backdropFilter: 'blur(16px)',
+                    boxShadow: '0 12px 36px rgba(0,0,0,0.6)',
+                    WebkitOverflowScrolling: 'touch'
+                  }}
+                  onMouseDown={(e) => e.preventDefault()}
+                >
                   {filteredAddresses.map((a: any) => (
                     <div 
                       key={a.id} 
                       style={{
                         padding: '14px 16px',
-                        borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+                        borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
                         color: '#FFF',
                         fontSize: '14px',
                         lineHeight: '1.4',
                         cursor: 'pointer'
                       }}
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        setApartment(a.full_address);
-                        setShowDropdown(false);
-                      }}
                       onClick={() => {
                         setApartment(a.full_address);
                         setShowDropdown(false);
+                        if (document.activeElement instanceof HTMLElement) {
+                          document.activeElement.blur();
+                        }
                       }}
                     >
                       {a.full_address}
