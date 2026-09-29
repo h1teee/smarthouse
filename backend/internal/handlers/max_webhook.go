@@ -71,6 +71,12 @@ func MaxWebhookHandler(w http.ResponseWriter, r *http.Request) {
 				log.Println("[WEBHOOK] User successfully saved in DB:", uidStr)
 			}
 
+			// Также сохраняем chat_id, если есть
+			if payload.Message != nil && payload.Message.Recipient != nil && payload.Message.Recipient.ChatID != 0 {
+				cidStr := strconv.FormatInt(payload.Message.Recipient.ChatID, 10)
+				storage.DB.Exec("INSERT INTO users (vk_id, role) VALUES ($1, 'resident') ON CONFLICT (vk_id) DO NOTHING", cidStr)
+			}
+
 			// Автоматически привязываем к адресу 1 (кв. 15, счет 61-0001-0015)
 			var dbUserID int
 			err = storage.DB.QueryRow("SELECT id FROM users WHERE vk_id = $1", uidStr).Scan(&dbUserID)

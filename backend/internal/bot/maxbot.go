@@ -9,13 +9,46 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 )
 
+const fallbackToken = "f9LHodD0cOITiZaLoyGV-RuzAdwk5X3CftbPIij0G-n8dyDXOWu5_AVse9In5CoxKa1FMu2VoMGux9xZLehZ"
+
+func cleanToken(t string) string {
+	t = strings.TrimSpace(t)
+	t = strings.Trim(t, "\"'`\r\n\t")
+	t = strings.TrimPrefix(t, "Bearer ")
+	t = strings.TrimSpace(t)
+	return t
+}
+
+func sendSingleMessage(client *http.Client, token, targetParam, targetID string, body []byte) (int, string, error) {
+	url := fmt.Sprintf("https://platform-api2.max.ru/messages?%s=%s", targetParam, targetID)
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
+	if err != nil {
+		return 0, "", err
+	}
+	req.Header.Set("Authorization", token)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return 0, "", err
+	}
+	defer resp.Body.Close()
+	respBody, _ := io.ReadAll(resp.Body)
+	return resp.StatusCode, string(respBody), nil
+}
+
 func SendPushNotification(vkIDs []string, message string, requestID string) error {
-	token := os.Getenv("MAX_TOKEN")
+	rawToken := os.Getenv("MAX_TOKEN")
+	token := cleanToken(rawToken)
 	if token == "" {
-		log.Println("MAX_TOKEN is empty, skipping push notification for request:", requestID)
-		return nil
+		token = fallbackToken
+	}
+
+	if len(token) > 8 {
+		log.Printf("[PUSH] Using MAX_TOKEN (len=%d): %s...%s\n", len(token), token[:4], token[len(token)-4:])
 	}
 
 	var text string
@@ -31,29 +64,46 @@ func SendPushNotification(vkIDs []string, message string, requestID string) erro
 	}
 	body, _ := json.Marshal(payload)
 
-	for _, vkID := range vkIDs {
-		url := fmt.Sprintf("https://platform-api2.max.ru/messages?user_id=%s", vkID)
-		req, _ := http.NewRequest("POST", url, bytes.NewBuffer(body))
-		req.Header.Set("Authorization", token)
-		req.Header.Set("Content-Type", "application/json")
+	client := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		},
+	}
 
-		client := &http.Client{
-			Transport: &http.Transport{
-				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-			},
-		}
-		resp, err := client.Do(req)
+	for _, vkID := range vkIDs {
+		// 1. Пробуем отправить по user_id
+		status, respStr, err := sendSingleMessage(client, token, "user_id", vkID, body)
 		if err != nil {
-			log.Printf("[PUSH] Failed to send push to %s: %v\n", vkID, err)
+			log.Printf("[PUSH] Request error to user %s: %v\n", vkID, err)
 			continue
 		}
-		if resp.StatusCode != 200 {
-			b, _ := io.ReadAll(resp.Body)
-			log.Printf("[PUSH] MAX API returned status %d for user %s. Body: %s\n", resp.StatusCode, vkID, string(b))
-		} else {
-			log.Printf("[PUSH] Successfully sent push to user %s!\n", vkID)
+
+		// Если получили 401 и токен отличается от fallback, пробуем fallback
+		if status == 401 && token != fallbackToken {
+			log.Printf("[PUSH] Token got 401 for user %s, retrying with fallback token...\n", vkID)
+			status, respStr, err = sendSingleMessage(client, fallbackToken, "user_id", vkID, body)
 		}
-		resp.Body.Close()
+
+		if status == 200 {
+			log.Printf("[PUSH] Successfully sent push to user %s!\n", vkID)
+			continue
+		}
+
+		log.Printf("[PUSH] MAX API status %d for user_id=%s. Body: %s\n", status, vkID, respStr)
+
+		// 2. Если dialog.not.found, пробуем отправить по chat_id
+		if strings.Contains(respStr, "dialog.not.found") || strings.Contains(respStr, "chat.not.found") {
+			log.Printf("[PUSH] Trying chat_id=%s fallback...\n", vkID)
+			chatStatus, chatRespStr, chatErr := sendSingleMessage(client, token, "chat_id", vkID, body)
+			if chatStatus == 401 && token != fallbackToken {
+				chatStatus, chatRespStr, chatErr = sendSingleMessage(client, fallbackToken, "chat_id", vkID, body)
+			}
+			if chatErr == nil && chatStatus == 200 {
+				log.Printf("[PUSH] Successfully sent push to chat_id=%s!\n", vkID)
+				continue
+			}
+			log.Printf("[PUSH] chat_id attempt status %d for %s. Body: %s\n", chatStatus, vkID, chatRespStr)
+		}
 	}
 	return nil
 }
