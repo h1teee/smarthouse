@@ -206,13 +206,15 @@ const App: React.FC = () => {
 
         {/* Экран 2.2: Камера */}
         <div className={`screenWrapper ${getScreenClass('camera')}`}>
-          <CameraScreen 
-            onClose={() => navigateTo('mainFeed')} 
-            onCapture={(img) => {
-              setCapturedPhoto(img);
-              navigateTo('requestPreview');
-            }} 
-          />
+          {currentScreen === 'camera' && (
+            <CameraScreen 
+              onClose={() => navigateTo('mainFeed')} 
+              onCapture={(img) => {
+                setCapturedPhoto(img);
+                navigateTo('requestPreview');
+              }} 
+            />
+          )}
         </div>
 
         {/* Экран 2.3 + 2.4: Распознавание и превью заявки */}

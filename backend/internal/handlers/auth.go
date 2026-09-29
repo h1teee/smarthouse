@@ -33,7 +33,7 @@ func LoginByAccountHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var userID int
-	err := storage.DB.QueryRow("SELECT user_id FROM user_addresses WHERE account_number = $1 AND apartment = $2 LIMIT 1", req.AccountNumber, req.Apartment).Scan(&userID)
+	err := storage.DB.QueryRow("SELECT ua.user_id FROM user_addresses ua JOIN addresses a ON ua.address_id = a.id WHERE ua.account_number = $1 AND a.full_address = $2 LIMIT 1", req.AccountNumber, req.Apartment).Scan(&userID)
 	
 	if err == sql.ErrNoRows {
 		http.Error(w, "Account or apartment not found", http.StatusUnauthorized)

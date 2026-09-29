@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styles from './AuthScreen.module.css';
 
 interface AuthScreenProps {
@@ -9,6 +9,14 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onNext }) => {
   const [account, setAccount] = useState('');
   const [apartment, setApartment] = useState('');
   const [loading, setLoading] = useState(false);
+  const [addresses, setAddresses] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetch(import.meta.env.VITE_API_URL + '/api/addresses')
+      .then(res => res.json())
+      .then(data => setAddresses(data || []))
+      .catch(() => {});
+  }, []);
   const [error, setError] = useState('');
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -83,13 +91,19 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onNext }) => {
           </div>
 
           <div className={styles.inputGroup}>
-            <label className={styles.label}>Квартира</label>
+            <label className={styles.label}>Адрес</label>
             <input 
               className={styles.input}
-              placeholder="Номер квартиры"
+              placeholder="Выберите адрес"
               value={apartment}
               onChange={(e) => setApartment(e.target.value)}
+              list="address-list"
             />
+            <datalist id="address-list">
+              {addresses.map((a: any) => (
+                <option key={a.id} value={a.full_address} />
+              ))}
+            </datalist>
           </div>
 
           {error && <div className={styles.error}>{error}</div>}
@@ -101,7 +115,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onNext }) => {
         
         <div className={styles.demoNote}>
           <p>Для демо-входа используйте:</p>
-          <p>Счет: <b>61-0001-0015</b> | Кв: <b>15</b></p>
+          <p>Счет: <b>61-0001-0015</b> | Адрес: <b>Ростовская обл., г. Ростов-на-Дону, ГСК-3. Мухина, д. 47</b></p>
         </div>
       </main>
     </div>
