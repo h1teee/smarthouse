@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import styles from './ProfileScreen.module.css';
 import { useSwipeClose } from '../../hooks/useSwipeClose';
