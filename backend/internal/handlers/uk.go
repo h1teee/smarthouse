@@ -11,6 +11,7 @@ import (
 	"database/sql"
 
 	"backend/internal/ai"
+	"backend/internal/bot"
 	"backend/internal/models"
 	"backend/internal/storage"
 )
@@ -189,12 +190,6 @@ func BroadcastHandler(w http.ResponseWriter, r *http.Request) {
 	// Собираем всех vk_id жителей выбранных домов
 	var vkIDs []string
 	if len(req.SelectedIds) > 0 {
-		query := `
-			SELECT DISTINCT u.vk_id 
-			FROM users u 
-			JOIN user_addresses ua ON u.id = ua.user_id 
-			WHERE ua.address_id = ANY($1) AND u.vk_id IS NOT NULL AND u.vk_id != ''
-		`
 		// В PostgreSQL ANY() принимает массив. 
 		// Для простоты, так как драйвер pq/pgx может требовать специальный тип, 
 		// можно использовать github.com/lib/pq, или просто сформировать запрос.
@@ -231,7 +226,6 @@ func BroadcastHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Отправляем реальные пуши всем найденным жителям
-	pushResult := "not_sent"
 	if len(uniqueVKIDs) > 0 {
 		bot.SendPushNotification(uniqueVKIDs, "🔔 ВАЖНОЕ СООБЩЕНИЕ ОТ УК:\n\n" + req.Text, "broadcast")
 		pushResult = "sent_to_users"
