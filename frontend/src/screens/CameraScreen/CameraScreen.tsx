@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/Button';
 import styles from './CameraScreen.module.css';
 
-export const DEFAULT_ANNOUNCEMENT_IMAGE = `data:image/svg+xml;utf8,${encodeURIComponent(`
+export const DEFAULT_ANNOUNCEMENT_IMAGE = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(`
 <svg xmlns="http://www.w3.org/2000/svg" width="600" height="850" viewBox="0 0 600 850">
   <rect width="600" height="850" fill="#F8F8FA"/>
   <rect x="25" y="25" width="550" height="800" fill="#FFFFFF" stroke="#D1D1D6" stroke-width="1.5" rx="6"/>
@@ -55,10 +55,10 @@ export const CameraScreen: React.FC<CameraScreenProps> = ({
   onClose,
   onCapture,
 }) => {
-  const [flashMode, setFlashMode] = useState<'auto' | 'on' | 'off'>('auto');
+  // Flash mode: only 'off' and 'on' as requested
+  const [flashMode, setFlashMode] = useState<'on' | 'off'>('off');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
   const [previewImage, setPreviewImage] = useState<string | null>(null);
@@ -67,30 +67,44 @@ export const CameraScreen: React.FC<CameraScreenProps> = ({
     let mounted = true;
     const startCamera = async () => {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'environment' }
-        });
+        let stream: MediaStream;
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: { ideal: 'environment' } },
+            audio: false,
+          });
+        } catch {
+          // Fallback to default camera if environment camera is not available
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: false,
+          });
+        }
+
         if (mounted) {
           streamRef.current = stream;
           if (videoRef.current) {
             videoRef.current.srcObject = stream;
+            videoRef.current.play().catch((e) => console.warn('Camera play warning:', e));
           }
         } else {
-          stream.getTracks().forEach(track => track.stop());
+          stream.getTracks().forEach((track) => track.stop());
         }
       } catch (err) {
-        console.error('Camera access denied:', err);
+        console.error('Camera access error:', err);
       }
     };
+
     startCamera();
+
     return () => {
       mounted = false;
-      streamRef.current?.getTracks().forEach(track => track.stop());
+      streamRef.current?.getTracks().forEach((track) => track.stop());
     };
-  }, []); // Run only once on mount
+  }, []);
 
   const cycleFlash = () => {
-    setFlashMode((prev) => prev === "auto" ? "on" : prev === "on" ? "off" : "auto");
+    setFlashMode((prev) => (prev === 'off' ? 'on' : 'off'));
   };
 
   const handleGalleryClick = () => {
@@ -124,7 +138,7 @@ export const CameraScreen: React.FC<CameraScreenProps> = ({
         const ctx = canvas.getContext('2d');
         if (ctx) {
           ctx.drawImage(img, 0, 0, width, height);
-          setPreviewImage(canvas.toDataURL('image/jpeg', 0.7));
+          setPreviewImage(canvas.toDataURL('image/jpeg', 0.8));
         }
       };
       img.src = URL.createObjectURL(file);
@@ -132,72 +146,96 @@ export const CameraScreen: React.FC<CameraScreenProps> = ({
   };
 
   const handleShutterClick = async () => {
-    if (videoRef.current && canvasRef.current && streamRef.current) {
+    try {
       const video = videoRef.current;
-      const track = streamRef.current.getVideoTracks()[0];
-      
+      const track = streamRef.current?.getVideoTracks()[0];
+
       let torchUsed = false;
-      if (flashMode === "on" && track && typeof track.getCapabilities === "function") {
+      if (flashMode === 'on' && track && typeof track.getCapabilities === 'function') {
         const caps = track.getCapabilities() as any;
         if (caps.torch) {
           try {
             await track.applyConstraints({ advanced: [{ torch: true } as any] });
             torchUsed = true;
-            await new Promise(r => setTimeout(r, 400));
+            // Short pause to allow sensor to adjust exposure to the flash
+            await new Promise((r) => setTimeout(r, 250));
           } catch (e) {
-            console.error("Torch error", e);
+            console.warn('Torch constraint error:', e);
           }
         }
       }
 
-      const canvas = canvasRef.current;
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      const ctx = canvas.getContext("2d");
-      if (ctx) {
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const base64 = canvas.toDataURL("image/jpeg", 0.8);
-        setPreviewImage(base64);
+      let capturedDataUrl: string | null = null;
+
+      // 1. Try ImageCapture API if supported by browser/device
+      if (track && (window as any).ImageCapture) {
+        try {
+          const imageCapture = new (window as any).ImageCapture(track);
+          const blob = await imageCapture.takePhoto();
+          if (blob && blob.size > 0) {
+            capturedDataUrl = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result as string);
+              reader.onerror = reject;
+              reader.readAsDataURL(blob);
+            });
+          }
+        } catch (e) {
+          console.warn('ImageCapture takePhoto fallback to canvas:', e);
+        }
       }
 
-      if (torchUsed) {
-        track.applyConstraints({ advanced: [{ torch: false } as any] }).catch(e => console.error("Torch error", e));
+      // 2. Fallback to drawing current video frame to canvas
+      if (!capturedDataUrl && video) {
+        const width = video.videoWidth || video.clientWidth || 1280;
+        const height = video.videoHeight || video.clientHeight || 720;
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(video, 0, 0, width, height);
+          capturedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        }
       }
-    } else {
-      setPreviewImage(DEFAULT_ANNOUNCEMENT_IMAGE);
+
+      // Turn off torch immediately
+      if (torchUsed && track) {
+        track.applyConstraints({ advanced: [{ torch: false } as any] }).catch(() => {});
+      }
+
+      if (capturedDataUrl && capturedDataUrl.startsWith('data:image')) {
+        setPreviewImage(capturedDataUrl);
+      }
+    } catch (err) {
+      console.error('Shutter error:', err);
     }
   };
 
-  if (previewImage) {
-    return (
-      <div className={styles.screen} style={{ backgroundColor: '#000', display: 'flex', flexDirection: 'column' }}>
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-          <img src={previewImage} alt="Preview" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
-        </div>
-        <footer className={styles.bottomBar} style={{ padding: '20px 24px', display: 'flex', justifyContent: 'space-between', gap: '12px', background: 'rgba(0,0,0,0.8)' }}>
-          <Button variant="ghost" onClick={() => setPreviewImage(null)} style={{ flex: 1, backgroundColor: "rgba(255,255,255,0.15)", color: "#fff" }}>
-            Переснять
-          </Button>
-          <Button variant="primary" onClick={() => onCapture?.(previewImage)} style={{ flex: 1 }}>
-            Продолжить
-          </Button>
-        </footer>
-      </div>
-    );
-  }
+  const handleRetake = () => {
+    setPreviewImage(null);
+    // Ensure video stream remains active and playing
+    if (videoRef.current && streamRef.current) {
+      if (videoRef.current.srcObject !== streamRef.current) {
+        videoRef.current.srcObject = streamRef.current;
+      }
+      videoRef.current.play().catch(() => {});
+    }
+  };
 
   return (
     <div className={styles.screen}>
       {/* Hidden file input for native device gallery */}
-      <input 
-        type="file" 
-        accept="image/*" 
-        ref={fileInputRef} 
-        style={{ display: 'none' }} 
-        onChange={handleFileChange} 
+      <input
+        type="file"
+        accept="image/*"
+        ref={fileInputRef}
+        style={{ display: 'none' }}
+        onChange={handleFileChange}
       />
 
-      {/* ── Viewfinder background ── */}
+      {/* ── Viewfinder background (Always in DOM to prevent black screen) ── */}
       <div className={styles.viewfinder}>
         <video
           ref={videoRef}
@@ -206,129 +244,191 @@ export const CameraScreen: React.FC<CameraScreenProps> = ({
           muted
           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
         />
-        <canvas ref={canvasRef} style={{ display: 'none' }} />
       </div>
 
-      {/* ── Top bar ───────────────────────────────────── */}
-      <header className={styles.topBar}>
-        <button
-          className={styles.topBtn}
-          onClick={onClose}
-          aria-label="Закрыть"
+      {/* ── Preview Mode Overlay (Renders on top without unmounting video) ── */}
+      {previewImage ? (
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            zIndex: 50,
+            backgroundColor: '#000',
+            display: 'flex',
+            flexDirection: 'column',
+          }}
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
-        </button>
-
-        <div className={styles.topPill}>
-          <span>ДОКУМЕНТ</span>
-        </div>
-
-        <button
-          className={styles.topBtn}
-          onClick={cycleFlash}
-          aria-label={`Вспышка: ${flashMode}`}
-        >
-          <svg width="15" height="22" viewBox="0 0 14 22" fill="none">
-            <path
-              d="M8 1L1 12.5H6.5L5.5 21L13 9.5H7.5L8 1Z"
-              stroke="#FFFFFF"
-              strokeWidth="1.6"
-              strokeLinejoin="round"
-              fill={flashMode === 'on' ? '#FFFFFF' : 'none'}
+          <div
+            style={{
+              flex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              overflow: 'hidden',
+              padding: '16px',
+            }}
+          >
+            <img
+              src={previewImage}
+              alt="Предпросмотр"
+              style={{
+                maxWidth: '100%',
+                maxHeight: '100%',
+                objectFit: 'contain',
+                borderRadius: '8px',
+              }}
             />
-          </svg>
-          {flashMode === 'auto' && (
-            <span className={styles.flashLabel}>A</span>
-          )}
-          {flashMode === 'off' && (
-            <span className={styles.flashSlash}>
-              <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-                <line
-                  x1="2"
-                  y1="20"
-                  x2="20"
-                  y2="2"
+          </div>
+          <footer
+            className={styles.bottomBar}
+            style={{
+              padding: '20px 24px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              gap: '12px',
+              background: 'rgba(0,0,0,0.85)',
+            }}
+          >
+            <Button
+              variant="ghost"
+              onClick={handleRetake}
+              style={{
+                flex: 1,
+                backgroundColor: 'rgba(255,255,255,0.15)',
+                color: '#fff',
+              }}
+            >
+              Переснять
+            </Button>
+            <Button
+              variant="primary"
+              onClick={() => onCapture?.(previewImage)}
+              style={{ flex: 1 }}
+            >
+              Продолжить
+            </Button>
+          </footer>
+        </div>
+      ) : (
+        <>
+          {/* ── Top bar ───────────────────────────────────── */}
+          <header className={styles.topBar}>
+            <button
+              className={styles.topBtn}
+              onClick={onClose}
+              aria-label="Закрыть"
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+
+            <div className={styles.topPill}>
+              <span>ДОКУМЕНТ</span>
+            </div>
+
+            <button
+              className={styles.topBtn}
+              onClick={cycleFlash}
+              aria-label={`Вспышка: ${flashMode === 'on' ? 'Включена' : 'Выключена'}`}
+            >
+              <svg width="15" height="22" viewBox="0 0 14 22" fill="none">
+                <path
+                  d="M8 1L1 12.5H6.5L5.5 21L13 9.5H7.5L8 1Z"
                   stroke="#FFFFFF"
                   strokeWidth="1.6"
-                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  fill={flashMode === 'on' ? '#FFFFFF' : 'none'}
                 />
               </svg>
-            </span>
-          )}
-        </button>
-      </header>
+              {flashMode === 'off' && (
+                <span className={styles.flashSlash}>
+                  <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                    <line
+                      x1="2"
+                      y1="20"
+                      x2="20"
+                      y2="2"
+                      stroke="#FFFFFF"
+                      strokeWidth="1.6"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </span>
+              )}
+            </button>
+          </header>
 
-      {/* ── Scanner overlay ───────────────────────────── */}
-      <div className={styles.scannerOverlay}>
-        <div className={styles.scannerFrame}>
-          {/* Four corner brackets with vibrant Apple accent */}
-          <span className={`${styles.corner} ${styles.cornerTL}`} />
-          <span className={`${styles.corner} ${styles.cornerTR}`} />
-          <span className={`${styles.corner} ${styles.cornerBL}`} />
-          <span className={`${styles.corner} ${styles.cornerBR}`} />
-        </div>
-        <p className={styles.hint}>Наведите камеру на бумажное объявление</p>
-      </div>
+          {/* ── Scanner overlay ───────────────────────────── */}
+          <div className={styles.scannerOverlay}>
+            <div className={styles.scannerFrame}>
+              <span className={`${styles.corner} ${styles.cornerTL}`} />
+              <span className={`${styles.corner} ${styles.cornerTR}`} />
+              <span className={`${styles.corner} ${styles.cornerBL}`} />
+              <span className={`${styles.corner} ${styles.cornerBR}`} />
+            </div>
+            <p className={styles.hint}>Наведите камеру на бумажное объявление</p>
+          </div>
 
-      {/* ── Bottom bar ────────────────────────────────── */}
-      <footer className={styles.bottomBar}>
-        <div className={styles.bottomGradient} aria-hidden="true" />
+          {/* ── Bottom bar ────────────────────────────────── */}
+          <footer className={styles.bottomBar}>
+            <div className={styles.bottomGradient} aria-hidden="true" />
 
-        <div className={styles.bottomControls}>
-          {/* Gallery button */}
-          <button
-            className={styles.galleryBtn}
-            onClick={handleGalleryClick}
-            aria-label="Загрузить из галереи"
-            title="Загрузить из галереи"
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <rect
-                x="2"
-                y="3"
-                width="20"
-                height="18"
-                rx="4"
-                stroke="#FFFFFF"
-                strokeWidth="1.8"
-              />
-              <circle cx="8.5" cy="9.5" r="2" stroke="#FFFFFF" strokeWidth="1.8" />
-              <path
-                d="M2 17L7.5 12.5C8.33 11.83 9.67 11.83 10.5 12.5L16 17"
-                stroke="#FFFFFF"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M14 15L15.88 13.12C16.71 12.29 18.04 12.29 18.88 13.12L22 16.25"
-                stroke="#FFFFFF"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </button>
+            <div className={styles.bottomControls}>
+              {/* Gallery button */}
+              <button
+                className={styles.galleryBtn}
+                onClick={handleGalleryClick}
+                aria-label="Загрузить из галереи"
+                title="Загрузить из галереи"
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <rect
+                    x="2"
+                    y="3"
+                    width="20"
+                    height="18"
+                    rx="4"
+                    stroke="#FFFFFF"
+                    strokeWidth="1.8"
+                  />
+                  <circle cx="8.5" cy="9.5" r="2" stroke="#FFFFFF" strokeWidth="1.8" />
+                  <path
+                    d="M2 17L7.5 12.5C8.33 11.83 9.67 11.83 10.5 12.5L16 17"
+                    stroke="#FFFFFF"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M14 15L15.88 13.12C16.71 12.29 18.04 12.29 18.88 13.12L22 16.25"
+                    stroke="#FFFFFF"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
 
-          {/* Shutter button */}
-          <button
-            className={styles.shutterBtn}
-            onClick={handleShutterClick}
-            aria-label="Сделать снимок"
-          >
-            <span className={styles.shutterInner} />
-          </button>
+              {/* Shutter button */}
+              <button
+                className={styles.shutterBtn}
+                onClick={handleShutterClick}
+                aria-label="Сделать снимок"
+              >
+                <span className={styles.shutterInner} />
+              </button>
 
-          {/* Hidden placeholder for spacing to keep the shutter button centered */}
-          <div style={{ width: 44, height: 44 }} />
-        </div>
-      </footer>
+              {/* Spacer */}
+              <div style={{ width: 44, height: 44 }} />
+            </div>
+          </footer>
 
-      {/* ── Home Indicator ────────────────────────────── */}
-      <div className={styles.homeIndicator} aria-hidden="true" />
+          {/* ── Home Indicator ────────────────────────────── */}
+          <div className={styles.homeIndicator} aria-hidden="true" />
+        </>
+      )}
     </div>
   );
 };
