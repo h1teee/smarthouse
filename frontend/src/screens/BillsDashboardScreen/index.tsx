@@ -134,9 +134,10 @@ export const BillsDashboardScreen: React.FC<BillsDashboardScreenProps> = ({ onDe
           </div>
         )}
         
-        {unpaidBill && (
+        {(unpaidBill || bills.length > 0) && (
           <div className={styles.aiAlertCard} onClick={() => {
-            localStorage.setItem('selectedBillId', String(unpaidBill.id));
+            const billIdToAnalyze = unpaidBill ? unpaidBill.id : bills[0].id;
+            localStorage.setItem('selectedBillId', String(billIdToAnalyze));
             onDetailedAnalysis();
           }}>
             <div className={styles.aiAlertHeaderRow}>
