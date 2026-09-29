@@ -60,7 +60,12 @@ export const CameraScreen: React.FC<CameraScreenProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+
   useEffect(() => {
+    // Only start camera if not in preview mode
+    if (previewImage) return;
+    
     const startCamera = async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
@@ -78,7 +83,7 @@ export const CameraScreen: React.FC<CameraScreenProps> = ({
     return () => {
       streamRef.current?.getTracks().forEach(track => track.stop());
     };
-  }, []);
+  }, [previewImage]);
 
   const cycleFlash = () => {
     setFlashMode((prev) => {
@@ -95,12 +100,34 @@ export const CameraScreen: React.FC<CameraScreenProps> = ({
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const result = reader.result as string;
-        onCapture?.(result);
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 1200;
+        const MAX_HEIGHT = 1200;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          setPreviewImage(canvas.toDataURL('image/jpeg', 0.7));
+        }
       };
-      reader.readAsDataURL(file);
+      img.src = URL.createObjectURL(file);
     }
   };
 
@@ -115,13 +142,37 @@ export const CameraScreen: React.FC<CameraScreenProps> = ({
         ctx.drawImage(video, 0, 0);
         const base64 = canvas.toDataURL('image/jpeg', 0.8);
         streamRef.current?.getTracks().forEach(track => track.stop());
-        onCapture?.(base64);
+        setPreviewImage(base64);
       }
     } else {
       // Fallback if camera not available
-      onCapture?.(DEFAULT_ANNOUNCEMENT_IMAGE);
+      setPreviewImage(DEFAULT_ANNOUNCEMENT_IMAGE);
     }
   };
+
+  if (previewImage) {
+    return (
+      <div className={styles.screen} style={{ backgroundColor: '#000', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+          <img src={previewImage} alt="Preview" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+        </div>
+        <footer className={styles.bottomBar} style={{ padding: '20px 24px', display: 'flex', justifyContent: 'space-between', background: 'rgba(0,0,0,0.8)' }}>
+          <button 
+            onClick={() => setPreviewImage(null)} 
+            style={{ background: 'rgba(255,255,255,0.2)', color: '#fff', border: 'none', padding: '12px 24px', borderRadius: '12px', fontSize: '16px', fontWeight: 600 }}
+          >
+            Переснять
+          </button>
+          <button 
+            onClick={() => onCapture?.(previewImage)} 
+            style={{ background: '#0A84FF', color: '#fff', border: 'none', padding: '12px 32px', borderRadius: '12px', fontSize: '16px', fontWeight: 600 }}
+          >
+            Продолжить
+          </button>
+        </footer>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.screen}>
