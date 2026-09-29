@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, FormEvent } from 'react';
+import { API_URL, getAuthHeaders } from '@/config/api';
 import styles from './BillAnalysisScreen.module.css';
 
 interface BillAnalysisScreenProps {
@@ -57,7 +58,6 @@ const generateSmartAiReply = (userText: string, errorMsg?: string): string => {
 
   useEffect(() => {
     const loadData = async () => {
-      const apiUrl = import.meta.env.VITE_API_URL || 'https://smarthouse-backend.onrender.com';
       let billId = currentBillId;
       if (!billId || isNaN(Number(billId)) || Number(billId) <= 0) {
         billId = '3';
@@ -70,7 +70,9 @@ const generateSmartAiReply = (userText: string, errorMsg?: string): string => {
       try {
         let summaryText = DEFAULT_ANALYSIS_SUMMARY;
         try {
-          const resAi = await fetch(apiUrl + '/api/bills/' + billId + '/ai-analysis');
+          const resAi = await fetch(API_URL + '/api/bills/' + billId + '/ai-analysis', {
+            headers: getAuthHeaders()
+          });
           if (resAi.ok) {
             const dataAi = await resAi.json();
             if (dataAi.summary && !dataAi.summary.includes('Ошибка')) {
@@ -81,7 +83,7 @@ const generateSmartAiReply = (userText: string, errorMsg?: string): string => {
 
         let history: ExpenseItem[] = DEFAULT_EXPENSE_HISTORY;
         try {
-          const resBills = await fetch(apiUrl + '/api/bills', { headers: { 'X-User-ID': localStorage.getItem('user_id') || '1' } });
+          const resBills = await fetch(API_URL + '/api/bills', { headers: getAuthHeaders() });
           if (resBills.ok) {
             const dataBills = await resBills.json();
             if (Array.isArray(dataBills) && dataBills.length > 0) {
@@ -146,7 +148,6 @@ const generateSmartAiReply = (userText: string, errorMsg?: string): string => {
 
   const sendMessage = async (text: string) => {
     if (!text.trim()) return;
-    const apiUrl = import.meta.env.VITE_API_URL || 'https://smarthouse-backend.onrender.com';
     let billId = localStorage.getItem('selectedBillId');
     if (!billId || isNaN(Number(billId))) billId = '3';
 
@@ -160,9 +161,9 @@ const generateSmartAiReply = (userText: string, errorMsg?: string): string => {
     try {
       let replyText = '';
       try {
-        const res = await fetch(apiUrl + '/api/bills/' + billId + '/chat', {
+        const res = await fetch(API_URL + '/api/bills/' + billId + '/chat', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getAuthHeaders(),
           body: JSON.stringify({ message: text })
         });
         

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_URL, getAuthHeaders } from '@/config/api';
 import styles from './RequestPreviewScreen.module.css';
 import { DEFAULT_ANNOUNCEMENT_IMAGE } from '@/screens/CameraScreen/CameraScreen';
 
@@ -56,10 +57,9 @@ export const RequestPreviewScreen: React.FC<RequestPreviewScreenProps> = ({
 
     const parseImage = async () => {
       try {
-        const apiUrl = import.meta.env.VITE_API_URL || 'https://smarthouse-backend.onrender.com';
-        const res = await fetch(apiUrl + '/api/requests/ai-recognize', {
+        const res = await fetch(API_URL + '/api/requests/ai-recognize', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getAuthHeaders(),
           body: JSON.stringify({ image_base64: capturedImage })
         });
         if (res.ok) {
@@ -96,25 +96,29 @@ export const RequestPreviewScreen: React.FC<RequestPreviewScreenProps> = ({
   const handleSendToModeration = async () => {
     setIsLoadingSend(true);
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'https://smarthouse-backend.onrender.com';
-      await fetch(apiUrl + '/api/requests', {
+      const res = await fetch(API_URL + '/api/requests', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ 
           type: eventType, 
-          title: provider, 
+          title: provider || 'Объявление', 
           description: description,
           start_date: dates.includes(' — ') ? dates.split(' — ')[0] : dates,
           end_date: dates.includes(' — ') ? dates.split(' — ')[1] : dates,
           photo_url: capturedImage
         })
       });
-      setIsSuccess(true);
-      setTimeout(() => {
-        onSubmit?.();
-      }, 2500);
+      if (res.ok) {
+        setIsSuccess(true);
+        setTimeout(() => {
+          onSubmit?.();
+        }, 1500);
+      } else {
+        alert('Ошибка при сохранении заявки на сервере: ' + res.status);
+      }
     } catch (e) {
       console.error(e);
+      alert('Сетевая ошибка при отправке заявки');
     } finally {
       setIsLoadingSend(false);
     }

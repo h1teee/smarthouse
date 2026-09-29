@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_URL, getAuthHeaders } from '@/config/api';
 import styles from './MetersScreen.module.css';
 
 interface MetersScreenProps {
@@ -18,8 +19,8 @@ export const MetersScreen: React.FC<MetersScreenProps> = ({ onBack }) => {
   useEffect(() => {
     const fetchMeters = async () => {
       try {
-        const res = await fetch(import.meta.env.VITE_API_URL + '/api/meters', {
-          headers: { 'X-User-ID': localStorage.getItem('user_id') || '1' }
+        const res = await fetch(API_URL + '/api/meters', {
+          headers: getAuthHeaders()
         });
         if (res.ok) {
           const data = await res.json();
@@ -38,9 +39,9 @@ export const MetersScreen: React.FC<MetersScreenProps> = ({ onBack }) => {
   const handleSaveWater = async () => {
     setIsWaterSaving(true);
     try {
-      await fetch(import.meta.env.VITE_API_URL + '/api/meters', {
+      await fetch(API_URL + '/api/meters', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ water: parseFloat(water) || 0, electricity: prevElectricity })
       });
       setPrevWater(parseFloat(water) || 0);
@@ -54,9 +55,9 @@ export const MetersScreen: React.FC<MetersScreenProps> = ({ onBack }) => {
   const handleSaveElectricity = async () => {
     setIsElecSaving(true);
     try {
-      await fetch(import.meta.env.VITE_API_URL + '/api/meters', {
+      await fetch(API_URL + '/api/meters', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ water: prevWater, electricity: parseFloat(electricity) || 0 })
       });
       setPrevElectricity(parseFloat(electricity) || 0);

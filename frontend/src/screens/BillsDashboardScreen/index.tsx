@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { API_URL, getAuthHeaders } from '@/config/api';
 import styles from './BillsDashboardScreen.module.css';
 import { useSwipeClose } from '../../hooks/useSwipeClose';
 
@@ -33,7 +34,7 @@ export const BillsDashboardScreen: React.FC<BillsDashboardScreenProps> = ({ onDe
   useEffect(() => {
     const fetchBills = async () => {
       try {
-        const res = await fetch(import.meta.env.VITE_API_URL + '/api/bills', { headers: { 'X-User-ID': localStorage.getItem('user_id') || '1' } });
+        const res = await fetch(API_URL + '/api/bills', { headers: getAuthHeaders() });
         if (res.ok) {
           const data = await res.json();
           setBills(data || []);
@@ -80,10 +81,10 @@ export const BillsDashboardScreen: React.FC<BillsDashboardScreenProps> = ({ onDe
         await new Promise(r => setTimeout(r, 1000));
         // just mock
       } else {
-        await fetch(import.meta.env.VITE_API_URL + '/api/bills/' + unpaidBill.id + '/pay', { method: 'POST', headers: { 'X-User-ID': localStorage.getItem('user_id') || '1' } });
+        await fetch(API_URL + '/api/bills/' + unpaidBill.id + '/pay', { method: 'POST', headers: getAuthHeaders() });
       }
       // Refetch bills
-      const res = await fetch(import.meta.env.VITE_API_URL + '/api/bills', { headers: { 'X-User-ID': localStorage.getItem('user_id') || '1' } });
+      const res = await fetch(API_URL + '/api/bills', { headers: getAuthHeaders() });
       if (res.ok) {
         const data = await res.json();
         setBills(data || []);

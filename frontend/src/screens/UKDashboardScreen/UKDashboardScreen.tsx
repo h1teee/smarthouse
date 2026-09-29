@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_URL, getAuthHeaders } from '@/config/api';
 import styles from './UKDashboardScreen.module.css';
 
 export interface UKDashboardScreenProps {
@@ -70,7 +71,9 @@ export const UKDashboardScreen: React.FC<UKDashboardScreenProps> = ({ onOpenRequ
   React.useEffect(() => {
     const fetchRequests = async () => {
       try {
-        const res = await fetch(import.meta.env.VITE_API_URL + '/api/uk/requests');
+        const res = await fetch(API_URL + '/api/uk/requests', {
+          headers: getAuthHeaders()
+        });
         if (res.ok) {
           const data = await res.json();
           setRequests(data || []);
@@ -78,6 +81,8 @@ export const UKDashboardScreen: React.FC<UKDashboardScreenProps> = ({ onOpenRequ
       } catch (err) {}
     };
     fetchRequests();
+    const interval = setInterval(fetchRequests, 4000);
+    return () => clearInterval(interval);
   }, []);
 
   const displayRequests = requests.length > 0 ? requests.map((r: any) => ({

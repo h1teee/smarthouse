@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { API_URL, getAuthHeaders } from '@/config/api';
 import styles from './ProfileScreen.module.css';
 import { useSwipeClose } from '../../hooks/useSwipeClose';
 
@@ -85,7 +86,7 @@ export const ProfileScreen: React.FC<{onLogout?: () => void}> = ({ onLogout }) =
   const swipeLogout = useSwipeClose(() => setShowLogout(false));
 
   useEffect(() => {
-    fetch(import.meta.env.VITE_API_URL + '/api/bills', { headers: { 'X-User-ID': localStorage.getItem('user_id') || '1' } })
+    fetch(API_URL + '/api/bills', { headers: getAuthHeaders() })
       .then(res => res.json())
       .then(data => {
         if (data && data.length > 0) {
@@ -96,12 +97,11 @@ export const ProfileScreen: React.FC<{onLogout?: () => void}> = ({ onLogout }) =
       })
       .catch(() => {});
 
-    fetch(import.meta.env.VITE_API_URL + '/api/v1/profile/privileges', { headers: { 'X-User-ID': localStorage.getItem('user_id') || '1' } })
+    fetch(API_URL + '/api/v1/profile/privileges', { headers: getAuthHeaders() })
       .then(res => res.json())
       .then(data => {
         if (data && data.length > 0) {
           // If the backend actually returned valid offers, we would map them here.
-          // For now, if we get data, we could append it or replace.
         }
       })
       .catch(() => {});
@@ -332,12 +332,12 @@ export const ProfileScreen: React.FC<{onLogout?: () => void}> = ({ onLogout }) =
                     onClick={async () => {
                       notify('Оплата...');
                       try {
-                        const res = await fetch(import.meta.env.VITE_API_URL + '/api/bills', { headers: { 'X-User-ID': localStorage.getItem('user_id') || '1' } });
+                        const res = await fetch(API_URL + '/api/bills', { headers: getAuthHeaders() });
                         if (res.ok) {
                           const data = await res.json();
                           const unpaid = (data || []).filter((b: any) => !b.is_paid && !b.isPaid);
                           for (const b of unpaid) {
-                            await fetch(import.meta.env.VITE_API_URL + '/api/bills/' + b.id + '/pay', { method: 'POST', headers: { 'X-User-ID': localStorage.getItem('user_id') || '1' } });
+                            await fetch(API_URL + '/api/bills/' + b.id + '/pay', { method: 'POST', headers: getAuthHeaders() });
                           }
                         }
                       } catch(e) {}

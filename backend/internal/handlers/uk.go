@@ -117,14 +117,32 @@ func GetUKObjectsHandler(w http.ResponseWriter, r *http.Request) {
 
 func ApproveRequestHandler(w http.ResponseWriter, r *http.Request) {
 	reqID := r.PathValue("id")
-	storage.DB.Exec("UPDATE requests SET status = 'approved' WHERE id = $1", reqID)
+	
+	var req models.Request
+	err := storage.DB.QueryRow("SELECT address_id, type, title, description FROM requests WHERE id = $1", reqID).
+		Scan(&req.AddressID, &req.Type, &req.Title, &req.Description)
+	
+	if err == nil {
+		storage.DB.Exec("UPDATE requests SET status = 'approved' WHERE id = $1", reqID)
+		// Publish approved announcement to feed_items so all residents see it!
+		storage.DB.Exec("INSERT INTO feed_items (address_id, title, body, category) VALUES ($1, $2, $3, $4)",
+			req.AddressID, req.Title, req.Description, req.Type)
+	} else {
+		storage.DB.Exec("UPDATE requests SET status = 'approved' WHERE id = $1", reqID)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"status": "approved"})
 }
 
 func RejectRequestHandler(w http.ResponseWriter, r *http.Request) {
 	reqID := r.PathValue("id")
 	storage.DB.Exec("UPDATE requests SET status = 'rejected' WHERE id = $1", reqID)
+	
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"status": "rejected"})
 }
 
 func GetUKAnalyticsHandler(w http.ResponseWriter, r *http.Request) {

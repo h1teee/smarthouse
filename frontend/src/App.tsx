@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import bridge from '@vkontakte/vk-bridge';
+import { API_URL } from '@/config/api';
 import { AuthScreen } from '@/screens/AuthScreen';
 import { AddressScreen } from '@/screens/AddressScreen';
 import { AccountScreen } from '@/screens/AccountScreen';
@@ -100,8 +101,7 @@ const App: React.FC = () => {
     // Авто-авторизация из чат-бота (TamTam передает user_id или vk_id)
     const botUserId = urlParams.get('user_id') || urlParams.get('vk_id') || urlParams.get('chat_id');
     if (botUserId) {
-      const apiUrl = import.meta.env.VITE_API_URL || 'https://smarthouse-backend.onrender.com';
-      fetch(apiUrl + '/api/auth/login', {
+      fetch(API_URL + '/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_id: botUserId })
@@ -223,6 +223,7 @@ const App: React.FC = () => {
             onBack={() => navigateTo('account')} 
             onOpenCamera={() => navigateTo('camera')} 
             onOpenNotifications={() => navigateTo('residentNotifications')}
+            isActive={currentScreen === 'mainFeed'}
           />
         </div>
 

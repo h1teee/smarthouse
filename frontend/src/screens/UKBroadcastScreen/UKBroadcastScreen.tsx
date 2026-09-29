@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useRef } from 'react';
+import { API_URL, getAuthHeaders } from '@/config/api';
 import styles from './UKBroadcastScreen.module.css';
 
 const MOCK_ADDRESSES = [
@@ -100,9 +101,9 @@ export const UKBroadcastScreen: React.FC = () => {
 
     setIsSending(true);
     try {
-      const res = await fetch(import.meta.env.VITE_API_URL + '/api/uk/broadcast', {
+      const res = await fetch(API_URL + '/api/uk/broadcast', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-User-ID': localStorage.getItem('user_id') || '1' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           selectedIds: Array.from(selectedIds).map(Number),
           category: category,
@@ -138,9 +139,9 @@ export const UKBroadcastScreen: React.FC = () => {
     if (!message.trim()) return;
     setIsImproving(true);
     try {
-      const res = await fetch(import.meta.env.VITE_API_URL + '/api/ai/improve-text', {
+      const res = await fetch(API_URL + '/api/ai/improve-text', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ text: message })
       });
       if (res.ok) {

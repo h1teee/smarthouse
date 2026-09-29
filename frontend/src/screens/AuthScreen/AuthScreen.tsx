@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_URL } from '@/config/api';
 import styles from './AuthScreen.module.css';
 
 interface AuthScreenProps {
@@ -26,8 +27,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onNext }) => {
     .slice(0, 10);
 
   useEffect(() => {
-    const apiUrl = import.meta.env.VITE_API_URL || 'https://smarthouse-backend.onrender.com';
-    fetch(apiUrl + '/api/addresses')
+    fetch(API_URL + '/api/addresses')
       .then(res => {
         if (!res.ok) throw new Error('API error');
         return res.json();
@@ -54,7 +54,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onNext }) => {
     setError('');
 
     try {
-      const res = await fetch(import.meta.env.VITE_API_URL + '/api/auth/login-by-account', {
+      const res = await fetch(API_URL + '/api/auth/login-by-account', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ account_number: account, apartment: apartment })

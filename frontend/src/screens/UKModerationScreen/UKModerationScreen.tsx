@@ -1,4 +1,5 @@
 import React, { useState, useEffect, TouchEvent } from 'react';
+import { API_URL, getAuthHeaders } from '@/config/api';
 import styles from './UKModerationScreen.module.css';
 
 interface UKModerationScreenProps {
@@ -20,6 +21,7 @@ export const UKModerationScreen: React.FC<UKModerationScreenProps> = ({
   const [details, setDetails] = useState('');
 
   const [isLoadingConfirm, setIsLoadingConfirm] = useState(false);
+  const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
   
   // Sheet state
   const [isRejectSheetOpen, setIsRejectSheetOpen] = useState(false);
@@ -34,7 +36,9 @@ export const UKModerationScreen: React.FC<UKModerationScreenProps> = ({
       const idStr = localStorage.getItem('selectedRequestId');
       if (!idStr) return;
       try {
-        const res = await fetch(import.meta.env.VITE_API_URL + '/api/uk/requests?status=all');
+        const res = await fetch(API_URL + '/api/uk/requests?status=all', {
+          headers: getAuthHeaders()
+        });
         if (res.ok) {
           const list = await res.json();
           const req = list.find((r: any) => String(r.id) === idStr);
@@ -78,15 +82,23 @@ export const UKModerationScreen: React.FC<UKModerationScreenProps> = ({
     if (!request) return;
     setIsLoadingConfirm(true);
     try {
-      await fetch(import.meta.env.VITE_API_URL + '/api/uk/requests/' + request.id + '/approve', { method: 'POST' });
-      setSuccessMsg('Успешно одобрено');
-      setIsSuccess(true);
-      setTimeout(() => {
-        onConfirm();
-        setTimeout(() => setIsSuccess(false), 500);
-      }, 2000);
+      const res = await fetch(API_URL + '/api/uk/requests/' + request.id + '/approve', {
+        method: 'POST',
+        headers: getAuthHeaders()
+      });
+      if (res.ok) {
+        setSuccessMsg('Успешно одобрено');
+        setIsSuccess(true);
+        setTimeout(() => {
+          onConfirm();
+          setTimeout(() => setIsSuccess(false), 500);
+        }, 1500);
+      } else {
+        alert('Ошибка при одобрении заявки на сервере: ' + res.status);
+      }
     } catch (e) {
       console.error(e);
+      alert('Сетевая ошибка при одобрении заявки');
     } finally {
       setIsLoadingConfirm(false);
     }
@@ -96,16 +108,24 @@ export const UKModerationScreen: React.FC<UKModerationScreenProps> = ({
     if (!request) return;
     setIsLoadingReject(true);
     try {
-      await fetch(import.meta.env.VITE_API_URL + '/api/uk/requests/' + request.id + '/reject', { method: 'POST' });
-      setIsRejectSheetOpen(false);
-      setSuccessMsg('Заявка отклонена');
-      setIsSuccess(true);
-      setTimeout(() => {
-        onReject();
-        setTimeout(() => setIsSuccess(false), 500);
-      }, 2000);
+      const res = await fetch(API_URL + '/api/uk/requests/' + request.id + '/reject', {
+        method: 'POST',
+        headers: getAuthHeaders()
+      });
+      if (res.ok) {
+        setIsRejectSheetOpen(false);
+        setSuccessMsg('Заявка отклонена');
+        setIsSuccess(true);
+        setTimeout(() => {
+          onReject();
+          setTimeout(() => setIsSuccess(false), 500);
+        }, 1500);
+      } else {
+        alert('Ошибка при отклонении заявки на сервере');
+      }
     } catch (e) {
       console.error(e);
+      alert('Сетевая ошибка при отклонении заявки');
     } finally {
       setIsLoadingReject(false);
     }
@@ -147,7 +167,15 @@ export const UKModerationScreen: React.FC<UKModerationScreenProps> = ({
       </header>
 
       <main className={styles.content}>
-        <div className={styles.photoCard} onClick={() => { if (request?.photo_url) { const w = window.open(); if (w) { w.document.write(`<img src="${request.photo_url}" style="width:100%;height:100%;object-fit:contain;background:#000;" />`); w.document.body.style.margin = '0'; w.document.body.style.background = '#000'; } }}}>
+        <div 
+          className={styles.photoCard} 
+          style={{ cursor: request?.photo_url ? 'pointer' : 'default' }}
+          onClick={() => {
+            if (request?.photo_url) {
+              setIsPhotoModalOpen(true);
+            }
+          }}
+        >
           {request?.photo_url ? (
             <img src={request.photo_url} alt="Оригинал" style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', top: 0, left: 0 }} />
           ) : (
@@ -284,6 +312,67 @@ export const UKModerationScreen: React.FC<UKModerationScreenProps> = ({
           </div>
         )}
       </div>
+
+      {/* ── Fullscreen In-App Photo Modal ────────────────────────────── */}
+      {isPhotoModalOpen && request?.photo_url && (
+        <div 
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9999,
+            backgroundColor: 'rgba(0, 0, 0, 0.96)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px',
+            touchAction: 'none'
+          }}
+          onClick={() => setIsPhotoModalOpen(false)}
+        >
+          <div style={{ position: 'absolute', top: 20, right: 20, zIndex: 10000 }}>
+            <button
+              style={{
+                background: 'rgba(255, 255, 255, 0.25)',
+                border: 'none',
+                color: '#fff',
+                borderRadius: '50%',
+                width: 44,
+                height: 44,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer'
+              }}
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsPhotoModalOpen(false);
+              }}
+              aria-label="Закрыть"
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
+          <img 
+            src={request.photo_url} 
+            alt="Оригинал объявления" 
+            style={{
+              maxWidth: '100%',
+              maxHeight: '85vh',
+              objectFit: 'contain',
+              borderRadius: '10px',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.8)'
+            }}
+            onClick={(e) => e.stopPropagation()} 
+          />
+          <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '13px', marginTop: '16px', textAlign: 'center' }}>
+            Нажмите в любом месте, чтобы закрыть
+          </p>
+        </div>
+      )}
     </div>
   );
 };

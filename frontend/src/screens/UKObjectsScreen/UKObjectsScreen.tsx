@@ -1,5 +1,6 @@
 import React, { useState, useEffect, TouchEvent } from 'react';
 import { YMaps, Map, Placemark, Clusterer } from '@pbe/react-yandex-maps';
+import { API_URL, getAuthHeaders } from '@/config/api';
 import styles from './UKObjectsScreen.module.css';
 
 type HouseStatus = 'ok' | 'repair' | 'critical';
@@ -38,8 +39,8 @@ export const UKObjectsScreen: React.FC = () => {
     const fetchData = async () => {
       try {
         const [objRes, reqRes] = await Promise.all([
-          fetch(import.meta.env.VITE_API_URL + '/api/uk/objects'),
-          fetch(import.meta.env.VITE_API_URL + '/api/uk/requests')
+          fetch(API_URL + '/api/uk/objects', { headers: getAuthHeaders() }),
+          fetch(API_URL + '/api/uk/requests', { headers: getAuthHeaders() })
         ]);
         const objData = await objRes.json();
         const reqData = await reqRes.json();
