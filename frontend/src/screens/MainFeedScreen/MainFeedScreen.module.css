@@ -7,37 +7,38 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: #000;
+  background: var(--sys-bg);
 }
 
 .appBackground {
   position: absolute;
   inset: 0;
   z-index: 0;
-  background: radial-gradient(circle at 50% -20%, #17002b 0%, #000000 60%, #000a1a 100%);
+  background: #000000;
   overflow: hidden;
 }
 .appBackground::after {
   content: '';
   position: absolute;
-  top: 0%;
-  left: -20%;
-  width: 400px;
-  height: 400px;
-  background: radial-gradient(circle, rgba(191, 90, 242, 0.15) 0%, transparent 70%);
+  top: 5%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 480px;
+  height: 480px;
+  background: radial-gradient(circle, rgba(191, 90, 242, 0.22) 0%, rgba(10, 132, 255, 0.08) 45%, transparent 70%);
   filter: blur(60px);
-  animation: ambientPulse 14s ease-in-out infinite alternate;
+  animation: ambientPulse 12s ease-in-out infinite alternate;
 }
 .appBackground::before {
   content: '';
   position: absolute;
-  bottom: -10%;
-  right: -20%;
-  width: 500px;
-  height: 500px;
-  background: radial-gradient(circle, rgba(10, 132, 255, 0.1) 0%, transparent 70%);
-  filter: blur(80px);
-  animation: ambientPulse 16s ease-in-out infinite alternate-reverse;
+  bottom: 0%;
+  right: -10%;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(10, 132, 255, 0.12) 0%, transparent 65%);
+  filter: blur(70px);
+  animation: ambientPulse 14s ease-in-out infinite alternate-reverse;
 }
 
 .contentLayer {

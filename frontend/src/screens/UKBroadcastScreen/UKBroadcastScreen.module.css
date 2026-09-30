@@ -18,11 +18,11 @@
   -webkit-font-smoothing: antialiased;
 }
 
-/* Свечение строго по центру экрана (fixed, чтобы не уезжало при скролле) */
+/* Свечение строго по центру экрана (absolute в рамках контейнера) */
 .container::before {
   content: "";
-  position: fixed;
-  top: 42%;
+  position: absolute;
+  top: 40%;
   left: 50%;
   transform: translate(-50%, -50%);
   width: 380px;
@@ -37,8 +37,8 @@
 /* Второй мягкий слой свечения по центру для глубины */
 .container::after {
   content: "";
-  position: fixed;
-  top: 48%;
+  position: absolute;
+  top: 45%;
   left: 50%;
   transform: translate(-50%, -50%);
   width: 280px;

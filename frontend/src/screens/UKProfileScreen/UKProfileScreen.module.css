@@ -18,8 +18,8 @@
 /* Свечение (Ambient Glow) */
 .container::before {
   content: "";
-  position: fixed;
-  top: 42%;
+  position: absolute;
+  top: 40%;
   left: 50%;
   transform: translate(-50%, -50%);
   width: 380px;
