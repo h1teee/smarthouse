@@ -1,0 +1,552 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "SmartHouse MAX API (Команда glo)",
+    "description": "Официальное API платформы «Мой Дом» для взаимодействия жителей,  управляющих компаний и чат-бота мессенджера MAX в рамках трека «Умный город».",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Команда glo"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://smarthouse-backend-rfil.onrender.com",
+      "description": "Боевой сервер в облаке Render"
+    },
+    {
+      "url": "http://localhost:8080",
+      "description": "Локальный сервер для разработки через Docker"
+    }
+  ],
+  "paths": {
+    "/api/health": {
+      "get": {
+        "summary": "Проверка работоспособности сервиса (Health Check)",
+        "responses": {
+          "200": {
+            "description": "Сервис активен и принимает запросы",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "example": "OK"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/map/houses": {
+      "get": {
+        "summary": "Реестр многоквартирных домов со статусами коммунальных сетей",
+        "responses": {
+          "200": {
+            "description": "Список объектов МКД с координатами и статусами сетей",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/HouseStatus"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bills": {
+      "get": {
+        "summary": "Получение начислений и квитанций ЖКУ пользователя",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Список начислений ЖКУ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Bill"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bills/{id}/pay": {
+      "post": {
+        "summary": "Проведение оплаты квитанции через СБП / Карту / SberPay",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "payment_method": {
+                    "type": "string",
+                    "enum": [
+                      "sbp",
+                      "card",
+                      "sberpay"
+                    ]
+                  },
+                  "account_number": {
+                    "type": "string",
+                    "example": "61-0001-0015"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Платёж успешно проведён с выдачей фискального чека",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentReceipt"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bills/{id}/reset": {
+      "post": {
+        "summary": "Сброс статуса квитанции в неоплаченный (для тестов и демонстраций)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Статус квитанции сброшен",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "unpaid"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bills/{id}/ai-analysis": {
+      "get": {
+        "summary": "ИИ-разбор начислений квитанции ЖКУ понятным языком",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Человекопонятное резюме квитанции",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "summary": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bills/{id}/chat": {
+      "post": {
+        "summary": "Диалог с ИИ-ассистентом по деталям и формулам начислений ЖКУ",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Ответ ИИ-эксперта по ЖКУ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "reply": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/requests": {
+      "post": {
+        "summary": "Создание заявки в диспетчерскую службу УК от жителя",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "water",
+                      "electricity",
+                      "heating",
+                      "other"
+                    ]
+                  },
+                  "address_id": {
+                    "type": "integer"
+                  },
+                  "photo_url": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Заявка успешно зарегистрирована"
+          }
+        }
+      }
+    },
+    "/api/uk/requests": {
+      "get": {
+        "summary": "Реестр входящих заявок для диспетчера УК",
+        "responses": {
+          "200": {
+            "description": "Список всех обращений жителей",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RequestItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/uk/broadcast": {
+      "post": {
+        "summary": "Таргетированная PUSH-рассылка жильцам выбранных домов через MAX API",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "title",
+                  "message",
+                  "address_ids"
+                ],
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "message": {
+                    "type": "string"
+                  },
+                  "address_ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer"
+                    }
+                  },
+                  "category": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Рассылка сформирована и отправлена адресатам"
+          }
+        }
+      }
+    },
+    "/api/uk/analytics": {
+      "get": {
+        "summary": "Оперативная сводка показателей для УК",
+        "responses": {
+          "200": {
+            "description": "Статистика по заявкам и статусам",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "total_requests": {
+                      "type": "integer"
+                    },
+                    "approved": {
+                      "type": "integer"
+                    },
+                    "pending": {
+                      "type": "integer"
+                    },
+                    "rejected": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/profile/privileges": {
+      "get": {
+        "summary": "Получение предложений программы лояльности партнеров",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Список офферов",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PrivilegeOffer"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/webhook/max": {
+      "post": {
+        "summary": "Входящий вебхук событий от мессенджера MAX",
+        "responses": {
+          "200": {
+            "description": "Событие обработано"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "HouseStatus": {
+        "type": "object",
+        "properties": {
+          "houseId": {
+            "type": "integer"
+          },
+          "address": {
+            "type": "string"
+          },
+          "lat": {
+            "type": "number"
+          },
+          "lng": {
+            "type": "number"
+          },
+          "water_status": {
+            "type": "string"
+          },
+          "electricity_status": {
+            "type": "string"
+          }
+        }
+      },
+      "Bill": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "user_id": {
+            "type": "integer"
+          },
+          "month": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "is_paid": {
+            "type": "boolean"
+          },
+          "account_number": {
+            "type": "string"
+          }
+        }
+      },
+      "PaymentReceipt": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "transaction_id": {
+            "type": "string"
+          },
+          "receipt_number": {
+            "type": "string"
+          },
+          "account_number": {
+            "type": "string"
+          },
+          "recipient": {
+            "type": "string"
+          },
+          "recipient_inn": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "month": {
+            "type": "string"
+          },
+          "paid_at": {
+            "type": "string"
+          },
+          "payment_method": {
+            "type": "string"
+          }
+        }
+      },
+      "RequestItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string"
+          }
+        }
+      },
+      "PrivilegeOffer": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "partner_name": {
+            "type": "string"
+          },
+          "badge_text": {
+            "type": "string"
+          },
+          "offer_text": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
