@@ -49,6 +49,7 @@ func main() {
 	mux.HandleFunc("GET /api/feed", handlers.GetFeedHandler)
 	mux.HandleFunc("GET /api/bills", handlers.GetBillsHandler)
 	mux.HandleFunc("POST /api/bills/{id}/pay", handlers.PayBillHandler)
+	mux.HandleFunc("POST /api/bills/{id}/reset", handlers.ResetBillHandler)
 	mux.HandleFunc("GET /api/meters", handlers.GetMetersHandler)
 	mux.HandleFunc("POST /api/meters", handlers.PostMetersHandler)
 	mux.HandleFunc("GET /api/notifications", handlers.GetNotificationsHandler)

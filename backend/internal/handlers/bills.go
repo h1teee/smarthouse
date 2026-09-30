@@ -174,6 +174,16 @@ func PayBillHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(resp)
 }
 
+func ResetBillHandler(w http.ResponseWriter, r *http.Request) {
+	billIDStr := r.PathValue("id")
+	billID, _ := strconv.Atoi(billIDStr)
+	if storage.DB != nil && billID > 0 {
+		storage.DB.Exec("UPDATE bills SET is_paid = false WHERE id = $1", billID)
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"status": "unpaid"})
+}
+
 func BillAIAnalysisHandler(w http.ResponseWriter, r *http.Request) {
 	billIDStr := r.PathValue("id")
 	billID, _ := strconv.Atoi(billIDStr)
