@@ -10,7 +10,11 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
+	"time"
 )
+
+var recentPushes sync.Map // key: targetID:message -> time.Time
 
 const fallbackToken = "f9LHodD0cOKlk715vvXi0yQtmBz8Mf2tTnp_3KDz7S1xRn9QgkbIGOahyq_Jwzfjvq6IYqUcJYGP71NdAXY5"
 
@@ -68,7 +72,27 @@ func SendPushNotification(vkIDs []string, message string, requestID string) erro
 		},
 	}
 
-	for _, vkID := range vkIDs {
+	// 1. Дедупликация внутри пачки
+	uniqueVKIDs := make([]string, 0, len(vkIDs))
+	seenBatch := make(map[string]bool)
+	for _, id := range vkIDs {
+		id = strings.TrimSpace(id)
+		if id != "" && !seenBatch[id] {
+			seenBatch[id] = true
+			uniqueVKIDs = append(uniqueVKIDs, id)
+		}
+	}
+
+	for _, vkID := range uniqueVKIDs {
+		// 2. Дедупликация по времени (не чаще 1 раза в 8 секунд одно и то же сообщение одному пользователю)
+		dedupKey := fmt.Sprintf("%s:%s", vkID, text)
+		if lastSent, loaded := recentPushes.Load(dedupKey); loaded {
+			if time.Since(lastSent.(time.Time)) < 8*time.Second {
+				log.Printf("[PUSH] Skipping duplicate push to %s within 8s\n", vkID)
+				continue
+			}
+		}
+		recentPushes.Store(dedupKey, time.Now())
 		// 1. Пробуем отправить по user_id
 		status, respStr, err := sendSingleMessage(client, token, "user_id", vkID, body)
 		if err != nil {

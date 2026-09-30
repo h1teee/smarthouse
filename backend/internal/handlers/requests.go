@@ -27,7 +27,7 @@ func UpdateRequestStatusHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Находим VK ID пользователей для отправки пуша
 	query := `
-		SELECT u.vk_id 
+		SELECT DISTINCT u.vk_id 
 		FROM users u 
 		JOIN user_addresses ua ON u.id = ua.user_id 
 		WHERE ua.address_id = (SELECT address_id FROM requests WHERE id = $1 LIMIT 1)
