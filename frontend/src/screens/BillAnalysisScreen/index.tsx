@@ -219,35 +219,39 @@ const generateSmartAiReply = (userText: string, errorMsg?: string): string => {
       <div className={styles.ambientGlow} />
 
       <header className={styles.navBar}>
-        <button className={styles.backButton} onClick={onBack}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        <button className={styles.backButton} onClick={onBack} aria-label="Назад">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M15 18L9 12L15 6" />
           </svg>
-          Назад
         </button>
-        <h2 className={styles.navTitle}>Разбор квитанции</h2>
+
+        <div className={styles.navCenter}>
+          <h2 className={styles.navTitle}>Разбор квитанции</h2>
+          <div className={styles.navSubtitle}>
+            <span className={styles.onlineDot} />
+            <span>GigaChat • Онлайн</span>
+          </div>
+        </div>
+
         {allBills.length > 0 ? (
-          <select 
-            value={currentBillId || ''} 
-            onChange={(e) => {
-              setCurrentBillId(e.target.value);
-              localStorage.setItem('selectedBillId', e.target.value);
-              setMessages([{ id: 1, sender: 'ai', text: 'Загрузка...' }]);
-            }}
-            style={{ 
-              background: 'rgba(255,255,255,0.1)', 
-              color: '#fff', 
-              border: 'none', 
-              borderRadius: '8px', 
-              padding: '4px 8px',
-              fontSize: '14px',
-              outline: 'none'
-            }}
-          >
-            {allBills.map((b: any) => (
-              <option key={b.id} value={b.id} style={{color: '#000'}}>{b.month}</option>
-            ))}
-          </select>
+          <div className={styles.monthSelectorWrapper}>
+            <select 
+              value={currentBillId || ''} 
+              onChange={(e) => {
+                setCurrentBillId(e.target.value);
+                localStorage.setItem('selectedBillId', e.target.value);
+                setMessages([{ id: 1, sender: 'ai', text: 'Загрузка...' }]);
+              }}
+              className={styles.monthSelect}
+            >
+              {allBills.map((b: any) => (
+                <option key={b.id} value={b.id} className={styles.monthOption}>{b.month}</option>
+              ))}
+            </select>
+            <svg className={styles.selectChevron} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+          </div>
         ) : (
           <div className={styles.navSpacer} />
         )}
