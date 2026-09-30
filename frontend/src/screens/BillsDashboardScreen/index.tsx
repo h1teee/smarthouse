@@ -28,7 +28,7 @@ const MOCK_RECEIPTS: Receipt[] = [
 
 export const BillsDashboardScreen: React.FC<BillsDashboardScreenProps> = ({ onDetailedAnalysis, onNavigate }) => {
   const [bills, setBills] = useState<any[]>([]);
-  const [meters, setMeters] = useState({ water: 142, electricity: 8450 });
+  const [meters, setMeters] = useState({ water: 142.5, cold_water: 218.0, electricity: 8450 });
   const [selectedReceiptId, setSelectedReceiptId] = useState<string | null>(null);
 
   // Payment Sheet States
@@ -46,13 +46,6 @@ export const BillsDashboardScreen: React.FC<BillsDashboardScreenProps> = ({ onDe
     return m;
   };
 
-  const getDueDateText = (m: string) => {
-    if (m === '2024-09' || m.includes('09')) return 'до 10 октября';
-    if (m === '2024-10' || m.includes('10')) return 'до 10 ноября';
-    if (m === '2024-11' || m.includes('11')) return 'до 10 декабря';
-    return 'до 10 числа';
-  };
-
   useEffect(() => {
     const fetchBills = async () => {
       try {
@@ -66,7 +59,25 @@ export const BillsDashboardScreen: React.FC<BillsDashboardScreenProps> = ({ onDe
         }
       } catch (err) {}
     };
+
+    const fetchMeters = async () => {
+      try {
+        const res = await fetch(API_URL + '/api/meters', { headers: getAuthHeaders() });
+        if (res.ok) {
+          const data = await res.json();
+          if (data) {
+            setMeters({
+              water: data.water ?? 142.5,
+              cold_water: data.cold_water ?? 218.0,
+              electricity: data.electricity ?? 8450
+            });
+          }
+        }
+      } catch (err) {}
+    };
+
     fetchBills();
+    fetchMeters();
   }, []);
 
   // Find unpaid bill
@@ -164,9 +175,9 @@ export const BillsDashboardScreen: React.FC<BillsDashboardScreenProps> = ({ onDe
                 <div className={styles.providerLogo}>УК</div>
                 <div className={styles.providerName}>УК «Смарт Сити»</div>
               </div>
-              <div className={styles.statusBadge}>
-                <span className={styles.statusDot} />
-                Не оплачено
+              <div className={styles.dueBadge}>
+                <span className={styles.dueDot} />
+                до 10 сентября
               </div>
             </div>
             
@@ -195,7 +206,7 @@ export const BillsDashboardScreen: React.FC<BillsDashboardScreenProps> = ({ onDe
             </div>
             
             <button className={styles.payButton} onClick={handleOpenPayment}>
-              Оплатить {unpaidBill.amount.toLocaleString('ru-RU')} ₽ {getDueDateText(unpaidBill.month)}
+              Оплатить
             </button>
           </div>
         ) : (
@@ -240,45 +251,72 @@ export const BillsDashboardScreen: React.FC<BillsDashboardScreenProps> = ({ onDe
               Нейросеть проанализировала квитанцию за {unpaidBill ? formatMonthName(unpaidBill.month) : 'Ноябрь 2024'}. Нажмите, чтобы разобрать формулы или оспорить начисления.
             </p>
             <div className={styles.aiLinkButton}>
-              Открыть чат с GigaChat
+              Открыть чат с ИИ
             </div>
           </div>
         )}
 
         {/* Meters Widget */}
         <div className={styles.sectionHeader}>
-          <h2 className={styles.sectionTitle}>Счетчики</h2>
-          <span className={styles.sectionLink} onClick={() => onNavigate && onNavigate('meters')}>Все</span>
+          <div className={styles.sectionTitleGroup}>
+            <h2 className={styles.sectionTitle}>Счетчики</h2>
+            <span className={styles.sectionSub}>Показания за текущий период</span>
+          </div>
+          <button className={styles.metersSubmitLink} onClick={() => onNavigate && onNavigate('meters')}>
+            Передать
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </button>
         </div>
         <div className={styles.metersGrid}>
-          <div className={styles.meterCard}>
+          {/* Cold Water */}
+          <div className={styles.meterCard} onClick={() => onNavigate && onNavigate('meters')} style={{ cursor: 'pointer' }}>
             <div className={styles.meterHeader}>
               <div className={`${styles.meterIcon} ${styles.blue}`}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
                 </svg>
               </div>
-              <span className={styles.meterStatus}>Передано</span>
+              <span className={styles.meterStatus}>ХВС</span>
+            </div>
+            <div className={styles.meterData}>
+              <span className={styles.meterValue}>{meters.cold_water}</span>
+              <span className={styles.meterUnit}>м³</span>
+            </div>
+            <div className={styles.meterName}>Холодная вода</div>
+          </div>
+
+          {/* Hot Water */}
+          <div className={styles.meterCard} onClick={() => onNavigate && onNavigate('meters')} style={{ cursor: 'pointer' }}>
+            <div className={styles.meterHeader}>
+              <div className={`${styles.meterIcon} ${styles.red}`}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
+                </svg>
+              </div>
+              <span className={styles.meterStatus}>ГВС</span>
             </div>
             <div className={styles.meterData}>
               <span className={styles.meterValue}>{meters.water}</span>
               <span className={styles.meterUnit}>м³</span>
             </div>
-            <div className={styles.meterName}>Водоснабжение</div>
+            <div className={styles.meterName}>Горячая вода</div>
           </div>
 
-          <div className={styles.meterCard}>
+          {/* Electricity */}
+          <div className={styles.meterCard} onClick={() => onNavigate && onNavigate('meters')} style={{ cursor: 'pointer' }}>
             <div className={styles.meterHeader}>
               <div className={`${styles.meterIcon} ${styles.yellow}`}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
                 </svg>
               </div>
-              <span className={styles.meterStatusAlert}>До 25 авг</span>
+              <span className={styles.meterStatusAlert}>До 25 сен</span>
             </div>
             <div className={styles.meterData}>
               <span className={styles.meterValue}>{meters.electricity}</span>
-              <span className={styles.meterUnit}>кВт</span>
+              <span className={styles.meterUnit}>кВт·ч</span>
             </div>
             <div className={styles.meterName}>Электроэнергия</div>
           </div>
@@ -373,47 +411,39 @@ export const BillsDashboardScreen: React.FC<BillsDashboardScreenProps> = ({ onDe
             onClick={(e) => e.stopPropagation()}
             {...paymentSwipeHandlers}
           >
+            {/* iOS Sheet Grabber */}
+            <div className={styles.sheetGrabber} />
+
             {!paymentReceipt ? (
               <>
                 <div className={styles.sheetHeader}>
+                  <div className={styles.headerGhost} />
                   <h2 className={styles.sheetTitle}>Оплата ЖКУ</h2>
                   <button className={styles.closeBtn} onClick={() => !isPaying && setShowPaymentSheet(false)} aria-label="Закрыть">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round">
                       <line x1="18" y1="6" x2="6" y2="18" />
                       <line x1="6" y1="6" x2="18" y2="18" />
                     </svg>
                   </button>
                 </div>
 
-                {/* Hero Amount Card */}
-                <div className={styles.paymentHeroCard}>
-                  <div className={styles.paymentHeroLabel}>К оплате за {formatMonthName(unpaidBill.month)}</div>
-                  <div className={styles.paymentHeroAmount}>{unpaidBill.amount.toLocaleString('ru-RU')} ₽</div>
-                  <div className={styles.secureBadgeRow}>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#30D158" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                    </svg>
-                    <span>0% комиссии • Защищённый платёж СБП</span>
+                {/* Apple Hero Section */}
+                <div className={styles.appleHeroSection}>
+                  <div className={styles.appleAmount}>
+                    {unpaidBill.amount.toLocaleString('ru-RU')} ₽
+                  </div>
+                  <div className={styles.appleSubtext}>
+                    ООО УК «Смарт Сити» • за {formatMonthName(unpaidBill.month)}
                   </div>
                 </div>
 
-                {/* Account Number Card */}
-                <div className={styles.fieldLabel}>Лицевой счёт плательщика</div>
-                <div className={styles.accountInputCard}>
-                  <div className={styles.accountIconBox}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="3" y="4" width="18" height="16" rx="3" />
-                      <circle cx="9" cy="10" r="2" />
-                      <line x1="15" y1="8" x2="17" y2="8" />
-                      <line x1="15" y1="12" x2="17" y2="12" />
-                      <line x1="7" y1="16" x2="17" y2="16" />
-                    </svg>
-                  </div>
-                  <div className={styles.accountInputDetails}>
-                    <span className={styles.accountInputTitle}>Лицевой счёт в ГИС ЖКХ</span>
+                {/* Apple Inset Group 1: Bill & Account */}
+                <div className={styles.appleInsetGroup}>
+                  <div className={styles.appleRow}>
+                    <span className={styles.appleRowLabel}>Лицевой счёт</span>
                     <input 
                       type="text" 
-                      className={styles.accountField} 
+                      className={styles.appleRowInput} 
                       value={accountNumber}
                       onChange={(e) => {
                         setAccountNumber(e.target.value);
@@ -422,203 +452,180 @@ export const BillsDashboardScreen: React.FC<BillsDashboardScreenProps> = ({ onDe
                       placeholder="61-0001-0015"
                     />
                   </div>
-                  <span className={styles.accountBadge}>Активен</span>
-                </div>
-
-                {/* Requisites Card */}
-                <div className={styles.requisitesCard}>
-                  <div className={styles.reqRow}>
-                    <span className={styles.reqLabel}>Получатель</span>
-                    <span className={styles.reqValue}>
+                  <div className={styles.appleDivider} />
+                  <div className={styles.appleRow}>
+                    <span className={styles.appleRowLabel}>Получатель</span>
+                    <span className={styles.appleRowValue}>
                       ООО УК «Смарт Сити»
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="#0A84FF">
                         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
                       </svg>
                     </span>
                   </div>
-                  <div className={styles.reqRow}>
-                    <span className={styles.reqLabel}>ИНН / Расч. счёт</span>
-                    <span className={styles.reqValue}>6164123456 • р/с 40702...14819</span>
-                  </div>
-                  <div className={styles.reqRow}>
-                    <span className={styles.reqLabel}>Назначение</span>
-                    <span className={styles.reqValue}>Оплата ЖКУ за {formatMonthName(unpaidBill.month)}</span>
+                  <div className={styles.appleDivider} />
+                  <div className={styles.appleRow}>
+                    <span className={styles.appleRowLabel}>Комиссия</span>
+                    <span className={styles.appleRowValueGreen}>0 ₽ • Без комиссии</span>
                   </div>
                 </div>
 
-                {/* Payment Methods */}
-                <div className={styles.fieldLabel}>Способ оплаты</div>
-                <div className={styles.paymentMethodsGroup}>
+                {/* Apple Payment Method Section */}
+                <div className={styles.appleSectionLabel}>СПОСОБ ОПЛАТЫ</div>
+                <div className={styles.appleInsetGroup}>
                   {/* SBP Option */}
                   <div 
-                    className={`${styles.methodCard} ${paymentMethod === 'sbp' ? styles.methodCardActive : ''}`}
+                    className={`${styles.appleSelectRow} ${paymentMethod === 'sbp' ? styles.appleSelectRowActive : ''}`}
                     onClick={() => setPaymentMethod('sbp')}
                   >
-                    <div className={styles.methodLeft}>
-                      <div className={styles.methodIconArtwork}>
-                        <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
-                          <path d="M16 4L26 14H18.5L13.5 9L16 4Z" fill="url(#sbpYellowGrad)" />
-                          <path d="M26 14L21 28L16 19H23.5L26 14Z" fill="url(#sbpCyanGrad)" />
-                          <path d="M6 20L16 4L13.5 9L8.5 23L6 20Z" fill="url(#sbpBlueGrad)" />
-                          <defs>
-                            <linearGradient id="sbpYellowGrad" x1="16" y1="4" x2="26" y2="14" gradientUnits="userSpaceOnUse">
-                              <stop stopColor="#FFD600" />
-                              <stop offset="1" stopColor="#FF9500" />
-                            </linearGradient>
-                            <linearGradient id="sbpCyanGrad" x1="16" y1="14" x2="26" y2="28" gradientUnits="userSpaceOnUse">
-                              <stop stopColor="#00E5FF" />
-                              <stop offset="1" stopColor="#00B4D8" />
-                            </linearGradient>
-                            <linearGradient id="sbpBlueGrad" x1="6" y1="4" x2="16" y2="23" gradientUnits="userSpaceOnUse">
-                              <stop stopColor="#0A84FF" />
-                              <stop offset="1" stopColor="#0050C8" />
-                            </linearGradient>
-                          </defs>
-                        </svg>
-                      </div>
-                      <div className={styles.methodTexts}>
-                        <div className={styles.methodHeaderLine}>
-                          <span className={styles.methodName}>СБП (Система быстрых платежей)</span>
-                          <span className={styles.tagSbp}>0%</span>
-                        </div>
-                        <span className={styles.methodSubtext}>В приложении любого банка • Мгновенно</span>
-                      </div>
+                    <div className={styles.appleMethodIcon}>
+                      <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
+                        <path d="M16 4L26 14H18.5L13.5 9L16 4Z" fill="#FFD600" />
+                        <path d="M26 14L21 28L16 19H23.5L26 14Z" fill="#00E5FF" />
+                        <path d="M6 20L16 4L13.5 9L8.5 23L6 20Z" fill="#0A84FF" />
+                      </svg>
                     </div>
-                    <div className={styles.radioIndicator}>
-                      {paymentMethod === 'sbp' && <div className={styles.radioIndicatorDot} />}
+                    <div className={styles.appleMethodInfo}>
+                      <span className={styles.appleMethodTitle}>СБП (Система быстрых платежей)</span>
+                      <span className={styles.appleMethodSub}>Без комиссии • Мгновенно</span>
+                    </div>
+                    <div className={styles.appleCheckmark}>
+                      {paymentMethod === 'sbp' && (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0A84FF" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      )}
                     </div>
                   </div>
+
+                  <div className={styles.appleDivider} />
 
                   {/* Card Option */}
                   <div 
-                    className={`${styles.methodCard} ${paymentMethod === 'card' ? styles.methodCardActive : ''}`}
+                    className={`${styles.appleSelectRow} ${paymentMethod === 'card' ? styles.appleSelectRowActive : ''}`}
                     onClick={() => setPaymentMethod('card')}
                   >
-                    <div className={styles.methodLeft}>
-                      <div className={styles.methodIconArtwork}>
-                        <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
-                          <rect x="3" y="6" width="26" height="20" rx="4" fill="url(#cardGrad2)" stroke="rgba(255,255,255,0.25)" strokeWidth="1" />
-                          <rect x="3" y="11" width="26" height="4" fill="rgba(0,0,0,0.5)" />
-                          <rect x="6.5" y="18" width="5.5" height="4.5" rx="1" fill="url(#chipGrad2)" />
-                          <path d="M21 17C22 18.5 22 20.5 21 22M23.5 15.5C25 17.8 25 21.2 23.5 23.5" stroke="rgba(255,255,255,0.8)" strokeWidth="1.4" strokeLinecap="round" />
-                          <defs>
-                            <linearGradient id="cardGrad2" x1="3" y1="6" x2="29" y2="26" gradientUnits="userSpaceOnUse">
-                              <stop stopColor="#3A3D40" />
-                              <stop offset="1" stopColor="#181719" />
-                            </linearGradient>
-                            <linearGradient id="chipGrad2" x1="6.5" y1="18" x2="12" y2="22.5" gradientUnits="userSpaceOnUse">
-                              <stop stopColor="#FFE082" />
-                              <stop offset="1" stopColor="#FFB300" />
-                            </linearGradient>
-                          </defs>
-                        </svg>
-                      </div>
-                      <div className={styles.methodTexts}>
-                        <span className={styles.methodName}>Банковская карта</span>
-                        <span className={styles.methodSubtext}>Мир, Visa, Mastercard • Любой банк РФ</span>
-                      </div>
+                    <div className={styles.appleMethodIcon}>
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="2" y="5" width="20" height="14" rx="3" />
+                        <line x1="2" y1="10" x2="22" y2="10" />
+                      </svg>
                     </div>
-                    <div className={styles.radioIndicator}>
-                      {paymentMethod === 'card' && <div className={styles.radioIndicatorDot} />}
+                    <div className={styles.appleMethodInfo}>
+                      <span className={styles.appleMethodTitle}>Банковская карта</span>
+                      <span className={styles.appleMethodSub}>МИР, Visa, Mastercard</span>
+                    </div>
+                    <div className={styles.appleCheckmark}>
+                      {paymentMethod === 'card' && (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0A84FF" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      )}
                     </div>
                   </div>
 
+                  <div className={styles.appleDivider} />
+
                   {/* SberPay Option */}
                   <div 
-                    className={`${styles.methodCard} ${paymentMethod === 'sberpay' ? styles.methodCardActive : ''}`}
+                    className={`${styles.appleSelectRow} ${paymentMethod === 'sberpay' ? styles.appleSelectRowActive : ''}`}
                     onClick={() => setPaymentMethod('sberpay')}
                   >
-                    <div className={styles.methodLeft}>
-                      <div className={styles.methodIconArtwork}>
-                        <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
-                          <circle cx="16" cy="16" r="13" fill="url(#sberGreenGrad)" />
-                          <path d="M10.5 16L14.5 20L21.5 12" stroke="#FFFFFF" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
-                          <defs>
-                            <linearGradient id="sberGreenGrad" x1="3" y1="3" x2="29" y2="29" gradientUnits="userSpaceOnUse">
-                              <stop stopColor="#22C55E" />
-                              <stop offset="1" stopColor="#16A34A" />
-                            </linearGradient>
-                          </defs>
-                        </svg>
-                      </div>
-                      <div className={styles.methodTexts}>
-                        <span className={styles.methodName}>SberPay</span>
-                        <span className={styles.methodSubtext}>Быстрая оплата в СберБанк Онлайн</span>
-                      </div>
+                    <div className={styles.appleMethodIcon}>
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="10" fill="#22C55E" />
+                        <path d="M8 12L11 15L16 9" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
                     </div>
-                    <div className={styles.radioIndicator}>
-                      {paymentMethod === 'sberpay' && <div className={styles.radioIndicatorDot} />}
+                    <div className={styles.appleMethodInfo}>
+                      <span className={styles.appleMethodTitle}>SberPay</span>
+                      <span className={styles.appleMethodSub}>Приложение СберБанк Онлайн</span>
+                    </div>
+                    <div className={styles.appleCheckmark}>
+                      {paymentMethod === 'sberpay' && (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0A84FF" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      )}
                     </div>
                   </div>
                 </div>
 
+                {/* Apple Pay Action Button */}
                 <button 
                   className={styles.applePayBtn} 
                   onClick={handleExecutePayment}
                   disabled={isPaying || !accountNumber.trim()}
                 >
                   {isPaying ? (
-                    <>Безопасная обработка в банке...</>
+                    <span className={styles.spinnerRow}>
+                      <span className={styles.appleSpinner} />
+                      Обработка платежа...
+                    </span>
                   ) : (
-                    <>Оплатить {unpaidBill.amount.toLocaleString('ru-RU')} ₽ через {paymentMethod === 'sbp' ? 'СБП' : paymentMethod === 'card' ? 'карту' : 'SberPay'}</>
+                    <span>Оплатить {unpaidBill.amount.toLocaleString('ru-RU')} ₽</span>
                   )}
                 </button>
+                <div className={styles.appleFooterSecurity}>
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                  </svg>
+                  Защищено сквозным шифрованием Банка России (НСПК)
+                </div>
               </>
             ) : (
               <>
-                <div className={styles.successHeader}>
-                  <div className={styles.successRing}>
-                    <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <div className={styles.appleReceiptHeader}>
+                  <div className={styles.appleSuccessRing}>
+                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
                       <polyline points="20 6 9 17 4 12" />
                     </svg>
                   </div>
-                  <h2 className={styles.successTitle}>Оплата проведена</h2>
-                  <p className={styles.successSub}>Квитанция за {paymentReceipt.month} успешно оплачена в ГИС ЖКХ</p>
+                  <div className={styles.appleSuccessAmount}>
+                    {paymentReceipt.amount.toLocaleString('ru-RU')} ₽
+                  </div>
+                  <div className={styles.appleSuccessSub}>
+                    Оплачено • {paymentReceipt.month}
+                  </div>
                 </div>
 
-                <div className={styles.receiptTable}>
-                  <div className={styles.receiptItem}>
-                    <span className={styles.receiptKey}>Сумма платежа</span>
-                    <span className={styles.receiptVal} style={{ color: '#30D158', fontSize: 18, fontWeight: 700 }}>
-                      {paymentReceipt.amount.toLocaleString('ru-RU')} ₽
-                    </span>
+                <div className={styles.appleInsetGroup}>
+                  <div className={styles.appleRow}>
+                    <span className={styles.appleRowLabel}>Получатель</span>
+                    <span className={styles.appleRowValue}>{paymentReceipt.recipient}</span>
                   </div>
-                  <div className={styles.receiptItem}>
-                    <span className={styles.receiptKey}>Лицевой счёт</span>
-                    <span className={styles.receiptVal}>{paymentReceipt.account_number}</span>
+                  <div className={styles.appleDivider} />
+                  <div className={styles.appleRow}>
+                    <span className={styles.appleRowLabel}>Лицевой счёт</span>
+                    <span className={styles.appleRowValue}>{paymentReceipt.account_number}</span>
                   </div>
-                  <div className={styles.receiptItem}>
-                    <span className={styles.receiptKey}>Получатель</span>
-                    <span className={styles.receiptVal}>{paymentReceipt.recipient}</span>
+                  <div className={styles.appleDivider} />
+                  <div className={styles.appleRow}>
+                    <span className={styles.appleRowLabel}>Способ оплаты</span>
+                    <span className={styles.appleRowValue}>{paymentReceipt.payment_method}</span>
                   </div>
-                  <div className={styles.receiptItem}>
-                    <span className={styles.receiptKey}>Фискальный чек</span>
-                    <span className={styles.receiptVal}>{paymentReceipt.receipt_number}</span>
+                  <div className={styles.appleDivider} />
+                  <div className={styles.appleRow}>
+                    <span className={styles.appleRowLabel}>Чек ФН</span>
+                    <span className={styles.appleRowValue}>{paymentReceipt.receipt_number}</span>
                   </div>
-                  <div className={styles.receiptItem}>
-                    <span className={styles.receiptKey}>Дата и время</span>
-                    <span className={styles.receiptVal}>{paymentReceipt.paid_at}</span>
+                  <div className={styles.appleDivider} />
+                  <div className={styles.appleRow}>
+                    <span className={styles.appleRowLabel}>Дата и время</span>
+                    <span className={styles.appleRowValue}>{paymentReceipt.paid_at}</span>
                   </div>
-                  <div className={styles.receiptItem}>
-                    <span className={styles.receiptKey}>Способ оплаты</span>
-                    <span className={styles.receiptVal}>{paymentReceipt.payment_method}</span>
-                  </div>
-                  <div className={styles.receiptItem}>
-                    <span className={styles.receiptKey}>Статус зачисления</span>
-                    <span className={styles.receiptVal} style={{ color: '#30D158', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#30D158" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                      Зачислено на счёт УК
-                    </span>
+                  <div className={styles.appleDivider} />
+                  <div className={styles.appleRow}>
+                    <span className={styles.appleRowLabel}>Статус</span>
+                    <span className={styles.appleRowValueGreen}>Зачислено на счёт УК</span>
                   </div>
                 </div>
 
                 <button 
-                  className={styles.applePayBtn}
+                  className={styles.appleDoneBtn}
                   onClick={() => setShowPaymentSheet(false)}
                 >
-                  Отлично
+                  Готово
                 </button>
               </>
             )}

@@ -8,13 +8,23 @@ interface MetersScreenProps {
 
 export const MetersScreen: React.FC<MetersScreenProps> = ({ onBack }) => {
   const [prevWater, setPrevWater] = useState(0);
+  const [prevColdWater, setPrevColdWater] = useState(0);
   const [prevElectricity, setPrevElectricity] = useState(0);
 
   const [water, setWater] = useState('');
+  const [coldWater, setColdWater] = useState('');
   const [electricity, setElectricity] = useState('');
   
   const [isWaterSaving, setIsWaterSaving] = useState(false);
+  const [isColdWaterSaving, setIsColdWaterSaving] = useState(false);
   const [isElecSaving, setIsElecSaving] = useState(false);
+
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 2500);
+  };
 
   useEffect(() => {
     const fetchMeters = async () => {
@@ -25,9 +35,11 @@ export const MetersScreen: React.FC<MetersScreenProps> = ({ onBack }) => {
         if (res.ok) {
           const data = await res.json();
           setPrevWater(data.water || 0);
+          setPrevColdWater(data.cold_water || 0);
           setPrevElectricity(data.electricity || 0);
-          setWater(String(data.water || 0));
-          setElectricity(String(data.electricity || 0));
+          setWater(String(data.water || ''));
+          setColdWater(String(data.cold_water || ''));
+          setElectricity(String(data.electricity || ''));
         }
       } catch (err) {
         console.error(err);
@@ -37,32 +49,66 @@ export const MetersScreen: React.FC<MetersScreenProps> = ({ onBack }) => {
   }, []);
 
   const handleSaveWater = async () => {
+    const val = parseFloat(water);
+    if (isNaN(val)) return;
     setIsWaterSaving(true);
     try {
-      await fetch(API_URL + '/api/meters', {
+      const res = await fetch(API_URL + '/api/meters', {
         method: 'POST',
         headers: getAuthHeaders(),
-        body: JSON.stringify({ water: parseFloat(water) || 0, electricity: prevElectricity })
+        body: JSON.stringify({ water: val })
       });
-      setPrevWater(parseFloat(water) || 0);
+      if (res.ok) {
+        setPrevWater(val);
+        showToast('Показания ГВС успешно переданы');
+      }
     } catch (e) {
       console.error(e);
+      showToast('Ошибка при передаче показаний');
     } finally {
       setIsWaterSaving(false);
     }
   };
 
-  const handleSaveElectricity = async () => {
-    setIsElecSaving(true);
+  const handleSaveColdWater = async () => {
+    const val = parseFloat(coldWater);
+    if (isNaN(val)) return;
+    setIsColdWaterSaving(true);
     try {
-      await fetch(API_URL + '/api/meters', {
+      const res = await fetch(API_URL + '/api/meters', {
         method: 'POST',
         headers: getAuthHeaders(),
-        body: JSON.stringify({ water: prevWater, electricity: parseFloat(electricity) || 0 })
+        body: JSON.stringify({ cold_water: val })
       });
-      setPrevElectricity(parseFloat(electricity) || 0);
+      if (res.ok) {
+        setPrevColdWater(val);
+        showToast('Показания ХВС успешно переданы');
+      }
     } catch (e) {
       console.error(e);
+      showToast('Ошибка при передаче показаний');
+    } finally {
+      setIsColdWaterSaving(false);
+    }
+  };
+
+  const handleSaveElectricity = async () => {
+    const val = parseFloat(electricity);
+    if (isNaN(val)) return;
+    setIsElecSaving(true);
+    try {
+      const res = await fetch(API_URL + '/api/meters', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ electricity: val })
+      });
+      if (res.ok) {
+        setPrevElectricity(val);
+        showToast('Показания электричества переданы');
+      }
+    } catch (e) {
+      console.error(e);
+      showToast('Ошибка при передаче показаний');
     } finally {
       setIsElecSaving(false);
     }
@@ -72,6 +118,31 @@ export const MetersScreen: React.FC<MetersScreenProps> = ({ onBack }) => {
     <div className={styles.container}>
       {/* Background */}
       <div className={styles.ambientGlow} />
+
+      {toastMessage && (
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: 'rgba(18, 18, 22, 0.95)',
+          border: '1px solid rgba(48, 209, 88, 0.4)',
+          borderRadius: '20px',
+          padding: '8px 16px',
+          color: '#FFFFFF',
+          fontSize: '13px',
+          fontWeight: 600,
+          zIndex: 9999,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+          backdropFilter: 'blur(16px)'
+        }}>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#30D158' }} />
+          {toastMessage}
+        </div>
+      )}
 
       <div className={styles.headerRow}>
         <button className={styles.backBtn} onClick={onBack}>
@@ -94,15 +165,16 @@ export const MetersScreen: React.FC<MetersScreenProps> = ({ onBack }) => {
                   <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
                 </svg>
               </div>
-              <h2 className={styles.meterName}>Горячая вода</h2>
+              <h2 className={styles.meterName}>Горячая вода (ГВС)</h2>
             </div>
-            <span className={styles.meterStatusAlert}>До 25 авг</span>
+            <span className={styles.meterStatusAlert}>До 25 числа</span>
           </div>
           
           <div className={styles.inputCard}>
             <div className={styles.inputMain}>
               <input 
                 type="number"
+                step="0.01"
                 className={styles.inputValue} 
                 style={{ width: '100%', background: 'transparent', border: 'none', color: 'inherit', fontSize: 'inherit', fontWeight: 'inherit', outline: 'none', fontFamily: 'inherit' }}
                 value={water}
@@ -112,8 +184,12 @@ export const MetersScreen: React.FC<MetersScreenProps> = ({ onBack }) => {
             </div>
             <div className={styles.inputSub}>Предыдущее: {prevWater} м³</div>
           </div>
-          <button className={styles.submitBtn} onClick={handleSaveWater} disabled={isWaterSaving || parseFloat(water) === prevWater}>
-            {isWaterSaving ? 'Сохранение...' : 'Передать показания'}
+          <button 
+            className={styles.submitBtn} 
+            onClick={handleSaveWater} 
+            disabled={isWaterSaving || parseFloat(water) === prevWater || !water.trim()}
+          >
+            {isWaterSaving ? 'Передача в УК...' : parseFloat(water) === prevWater ? 'Показания переданы' : 'Передать показания'}
           </button>
         </div>
 
@@ -126,19 +202,32 @@ export const MetersScreen: React.FC<MetersScreenProps> = ({ onBack }) => {
                   <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
                 </svg>
               </div>
-              <h2 className={styles.meterName}>Холодная вода</h2>
+              <h2 className={styles.meterName}>Холодная вода (ХВС)</h2>
             </div>
-            <span className={styles.meterStatusOk}>Передано</span>
+            <span className={styles.meterStatusAlert}>До 25 числа</span>
           </div>
           
           <div className={styles.inputCard}>
             <div className={styles.inputMain}>
-              <span className={styles.inputValue}>320</span>
+              <input 
+                type="number"
+                step="0.01"
+                className={styles.inputValue} 
+                style={{ width: '100%', background: 'transparent', border: 'none', color: 'inherit', fontSize: 'inherit', fontWeight: 'inherit', outline: 'none', fontFamily: 'inherit' }}
+                value={coldWater}
+                onChange={(e) => setColdWater(e.target.value)}
+              />
               <span className={styles.inputUnit}>м³</span>
             </div>
-            <div className={styles.inputSub}>Предыдущее: 320 м³</div>
+            <div className={styles.inputSub}>Предыдущее: {prevColdWater} м³</div>
           </div>
-          <button className={styles.submitBtnDisabled} disabled>Показания переданы</button>
+          <button 
+            className={styles.submitBtn} 
+            onClick={handleSaveColdWater} 
+            disabled={isColdWaterSaving || parseFloat(coldWater) === prevColdWater || !coldWater.trim()}
+          >
+            {isColdWaterSaving ? 'Передача в УК...' : parseFloat(coldWater) === prevColdWater ? 'Показания переданы' : 'Передать показания'}
+          </button>
         </div>
 
         {/* Electricity */}
@@ -152,13 +241,14 @@ export const MetersScreen: React.FC<MetersScreenProps> = ({ onBack }) => {
               </div>
               <h2 className={styles.meterName}>Электроэнергия</h2>
             </div>
-            <span className={styles.meterStatusAlert}>До 25 авг</span>
+            <span className={styles.meterStatusAlert}>До 25 числа</span>
           </div>
           
           <div className={styles.inputCard}>
             <div className={styles.inputMain}>
               <input 
                 type="number"
+                step="0.01"
                 className={styles.inputValue} 
                 style={{ width: '100%', background: 'transparent', border: 'none', color: 'inherit', fontSize: 'inherit', fontWeight: 'inherit', outline: 'none', fontFamily: 'inherit' }}
                 value={electricity}
@@ -168,8 +258,12 @@ export const MetersScreen: React.FC<MetersScreenProps> = ({ onBack }) => {
             </div>
             <div className={styles.inputSub}>Предыдущее: {prevElectricity} кВт</div>
           </div>
-          <button className={styles.submitBtn} onClick={handleSaveElectricity} disabled={isElecSaving || parseFloat(electricity) === prevElectricity}>
-            {isElecSaving ? 'Сохранение...' : 'Передать показания'}
+          <button 
+            className={styles.submitBtn} 
+            onClick={handleSaveElectricity} 
+            disabled={isElecSaving || parseFloat(electricity) === prevElectricity || !electricity.trim()}
+          >
+            {isElecSaving ? 'Передача в УК...' : parseFloat(electricity) === prevElectricity ? 'Показания переданы' : 'Передать показания'}
           </button>
         </div>
 

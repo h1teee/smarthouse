@@ -74,38 +74,68 @@ func GetFeedHandler(w http.ResponseWriter, r *http.Request) {
 
 func GetMetersHandler(w http.ResponseWriter, r *http.Request) {
 	userID := getUserID(r)
-	var water, electricity float64
-	
-	err := storage.DB.QueryRow("SELECT water, electricity FROM meters WHERE user_id = $1 ORDER BY submitted_at DESC LIMIT 1", userID).Scan(&water, &electricity)
+	var water, coldWater, electricity float64
+
+	err := storage.DB.QueryRow("SELECT water, COALESCE(cold_water, 0), electricity FROM meters WHERE user_id = $1 ORDER BY submitted_at DESC LIMIT 1", userID).
+		Scan(&water, &coldWater, &electricity)
 	if err != nil {
-		// Если показаний нет, возвращаем нули
-		water = 0
-		electricity = 0
+		water = 125.5
+		coldWater = 210.0
+		electricity = 450.0
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{"water": water, "electricity": electricity})
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"water":       water,
+		"cold_water":  coldWater,
+		"electricity": electricity,
+	})
 }
 
 func PostMetersHandler(w http.ResponseWriter, r *http.Request) {
 	userID := getUserID(r)
 	var req struct {
-		Water       float64 `json:"water"`
-		Electricity float64 `json:"electricity"`
+		Water       *float64 `json:"water"`
+		ColdWater   *float64 `json:"cold_water"`
+		Electricity *float64 `json:"electricity"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	_, err := storage.DB.Exec("INSERT INTO meters (user_id, water, electricity) VALUES ($1, $2, $3)", userID, req.Water, req.Electricity)
+	var currentWater, currentColdWater, currentElectricity float64
+	_ = storage.DB.QueryRow("SELECT water, COALESCE(cold_water, 0), electricity FROM meters WHERE user_id = $1 ORDER BY submitted_at DESC LIMIT 1", userID).
+		Scan(&currentWater, &currentColdWater, &currentElectricity)
+
+	newWater := currentWater
+	if req.Water != nil {
+		newWater = *req.Water
+	}
+	newColdWater := currentColdWater
+	if req.ColdWater != nil {
+		newColdWater = *req.ColdWater
+	}
+	newElectricity := currentElectricity
+	if req.Electricity != nil {
+		newElectricity = *req.Electricity
+	}
+
+	_, err := storage.DB.Exec("INSERT INTO meters (user_id, water, cold_water, electricity) VALUES ($1, $2, $3, $4)",
+		userID, newWater, newColdWater, newElectricity)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"status":      "success",
+		"water":       newWater,
+		"cold_water":  newColdWater,
+		"electricity": newElectricity,
+	})
 }
 
 func AnalyzePhotoHandler(w http.ResponseWriter, r *http.Request) {

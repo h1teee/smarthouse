@@ -26,7 +26,7 @@ export const BillAnalysisScreen: React.FC<BillAnalysisScreenProps> = ({ onBack }
     { 
       id: 1, 
       sender: 'ai', 
-      text: 'Анализирую квитанцию... Загружаю данные из GigaChat 🤖' 
+      text: 'Анализирую квитанцию... Загружаю данные из AI 🤖' 
     }
   ]);
   const [isTyping, setIsTyping] = useState(true);
@@ -45,7 +45,7 @@ const formatMonthName = (m: string) => {
   return m;
 };
 
-const DEFAULT_ANALYSIS_SUMMARY = 'Анализирую квитанцию... Загружаю данные из GigaChat 🤖';
+const DEFAULT_ANALYSIS_SUMMARY = 'Анализирую квитанцию... Загружаю данные из AI 🤖';
 
 const DEFAULT_EXPENSE_HISTORY: ExpenseItem[] = [
   { id: '1', month: 'Сентябрь 2024', amount: '4 500 ₽', percentage: 70 },
@@ -229,7 +229,7 @@ const generateSmartAiReply = (userText: string, errorMsg?: string): string => {
           <h2 className={styles.navTitle}>Разбор квитанции</h2>
           <div className={styles.navSubtitle}>
             <span className={styles.onlineDot} />
-            <span>GigaChat • Онлайн</span>
+            <span>AI • Онлайн</span>
           </div>
         </div>
 

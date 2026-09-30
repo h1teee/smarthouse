@@ -8,12 +8,16 @@ import (
 )
 
 func GetPrivilegesHandler(w http.ResponseWriter, r *http.Request) {
-	userID := 1 
+	userID := getUserID(r)
 	hasDebt, _ := storage.CheckUserDebt(userID)
 
 	query := `SELECT o.id, p.name, o.badge_text, o.offer_text, o.icon_url, o.action_type, o.action_data, o.requires_zero_debt 
-			  FROM offers o JOIN partners p ON o.partner_id = p.id WHERE o.is_active = true`
-	rows, _ := storage.DB.Query(query)
+			  FROM offers o JOIN partners p ON o.partner_id = p.id WHERE o.is_active = true ORDER BY o.id ASC`
+	rows, err := storage.DB.Query(query)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	defer rows.Close()
 
 	var offers []models.Offer
@@ -25,7 +29,9 @@ func GetPrivilegesHandler(w http.ResponseWriter, r *http.Request) {
 			offers = append(offers, o)
 		}
 	}
-	if offers == nil { offers = []models.Offer{} }
+	if offers == nil {
+		offers = []models.Offer{}
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(offers)

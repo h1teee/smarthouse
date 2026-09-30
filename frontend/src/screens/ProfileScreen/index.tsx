@@ -13,48 +13,141 @@ interface Offer {
   gradient: string;
   borderColor: string;
   promoCode: string;
+  actionType?: string;
+  actionData?: string;
+  isLocked?: boolean;
 }
+
+const PARTNER_THEMES: Record<string, { gradient: string; borderColor: string; tag: string; promoCode: string }> = {
+  'Магнит': {
+    gradient: 'linear-gradient(145deg, #2b0808 0%, #140404 100%)',
+    borderColor: 'rgba(255, 69, 58, 0.4)',
+    tag: 'Продукты',
+    promoCode: 'DOM-MAGNIT-10'
+  },
+  'DNS': {
+    gradient: 'linear-gradient(145deg, #2b1704 0%, #140b02 100%)',
+    borderColor: 'rgba(255, 159, 10, 0.4)',
+    tag: 'Техника',
+    promoCode: 'DNS-RESIDENT-15'
+  },
+  'Спортмастер': {
+    gradient: 'linear-gradient(145deg, #0c203b 0%, #040c17 100%)',
+    borderColor: 'rgba(100, 210, 255, 0.4)',
+    tag: 'Спорт',
+    promoCode: 'SPORT-MAX-FREE'
+  },
+  'Яндекс Плюс': {
+    gradient: 'linear-gradient(145deg, #280a22 0%, #12030f 100%)',
+    borderColor: 'rgba(191, 90, 242, 0.4)',
+    tag: 'Подписка',
+    promoCode: 'YAPLUS-DOM-3M'
+  },
+  'МТС': {
+    gradient: 'linear-gradient(145deg, #280a0a 0%, #120303 100%)',
+    borderColor: 'rgba(255, 59, 48, 0.4)',
+    tag: 'Связь',
+    promoCode: 'MTS-SMART-20'
+  },
+  'ВкусВилл': {
+    gradient: 'linear-gradient(145deg, #0d2818 0%, #05120a 100%)',
+    borderColor: 'rgba(48, 209, 88, 0.4)',
+    tag: 'В доме',
+    promoCode: 'DOM-VKUS-42'
+  },
+  'Яндекс Go': {
+    gradient: 'linear-gradient(145deg, #2b1f07 0%, #140d02 100%)',
+    borderColor: 'rgba(255, 214, 10, 0.4)',
+    tag: 'Город',
+    promoCode: 'YANGO-RESIDENT'
+  },
+  'СБП': {
+    gradient: 'linear-gradient(145deg, #0c203b 0%, #040c17 100%)',
+    borderColor: 'rgba(100, 210, 255, 0.4)',
+    tag: 'Финансы',
+    promoCode: 'SBP-ZERO-FEE'
+  },
+  'Surf Coffee': {
+    gradient: 'linear-gradient(145deg, #280a22 0%, #12030f 100%)',
+    borderColor: 'rgba(191, 90, 242, 0.4)',
+    tag: 'В доме',
+    promoCode: 'SURF-NEIGHBOR-42'
+  }
+};
+
+const DEFAULT_PALETTE = [
+  { gradient: 'linear-gradient(145deg, #0d2818 0%, #05120a 100%)', borderColor: 'rgba(48, 209, 88, 0.4)', tag: 'Партнер' },
+  { gradient: 'linear-gradient(145deg, #2b1f07 0%, #140d02 100%)', borderColor: 'rgba(255, 214, 10, 0.4)', tag: 'Скидка' },
+  { gradient: 'linear-gradient(145deg, #0c203b 0%, #040c17 100%)', borderColor: 'rgba(100, 210, 255, 0.4)', tag: 'Выгода' },
+  { gradient: 'linear-gradient(145deg, #280a22 0%, #12030f 100%)', borderColor: 'rgba(191, 90, 242, 0.4)', tag: 'Сервис' },
+  { gradient: 'linear-gradient(145deg, #2b0808 0%, #140404 100%)', borderColor: 'rgba(255, 69, 58, 0.4)', tag: 'Акция' },
+];
 
 const INITIAL_OFFERS: Offer[] = [
   {
-    id: 'vkusvill',
-    partner: 'ВкусВилл',
-    tag: 'В доме',
-    rate: '10%',
-    desc: 'Кешбэк на продукты и доставку',
-    gradient: 'linear-gradient(145deg, #0d2818 0%, #05120a 100%)',
-    borderColor: 'rgba(48, 209, 88, 0.4)',
-    promoCode: 'DOM-VKUS-42'
+    id: '1',
+    partner: 'Магнит',
+    tag: 'Продукты',
+    rate: 'Скидка 10%',
+    desc: 'Скидка 10% на первую покупку для жителей ЖК',
+    gradient: 'linear-gradient(145deg, #2b0808 0%, #140404 100%)',
+    borderColor: 'rgba(255, 69, 58, 0.4)',
+    promoCode: 'DOM-MAGNIT-10',
+    actionType: 'link',
+    actionData: 'https://magnit.ru',
+    isLocked: false
   },
   {
-    id: 'yandex',
-    partner: 'Яндекс Go',
-    tag: 'Город',
-    rate: '15%',
-    desc: 'Скидка на поездки и доставку',
-    gradient: 'linear-gradient(145deg, #2b1f07 0%, #140d02 100%)',
-    borderColor: 'rgba(255, 214, 10, 0.4)',
-    promoCode: 'YANGO-RESIDENT'
+    id: '2',
+    partner: 'DNS',
+    tag: 'Техника',
+    rate: 'Кешбэк 15%',
+    desc: 'Кешбэк 15% на технику при оплате через приложение',
+    gradient: 'linear-gradient(145deg, #2b1704 0%, #140b02 100%)',
+    borderColor: 'rgba(255, 159, 10, 0.4)',
+    promoCode: 'DNS-RESIDENT-15',
+    actionType: 'link',
+    actionData: 'https://dns-shop.ru',
+    isLocked: false
   },
   {
-    id: 'sbp',
-    partner: 'СБП',
-    tag: 'Финансы',
-    rate: '0%',
-    desc: 'Оплата ЖКУ без комиссии + кешбэк',
+    id: '3',
+    partner: 'Спортмастер',
+    tag: 'Спорт',
+    rate: 'Бесплатный месяц',
+    desc: 'Бесплатный месяц тренировок для новых клиентов',
     gradient: 'linear-gradient(145deg, #0c203b 0%, #040c17 100%)',
     borderColor: 'rgba(100, 210, 255, 0.4)',
-    promoCode: 'SBP-ZERO-FEE'
+    promoCode: 'SPORT-MAX-FREE',
+    actionType: 'link',
+    actionData: 'https://sportmaster.ru',
+    isLocked: false
   },
   {
-    id: 'surfcoffee',
-    partner: 'Surf Coffee',
-    tag: 'В доме',
-    rate: '20%',
-    desc: 'Специальный тариф в кофейне лобби',
+    id: '4',
+    partner: 'Яндекс Плюс',
+    tag: 'Подписка',
+    rate: '3 мес за 1 ₽',
+    desc: '3 месяца Яндекс Плюс за 1 рубль',
     gradient: 'linear-gradient(145deg, #280a22 0%, #12030f 100%)',
     borderColor: 'rgba(191, 90, 242, 0.4)',
-    promoCode: 'SURF-NEIGHBOR-42'
+    promoCode: 'YAPLUS-DOM-3M',
+    actionType: 'link',
+    actionData: 'https://plus.yandex.ru',
+    isLocked: false
+  },
+  {
+    id: '5',
+    partner: 'МТС',
+    tag: 'Связь',
+    rate: 'Скидка 20%',
+    desc: 'Скидка 20% на мобильную связь',
+    gradient: 'linear-gradient(145deg, #280a0a 0%, #120303 100%)',
+    borderColor: 'rgba(255, 59, 48, 0.4)',
+    promoCode: 'MTS-SMART-20',
+    actionType: 'link',
+    actionData: 'https://mts.ru',
+    isLocked: false
   }
 ];
 
@@ -98,13 +191,36 @@ export const ProfileScreen: React.FC<{onLogout?: () => void}> = ({ onLogout }) =
       .catch(() => {});
 
     fetch(API_URL + '/api/v1/profile/privileges', { headers: getAuthHeaders() })
-      .then(res => res.json())
-      .then(data => {
-        if (data && data.length > 0) {
-          // If the backend actually returned valid offers, we would map them here.
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to load privileges');
+        return res.json();
+      })
+      .then((data: any[]) => {
+        if (Array.isArray(data) && data.length > 0) {
+          const mapped: Offer[] = data.map((item, idx) => {
+            const partnerName = item.partner_name || item.partner || 'Партнер';
+            const theme = PARTNER_THEMES[partnerName] || DEFAULT_PALETTE[idx % DEFAULT_PALETTE.length];
+            const promo = theme.promoCode || `${partnerName.toUpperCase().replace(/[^A-ZА-Я0-9]/g, '')}-SMART`;
+            return {
+              id: String(item.id),
+              partner: partnerName,
+              tag: theme.tag || (item.badge_text?.includes('%') ? 'Выгода' : 'Партнер'),
+              rate: item.badge_text || 'Скидка',
+              desc: item.offer_text || item.desc || '',
+              gradient: theme.gradient,
+              borderColor: theme.borderColor,
+              promoCode: promo,
+              actionType: item.action_type || 'link',
+              actionData: item.action_data || '',
+              isLocked: Boolean(item.is_locked),
+            };
+          });
+          setOffers(mapped);
         }
       })
-      .catch(() => {});
+      .catch((err) => {
+        console.warn('Privileges API error:', err);
+      });
   }, []);
 
   const notify = (msg: string) => {
@@ -287,70 +403,74 @@ export const ProfileScreen: React.FC<{onLogout?: () => void}> = ({ onLogout }) =
         </div>
 
         <div className={styles.carousel}>
-          {offers.map(offer => (
-            <div 
-              key={offer.id}
-              className={styles.card}
-              style={{
-                background: offer.gradient,
-                borderColor: offer.borderColor
-              }}
-              onClick={() => {
-                if (debt === 0) setActiveOffer(offer);
-              }}
-            >
-              <div className={styles.cardTop}>
-                <span className={styles.partnerTitle}>{offer.partner}</span>
-                <span className={styles.cardTag}>{offer.tag}</span>
-              </div>
-
-              <div className={styles.cardCenter}>
-                <div className={styles.cardRate}>{offer.rate}</div>
-                <div className={styles.cardDesc}>{offer.desc}</div>
-              </div>
-
-              <div className={styles.cardBottom}>
-                <div className={styles.cardChip} />
-                <span className={styles.cardArrow}>
-                  Подробнее
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <polyline points="9 18 15 12 9 6" />
-                  </svg>
-                </span>
-              </div>
-
-              {/* Заблокированное состояние при долге */}
-              {debt > 0 && (
-                <div className={styles.lockOverlay} onClick={(e) => e.stopPropagation()}>
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FF453A" strokeWidth="2.2">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                  </svg>
-                  <span className={styles.lockText}>Оплатите задолженность</span>
-                  <button 
-                    className={styles.unlockBtn}
-                    onClick={async () => {
-                      notify('Оплата...');
-                      try {
-                        const res = await fetch(API_URL + '/api/bills', { headers: getAuthHeaders() });
-                        if (res.ok) {
-                          const data = await res.json();
-                          const unpaid = (data || []).filter((b: any) => !b.is_paid && !b.isPaid);
-                          for (const b of unpaid) {
-                            await fetch(API_URL + '/api/bills/' + b.id + '/pay', { method: 'POST', headers: getAuthHeaders() });
-                          }
-                        }
-                      } catch(e) {}
-                      setDebt(0);
-                      notify('Задолженность оплачена! Доступ открыт');
-                    }}
-                  >
-                    Оплатить {debt.toLocaleString('ru-RU')} ₽
-                  </button>
+          {offers.map(offer => {
+            const isOfferLocked = (debt > 0 && offer.isLocked) || (offer.isLocked ?? debt > 0);
+            return (
+              <div 
+                key={offer.id}
+                className={styles.card}
+                style={{
+                  background: offer.gradient,
+                  borderColor: offer.borderColor
+                }}
+                onClick={() => {
+                  if (!isOfferLocked) setActiveOffer(offer);
+                }}
+              >
+                <div className={styles.cardTop}>
+                  <span className={styles.partnerTitle}>{offer.partner}</span>
+                  <span className={styles.cardTag}>{offer.tag}</span>
                 </div>
-              )}
-            </div>
-          ))}
+
+                <div className={styles.cardCenter}>
+                  <div className={styles.cardRate}>{offer.rate}</div>
+                  <div className={styles.cardDesc}>{offer.desc}</div>
+                </div>
+
+                <div className={styles.cardBottom}>
+                  <div className={styles.cardChip} />
+                  <span className={styles.cardArrow}>
+                    Подробнее
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                  </span>
+                </div>
+
+                {/* Заблокированное состояние при долге */}
+                {isOfferLocked && (
+                  <div className={styles.lockOverlay} onClick={(e) => e.stopPropagation()}>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FF453A" strokeWidth="2.2">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                    </svg>
+                    <span className={styles.lockText}>Оплатите задолженность</span>
+                    <button 
+                      className={styles.unlockBtn}
+                      onClick={async () => {
+                        notify('Оплата...');
+                        try {
+                          const res = await fetch(API_URL + '/api/bills', { headers: getAuthHeaders() });
+                          if (res.ok) {
+                            const data = await res.json();
+                            const unpaid = (data || []).filter((b: any) => !b.is_paid && !b.isPaid);
+                            for (const b of unpaid) {
+                              await fetch(API_URL + '/api/bills/' + b.id + '/pay', { method: 'POST', headers: getAuthHeaders() });
+                            }
+                          }
+                        } catch(e) {}
+                        setDebt(0);
+                        setOffers(prev => prev.map(p => ({ ...p, isLocked: false })));
+                        notify('Задолженность оплачена! Доступ открыт');
+                      }}
+                    >
+                      Оплатить {debt > 0 ? `${debt.toLocaleString('ru-RU')} ₽` : 'задолженность'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </section>
 
@@ -521,13 +641,24 @@ export const ProfileScreen: React.FC<{onLogout?: () => void}> = ({ onLogout }) =
               onClick={() => {
                 navigator.clipboard?.writeText(activeOffer.promoCode);
                 notify(`Промокод ${activeOffer.promoCode} скопирован`);
-                setActiveOffer(null);
               }}
             >
               Скопировать промокод
             </button>
+            {activeOffer.actionData && (
+              <button 
+                className={styles.secondaryBtn}
+                style={{ marginTop: 8 }}
+                onClick={() => {
+                  window.open(activeOffer.actionData, '_blank');
+                }}
+              >
+                Перейти к партнеру ↗
+              </button>
+            )}
             <button 
               className={styles.secondaryBtn}
+              style={{ marginTop: 8 }}
               onClick={() => setActiveOffer(null)}
             >
               Закрыть
