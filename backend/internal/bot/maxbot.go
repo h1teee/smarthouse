@@ -12,7 +12,7 @@ import (
 	"strings"
 )
 
-const fallbackToken = "f9LHodD0cOITiZaLoyGV-RuzAdwk5X3CftbPIij0G-n8dyDXOWu5_AVse9In5CoxKa1FMu2VoMGux9xZLehZ"
+const fallbackToken = "f9LHodD0cOKlk715vvXi0yQtmBz8Mf2tTnp_3KDz7S1xRn9QgkbIGOahyq_Jwzfjvq6IYqUcJYGP71NdAXY5"
 
 func cleanToken(t string) string {
 	t = strings.TrimSpace(t)
