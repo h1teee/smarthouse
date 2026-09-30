@@ -55,13 +55,7 @@ func SendPushNotification(vkIDs []string, message string, requestID string) erro
 		log.Printf("[PUSH] Using MAX_TOKEN (len=%d): %s...%s\n", len(token), token[:4], token[len(token)-4:])
 	}
 
-	var text string
-	if requestID == "broadcast" || requestID == "broadcast_test" || requestID == "welcome" {
-		text = fmt.Sprintf("%s\n\nОткрыть приложение: https://smarthouse-frontend.onrender.com/", message)
-	} else {
-		deepLink := fmt.Sprintf("https://smarthouse-frontend.onrender.com/?screen=ukModeration&requestId=%s", requestID)
-		text = fmt.Sprintf("%s\n\nСсылка: %s", message, deepLink)
-	}
+	text := message
 
 	payload := map[string]interface{}{
 		"text": text,
