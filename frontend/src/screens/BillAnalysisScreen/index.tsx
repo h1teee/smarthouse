@@ -38,18 +38,25 @@ export const BillAnalysisScreen: React.FC<BillAnalysisScreenProps> = ({ onBack }
   const [inputText, setInputText] = useState('');
   const [isSending, setIsSending] = useState(false);
 
-const DEFAULT_ANALYSIS_SUMMARY = 'Счет за ноябрь 2024 — 5 100 ₽. Из них:\n• Отопление: 2 805 ₽ (55%)\n• Водоснабжение: 1 275 ₽ (25%)\n• Электроэнергия: 1 020 ₽ (20%)\n\nНачисления на 300 ₽ выше прошлого месяца из-за начала отопительного сезона. Рекомендуем проверить исправность терморегуляторов и передавать показания ИПУ до 25 числа.';
+const formatMonthName = (m: string) => {
+  if (m === '2024-09' || m.includes('09')) return 'Сентябрь 2024';
+  if (m === '2024-10' || m.includes('10')) return 'Октябрь 2024';
+  if (m === '2024-11' || m.includes('11')) return 'Ноябрь 2024';
+  return m;
+};
+
+const DEFAULT_ANALYSIS_SUMMARY = 'Анализирую квитанцию... Загружаю данные из GigaChat 🤖';
 
 const DEFAULT_EXPENSE_HISTORY: ExpenseItem[] = [
-  { id: '1', month: '2024-09', amount: '4 500 ₽', percentage: 70 },
-  { id: '2', month: '2024-10', amount: '4 800 ₽', percentage: 78 },
-  { id: '3', month: '2024-11', amount: '5 100 ₽', percentage: 100, isCurrent: true },
+  { id: '1', month: 'Сентябрь 2024', amount: '4 500 ₽', percentage: 70 },
+  { id: '2', month: 'Октябрь 2024', amount: '4 800 ₽', percentage: 78 },
+  { id: '3', month: 'Ноябрь 2024', amount: '5 100 ₽', percentage: 100, isCurrent: true },
 ];
 
 const DEFAULT_BILLS = [
-  { id: 1, month: '2024-09', amount: 4500 },
-  { id: 2, month: '2024-10', amount: 4800 },
-  { id: 3, month: '2024-11', amount: 5100 },
+  { id: 1, month: 'Сентябрь 2024', amount: 4500 },
+  { id: 2, month: 'Октябрь 2024', amount: 4800.50 },
+  { id: 3, month: 'Ноябрь 2024', amount: 5100 },
 ];
 
 const generateSmartAiReply = (userText: string, errorMsg?: string): string => {
@@ -87,7 +94,11 @@ const generateSmartAiReply = (userText: string, errorMsg?: string): string => {
           if (resBills.ok) {
             const dataBills = await resBills.json();
             if (Array.isArray(dataBills) && dataBills.length > 0) {
-              setAllBills(dataBills);
+              const formattedBills = dataBills.map((b: any) => ({
+                ...b,
+                month: formatMonthName(b.month)
+              }));
+              setAllBills(formattedBills);
               const sorted = [...dataBills].reverse();
               let maxAmount = 0;
               sorted.forEach((b: any) => {
@@ -95,7 +106,7 @@ const generateSmartAiReply = (userText: string, errorMsg?: string): string => {
               });
               history = sorted.map((b: any) => ({
                 id: String(b.id),
-                month: b.month,
+                month: formatMonthName(b.month),
                 amount: b.amount.toFixed(2) + ' ₽',
                 percentage: maxAmount > 0 ? (b.amount / maxAmount) * 100 : 0,
                 isCurrent: String(b.id) === billId
@@ -151,7 +162,7 @@ const generateSmartAiReply = (userText: string, errorMsg?: string): string => {
     let billId = localStorage.getItem('selectedBillId');
     if (!billId || isNaN(Number(billId))) billId = '3';
 
-    setShowQuickReplies(false);
+    // Кнопки остаются всегда активными
     setIsSending(true);
     setInputText('');
 
