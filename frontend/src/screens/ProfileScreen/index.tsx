@@ -361,7 +361,7 @@ export const ProfileScreen: React.FC<{onLogout?: () => void}> = ({ onLogout }) =
           className={styles.quickTile}
           onClick={() => setActiveModal('cards')}
         >
-          <div className={styles.quickTileIcon} style={{ background: 'linear-gradient(135deg, #0A84FF, #0056B3)' }}>
+          <div className={styles.quickTileIcon} style={{ background: 'linear-gradient(135deg, #BF5AF2, #7B2CBF)' }}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="2" y="5" width="20" height="14" rx="2" />
               <line x1="2" y1="10" x2="22" y2="10" />

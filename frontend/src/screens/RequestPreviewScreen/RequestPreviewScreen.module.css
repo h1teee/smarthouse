@@ -51,8 +51,8 @@
   height: 320px;
   background: radial-gradient(
     circle,
-    rgba(10, 132, 255, 0.14) 0%,
-    rgba(88, 86, 214, 0.08) 35%,
+    rgba(175, 82, 222, 0.14) 0%,
+    rgba(142, 68, 173, 0.08) 35%,
     transparent 65%
   );
   border-radius: 50%;
@@ -95,7 +95,7 @@
   font-size: 15px;
   font-weight: 600;
   letter-spacing: -0.2px;
-  background: linear-gradient(90deg, #BF5AF2 0%, #0A84FF 100%);
+  background: linear-gradient(90deg, #BF5AF2 0%, #E0A6FF 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -127,7 +127,7 @@
   position: absolute;
   inset: -8px;
   border-radius: 20px;
-  background: conic-gradient(from 0deg, #BF5AF2, #0A84FF, #30D158, #FFD60A, #BF5AF2);
+  background: conic-gradient(from 0deg, #BF5AF2, #AF52DE, #E0A6FF, #BF5AF2);
   filter: blur(14px);
   opacity: 0.75;
   animation: rotateHalo 6s linear infinite;
@@ -162,7 +162,7 @@
   right: 0;
   height: 3px;
   background: #FFFFFF;
-  box-shadow: 0 0 14px 4px #BF5AF2, 0 0 28px 8px rgba(10, 132, 255, 0.8);
+  box-shadow: 0 0 14px 4px #BF5AF2, 0 0 28px 8px rgba(191, 90, 242, 0.8);
   z-index: 5;
   animation: laserScan 2.2s cubic-bezier(0.45, 0, 0.55, 1) infinite alternate;
 }
@@ -251,7 +251,7 @@
 
 .progressBarFill {
   height: 100%;
-  background: linear-gradient(90deg, #BF5AF2 0%, #0A84FF 100%);
+  background: linear-gradient(90deg, #BF5AF2 0%, #E0A6FF 100%);
   border-radius: 2px;
   transition: width 0.4s ease;
 }
@@ -273,7 +273,7 @@
   width: 100%;
   min-height: 50px;
   border-radius: 14px;
-  background: linear-gradient(135deg, rgba(191, 90, 242, 0.25) 0%, rgba(10, 132, 255, 0.25) 100%);
+  background: linear-gradient(135deg, rgba(191, 90, 242, 0.28) 0%, rgba(142, 68, 173, 0.24) 100%);
   border: 1px solid rgba(191, 90, 242, 0.4);
   color: #FFFFFF;
   font-size: 16px;
@@ -285,7 +285,7 @@
 
 .skipAnalysisBtn:active {
   transform: scale(0.97);
-  background: linear-gradient(135deg, rgba(191, 90, 242, 0.35) 0%, rgba(10, 132, 255, 0.35) 100%);
+  background: linear-gradient(135deg, rgba(191, 90, 242, 0.38) 0%, rgba(142, 68, 173, 0.34) 100%);
 }
 
 /* ═══════════════════════════════════════════════════
@@ -462,7 +462,7 @@
 
 .iconPurple { background: rgba(191, 90, 242, 0.16); color: #BF5AF2; border: 1px solid rgba(191, 90, 242, 0.3); }
 .iconOrange { background: rgba(255, 159, 10, 0.16); color: #FF9F0A; border: 1px solid rgba(255, 159, 10, 0.3); }
-.iconBlue { background: rgba(10, 132, 255, 0.16); color: #0A84FF; border: 1px solid rgba(10, 132, 255, 0.3); }
+.iconBlue { background: rgba(191, 90, 242, 0.16); color: #BF5AF2; border: 1px solid rgba(191, 90, 242, 0.3); }
 .iconGreen { background: rgba(52, 199, 89, 0.16); color: #34C759; border: 1px solid rgba(52, 199, 89, 0.3); }
 .iconTeal { background: rgba(100, 210, 255, 0.16); color: #64D2FF; border: 1px solid rgba(100, 210, 255, 0.3); }
 .iconYellow { background: rgba(255, 214, 10, 0.16); color: #FFD60A; border: 1px solid rgba(255, 214, 10, 0.3); }
@@ -713,7 +713,7 @@
   width: 160px;
   height: 160px;
   border-radius: 50%;
-  background: conic-gradient(from 0deg, #BF5AF2, #0A84FF, #30D158, #FFD60A, #BF5AF2);
+  background: conic-gradient(from 0deg, #BF5AF2, #AF52DE, #E0A6FF, #BF5AF2);
   filter: blur(20px);
   opacity: 0.6;
   animation: rotateHalo 6s linear infinite;
@@ -747,7 +747,7 @@
 
 .progressBarFillCenter {
   height: 100%;
-  background: linear-gradient(90deg, #BF5AF2 0%, #0A84FF 100%);
+  background: linear-gradient(90deg, #BF5AF2 0%, #E0A6FF 100%);
   border-radius: 3px;
   transition: width 0.4s ease;
 }

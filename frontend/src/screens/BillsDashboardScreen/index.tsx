@@ -235,7 +235,7 @@ export const BillsDashboardScreen: React.FC<BillsDashboardScreenProps> = ({ onDe
                   <defs>
                     <linearGradient id="sparkleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
                       <stop offset="0%" stopColor="#BF5AF2" />
-                      <stop offset="100%" stopColor="#0A84FF" />
+                      <stop offset="100%" stopColor="#AF52DE" />
                     </linearGradient>
                   </defs>
                 </svg>
@@ -457,7 +457,7 @@ export const BillsDashboardScreen: React.FC<BillsDashboardScreenProps> = ({ onDe
                     <span className={styles.appleRowLabel}>Получатель</span>
                     <span className={styles.appleRowValue}>
                       ООО УК «Смарт Сити»
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="#0A84FF">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="#BF5AF2">
                         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
                       </svg>
                     </span>
@@ -490,7 +490,7 @@ export const BillsDashboardScreen: React.FC<BillsDashboardScreenProps> = ({ onDe
                     </div>
                     <div className={styles.appleCheckmark}>
                       {paymentMethod === 'sbp' && (
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0A84FF" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#BF5AF2" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
                           <polyline points="20 6 9 17 4 12" />
                         </svg>
                       )}
@@ -516,7 +516,7 @@ export const BillsDashboardScreen: React.FC<BillsDashboardScreenProps> = ({ onDe
                     </div>
                     <div className={styles.appleCheckmark}>
                       {paymentMethod === 'card' && (
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0A84FF" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#BF5AF2" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
                           <polyline points="20 6 9 17 4 12" />
                         </svg>
                       )}
@@ -542,7 +542,7 @@ export const BillsDashboardScreen: React.FC<BillsDashboardScreenProps> = ({ onDe
                     </div>
                     <div className={styles.appleCheckmark}>
                       {paymentMethod === 'sberpay' && (
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0A84FF" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#BF5AF2" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
                           <polyline points="20 6 9 17 4 12" />
                         </svg>
                       )}
